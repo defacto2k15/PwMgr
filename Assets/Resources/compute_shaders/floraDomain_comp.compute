@@ -1,0 +1,74 @@
+﻿#pragma kernel CSFloraDomain_Calculate
+
+#define CS_NUMTHREADS_ONE [numthreads(1,1,1)]
+#include "../shaders/noise.hlsl"
+
+cbuffer ConstantGlobalParameters {
+	int g_ArrayLength;
+	int g_DomainTypesCount;
+	float4 g_Coords;
+	float g_Seed;
+};
+
+struct GenerationCharacteristic {
+	float MinIntensity;
+	float MaxIntensity;
+	float PositionMultiplier;
+};
+
+StructuredBuffer<GenerationCharacteristic> DomainCharacteristicsBuffer;
+RWBuffer<float> OutputIntensityArray;
+
+CS_NUMTHREADS_ONE
+void  CSFloraDomain_Calculate(uint3 id : SV_DispatchThreadID) { 
+	int oneLayerLength = g_ArrayLength*g_ArrayLength;
+
+	float2 position = float2(
+		g_Coords[0] + ((float)id.x / (g_ArrayLength - 1)) * (g_Coords[2]),
+		g_Coords[1] + ((float)id.y / (g_ArrayLength - 1)) * (g_Coords[3])
+		);
+	position.x += 45141.22 * g_Seed;
+	position.y += 92.112;
+
+	position /= 100;
+
+	float intensitiesAtPixel[10];
+
+	for (int i = 0; i < g_DomainTypesCount; i++) {
+		GenerationCharacteristic characteristic = DomainCharacteristicsBuffer[i];
+		float2 domainPosition = position * characteristic.PositionMultiplier;
+		domainPosition += (i + 1)*float2(-52.267, 98.138);
+
+		float baseIntensity = ((fractal_simplePerlinNoise2D_3(domainPosition))+4)/4;
+		float finalSingleIntensity = lerp(characteristic.MinIntensity, characteristic.MaxIntensity, baseIntensity);
+
+		intensitiesAtPixel[i] = finalSingleIntensity;
+	}
+
+	float maxIntensity = 0;
+
+	for (int i = 0; i < g_DomainTypesCount; i++) {
+		maxIntensity = max(intensitiesAtPixel[i], maxIntensity);
+	}
+
+	// normalization
+	for (int i = 0; i < g_DomainTypesCount; i++) {
+		intensitiesAtPixel[i] /= maxIntensity;
+	}
+
+	float cutoffMargin = 0.2f;
+	for (int i = 0; i < g_DomainTypesCount; i++) {
+		float intensity = intensitiesAtPixel[i];
+		if (abs(1 - intensity) > cutoffMargin) {
+			intensity = 0;
+		}
+		else {
+			intensity = invLerp(1 - cutoffMargin, 1, intensity);
+		}
+		intensitiesAtPixel[i] = intensity;
+	}
+
+	for (int i = 0; i < g_DomainTypesCount; i++) {
+		OutputIntensityArray[oneLayerLength*i + id.y*g_ArrayLength + id.x] = intensitiesAtPixel[i];
+	}
+}

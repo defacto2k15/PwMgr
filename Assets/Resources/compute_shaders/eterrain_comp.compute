@@ -1,0 +1,141 @@
+﻿#pragma kernel CSETerrain_LocaleBufferUpdater
+#pragma kernel CSETerrain_LocaleRecalculate
+#pragma kernel CSETerrain_LocalesCopy
+
+cbuffer ConstantGlobalParameters {
+	int g_ScopeLength;
+	float4 g_travellerPositionWorldSpace;
+	int g_ringsPerLevelCount;
+	int g_levelsCount;
+};
+
+	sampler2D _HeightMap0;
+	sampler2D _HeightMap1;
+	sampler2D _HeightMap2;
+
+#include "../shaders/common.txt"
+#include "../shaders/eterrain_EPropLocaleCommon.hlsl"
+#include "../shaders/eterrain_heightMapCommon.hlsl"
+
+struct LocaleCopyOrder
+{
+	uint Pointer;
+	uint OldScopeIndex;
+	uint OldIndexInScope;
+	uint NewScopeIndex;
+	uint NewIndexInScope;
+};
+
+
+struct ScopeUpdateOrder {
+	uint Pointer;
+	uint ScopeIndex;
+	uint IndexInScope;
+	float2 FlatPosition;
+};
+
+
+StructuredBuffer<EPyramidConfiguration> _EPyramidConfigurationBuffer;
+StructuredBuffer<EPyramidPerFrameConfiguration> _EPyramidPerFrameConfigurationBuffer;
+
+StructuredBuffer<ScopeUpdateOrder> _ScopesUpdateOrdersBuffer;
+RWStructuredBuffer<EPropLocale> _EPropLocaleBuffer; 
+RWStructuredBuffer<EPropElevationId> _EPropIdsBuffer;
+Buffer<uint> _ScopesToRecalculateBuffer;
+StructuredBuffer<LocaleCopyOrder> _LocalesCopyOrdersBuffer ;
+
+ETerrainParameters init_ETerrainParametersFromBuffers(float2 travellerPositionWorldSpace) {
+	ETerrainParameters p;
+	p.pyramidConfiguration = _EPyramidConfigurationBuffer[0];
+	p.perFrameConfiguration = _EPyramidPerFrameConfigurationBuffer[0];
+	p.travellerPositionWorldSpace = travellerPositionWorldSpace;
+	p.ringsPerLevelCount = g_ringsPerLevelCount;
+	p.levelsCount = g_levelsCount;
+	return p;
+};
+
+struct ETerrainHeightSamplingResult { 
+	float height;
+	float terrainMergingLerpParam;
+	int ringIndex;
+	int levelIndex;
+};
+
+ETerrainHeightSamplingResult SampleHeightAtPosition(float2 travellerPositionWorldSpace, float2 flatPosition) {
+	ETerrainParameters terrainParameters = init_ETerrainParametersFromBuffers(travellerPositionWorldSpace);
+	ELevelAndRingIndexes levelAndRingIndexes = FindLevelAndIndexFromWorldSpacePosition(flatPosition, terrainParameters);
+	EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
+
+	float2 inSegmentSpaceUv = worldSpaceToMainGlobalLevelUvSpace(flatPosition, levelAndRingIndexes, terrainParameters);
+	ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
+
+	ETerrainHeightSamplingResult result;
+	result.height = terrainOut.finalHeight;
+	result.terrainMergingLerpParam = terrainOut.terrainMergingLerpParam;
+	result.ringIndex = levelAndRingIndexes.ringIndex;
+	result.levelIndex = levelAndRingIndexes.levelIndex;
+	return result;
+}
+
+[numthreads(1,1,1)]
+void  CSETerrain_LocaleBufferUpdater(uint3 id : SV_DispatchThreadID)
+{
+	ScopeUpdateOrder order = _ScopesUpdateOrdersBuffer[id.x];
+
+	uint ePropLocaleIndex = ComputeIndexInLocaleBuffer(g_ScopeLength, order.ScopeIndex, order.IndexInScope);
+
+	ETerrainHeightSamplingResult samplingResult = SampleHeightAtPosition(g_travellerPositionWorldSpace, order.FlatPosition);
+
+	EPropLocale newLocale;
+	newLocale.FlatPosition = order.FlatPosition;
+	newLocale.Height =  samplingResult.height * 50;
+	newLocale.Normal = float3(samplingResult.levelIndex, samplingResult.ringIndex, samplingResult.terrainMergingLerpParam);
+
+	_EPropLocaleBuffer[ePropLocaleIndex] = newLocale;
+
+	EPropElevationId eId;
+	eId.InScopeIndex = order.IndexInScope;
+	eId.LocaleBufferScopeIndex = order.ScopeIndex;
+	_EPropIdsBuffer[order.Pointer] = eId;
+}
+
+[numthreads(1,1,1)]
+void CSETerrain_LocaleRecalculate(uint3 id : SV_DispatchThreadID)
+{
+	int indexInScopesToRecalculateBuffer = floor(id.x / ((float)g_ScopeLength));
+	uint scopeIndex = _ScopesToRecalculateBuffer[indexInScopesToRecalculateBuffer];
+	uint indexInScope =  id.x% g_ScopeLength;
+
+	uint ePropLocaleIndex = ComputeIndexInLocaleBuffer(g_ScopeLength, scopeIndex, indexInScope);
+	EPropLocale locale = _EPropLocaleBuffer[ePropLocaleIndex];
+
+	ETerrainHeightSamplingResult samplingResult = SampleHeightAtPosition(g_travellerPositionWorldSpace, locale.FlatPosition);
+
+	locale.Height =  samplingResult.height * 50;
+	locale.Normal = float3(samplingResult.levelIndex, samplingResult.ringIndex, samplingResult.terrainMergingLerpParam);
+	//TODO normal
+
+	_EPropLocaleBuffer[ePropLocaleIndex] = locale;
+}
+
+[numthreads(1,1,1)]
+void CSETerrain_LocalesCopy(uint3 id : SV_DispatchThreadID)
+{
+	LocaleCopyOrder order =  _LocalesCopyOrdersBuffer[id.x];
+	uint oldEPropLocaleIndex = ComputeIndexInLocaleBuffer(g_ScopeLength, order.OldScopeIndex, order.OldIndexInScope);
+	EPropLocale oldLocale = _EPropLocaleBuffer[oldEPropLocaleIndex];
+	
+	uint newEPropLocaleIndex = ComputeIndexInLocaleBuffer(g_ScopeLength, order.NewScopeIndex, order.NewIndexInScope);
+	_EPropLocaleBuffer[newEPropLocaleIndex] = oldLocale;
+
+	EPropElevationId eId;
+	eId.InScopeIndex = order.NewIndexInScope;
+	eId.LocaleBufferScopeIndex = order.NewScopeIndex;
+	_EPropIdsBuffer[order.Pointer] = eId;
+
+	//EPropLocale tempLocale;
+	//tempLocale.Height = -2000;
+	//tempLocale.Normal = 0;
+	//tempLocale.FlatPosition = oldLocale.FlatPosition;
+	//_EPropLocaleBuffer[oldEPropLocaleIndex] = tempLocale;
+}

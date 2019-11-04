@@ -1,0 +1,30 @@
+﻿#pragma kernel  CSHeightTransform_BufferToOutputTexture
+#pragma kernel  CSHeightTransform_InputTextureToBuffer
+
+#include "commonComp.hlsl"
+#include "HeightColorTransformComp.hlsl"
+
+
+cbuffer ConstantGlobalParameters {
+	float g_tParam;
+	float g_cParam;
+	int g_sideLength;
+};
+
+Texture2D<float4> InputHeightTexture;
+RWTexture2D<float4> OutputHeightTexture;
+RWBuffer<float> HeightBuffer;
+
+CS_NUMTHREADS_ONE
+void CSHeightTransform_InputTextureToBuffer(uint3 id : SV_DispatchThreadID) {
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float height = decodeHeight(InputHeightTexture[id.xy]);
+	HeightBuffer[pIndex] = height;
+}
+
+CS_NUMTHREADS_ONE
+void CSHeightTransform_BufferToOutputTexture(uint3 id : SV_DispatchThreadID) {
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float height = HeightBuffer[pIndex];
+	OutputHeightTexture[id.xy] =  encodeHeight(height - 1.0 / (2048 * 2));
+}

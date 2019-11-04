@@ -1,0 +1,275 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+
+#pragma kernel CSMei_WaterIncrement
+#pragma kernel CSMei_FlowSimulation
+#pragma kernel CSMei_VelocityCalculation
+#pragma kernel CSMei_SedimentCalculation
+#pragma kernel CSMei_SedimentTransportation
+#pragma kernel CSMei_Evaporation
+#pragma kernel CSMei_InitializeBuffers
+ 
+#define VARIANT_NHOOD_CROSS4
+#include "neighbours.hlsl"
+#include "commonComp.hlsl"
+
+#ifndef VARIANT_NHOOD_CROSS4
+#error "ONLY Variant of nhood suported is CROSS4"
+#endif
+
+#define NEIGHBOUR_ID_LEFT (0)
+#define NEIGHBOUR_ID_RIGHT (2) 
+#define NEIGHBOUR_ID_UP (1)
+#define NEIGHBOUR_ID_DOWN (3)
+
+
+cbuffer ConstantGlobalParameters {
+	int g_sideLength;
+	float deltaT;
+	float constantWaterAdding;
+	float A_pipeCrossSection;
+	float l_pipeLength;
+	float g_GravityAcceleration;
+	float ks_DissolvingConstant;
+	float kd_DepositionConstant;
+	float ke_EvaporationConstant;
+	float kc_SedimentCapacityConstant;
+	float gridSideSize;
+};
+
+RWBuffer<float> HeightMap;
+RWBuffer<float> WaterMap;
+RWBuffer<float> WaterMap_1;
+RWBuffer<float> WaterMap_2;
+
+RWStructuredBuffer<float4> FluxMap;
+RWStructuredBuffer<float2> VelocityMap;
+
+RWBuffer< float > SedimentMap;
+RWBuffer< float > SedimentMap_1;
+
+RWTexture2D<float4> DebugTexture;
+
+
+ 
+void debugWriteToTexture(uint2 pos, float value) {
+	float4 color = float4(0, 0, 0, 1);
+	if (value > 0) {
+		color.g = value;
+	}
+	else {
+		color.r = -value;
+	}
+	DebugTexture[pos] = color;
+}
+
+CS_NUMTHREADS_ONE
+void CSMei_InitializeBuffers(uint3 id : SV_DispatchThreadID){
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	WaterMap[pIndex] = 0;
+	WaterMap_1[pIndex] = 0;
+	WaterMap_2[pIndex] = 0;
+	FluxMap[pIndex] = float4(0,0,0,0);
+	VelocityMap[pIndex] = float2(0, 0);
+	SedimentMap[pIndex] = 0;
+	SedimentMap_1[pIndex] = 0;
+}
+
+CS_NUMTHREADS_ONE
+void CSMei_WaterIncrement(uint3 id : SV_DispatchThreadID) {
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	
+	float oldWater = WaterMap[pIndex];
+	float newAmount = oldWater + deltaT * constantWaterAdding;
+	WaterMap_1[pIndex] = newAmount;
+
+}
+
+float SumVec(float4 input) {
+	return input[0] + input[1] + input[2] + input[3];
+}
+
+CS_NUMTHREADS_ONE
+void CSMei_FlowSimulation(uint3 id : SV_DispatchThreadID) {
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+
+	float4 oldFlux = FluxMap[pIndex]; 
+	float4 newFlux = float4(0, 0, 0, 0);
+
+	float pTotalHeight = HeightMap[pIndex] + WaterMap_1[pIndex];
+	
+	NeighboursList list = FindNeighbours(id.xy, g_sideLength);
+	for (int i = 0; i < NEIGHBOURHOOD_COUNT; i++) {
+		OneNeighbourData neighbourData = list.array[i];
+		if (is_OneNeighbourData_active(neighbourData)) {
+			int nIndex = Compute2DIndex(neighbourData.position, g_sideLength);
+			float nTotalHeight = HeightMap[nIndex] + WaterMap_1[nIndex];
+
+			float d_difference = pTotalHeight - nTotalHeight;
+			float d_flux = oldFlux[i];
+			float d_new_flux = max(0,
+				d_flux + deltaT * A_pipeCrossSection * (g_GravityAcceleration * d_difference) / l_pipeLength); 
+			newFlux[i] = d_new_flux;
+		}
+	}
+
+
+	float aD1 = WaterMap_1[pIndex];
+	float fluxSum = SumVec(newFlux);
+	float K_factor = 0;
+
+
+	// todo is if necessary
+	if (fluxSum != 0) {
+		K_factor = min(1, aD1 * (gridSideSize * gridSideSize) / (fluxSum * deltaT));
+	}
+	FluxMap[pIndex] = K_factor * newFlux;
+}
+
+float GetFlux(uniform NeighboursList list, int neighbourDirectionId, int outFluxDirectionId) {
+	OneNeighbourData neighbourData = list.array[neighbourDirectionId];
+	if (is_OneNeighbourData_active(neighbourData)) {
+		int nIndex = Compute2DIndex(neighbourData.position, g_sideLength);
+		float4 flux = FluxMap[nIndex];
+		return flux[outFluxDirectionId];
+	}
+	else {
+		return 0;
+	}
+}
+
+CS_NUMTHREADS_ONE
+void CSMei_VelocityCalculation(uint3 id : SV_DispatchThreadID) {
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float4 pFlux = FluxMap[pIndex];
+	float outFlow = SumVec(pFlux);
+
+	float inFlow = 0;
+	NeighboursList list = FindNeighbours(id.xy, g_sideLength);
+	for (int i = 0; i < NEIGHBOURHOOD_COUNT; i++) {
+		OneNeighbourData neighbourData = list.array[i];
+		if (is_OneNeighbourData_active(neighbourData)) {
+			int nIndex = Compute2DIndex(neighbourData.position, g_sideLength);
+			float4 nFlux = FluxMap[nIndex];
+			int oppositeIndex = (i + NEIGHBOURHOOD_COUNT / 2) % (NEIGHBOURHOOD_COUNT);
+			inFlow += nFlux[oppositeIndex];
+		}
+	}
+
+	float aChangeOfWater = deltaT * (inFlow - outFlow);
+
+	float waterMap1Value = WaterMap_1[pIndex];
+	float waterMap2Value =  max(0, waterMap1Value + aChangeOfWater / (gridSideSize * gridSideSize));
+	WaterMap_2[pIndex] = waterMap2Value;
+
+	float horizontalFlux =
+		GetFlux(list, NEIGHBOUR_ID_LEFT, NEIGHBOUR_ID_RIGHT) -
+		pFlux[NEIGHBOUR_ID_LEFT] +
+		pFlux[NEIGHBOUR_ID_RIGHT] -
+		GetFlux(list, NEIGHBOUR_ID_RIGHT, NEIGHBOUR_ID_LEFT);
+
+	float deltaWx = horizontalFlux / 2;
+
+	float verticalFlux =
+		GetFlux(list, NEIGHBOUR_ID_DOWN, NEIGHBOUR_ID_UP) -
+		pFlux[NEIGHBOUR_ID_DOWN] +
+		pFlux[NEIGHBOUR_ID_UP] -
+		GetFlux(list, NEIGHBOUR_ID_UP, NEIGHBOUR_ID_DOWN);
+	float deltaWy = verticalFlux / 2;
+
+	float avgHeight = (waterMap1Value + waterMap2Value) / 2;
+
+	float2 newVelocity = float2(
+		deltaWx / (gridSideSize * avgHeight),
+		deltaWy / (gridSideSize * avgHeight)
+		);
+	// todo needed checking if newVelocity is NaN?
+
+	VelocityMap[pIndex] = newVelocity;
+}
+
+CS_NUMTHREADS_ONE
+void CSMei_SedimentCalculation(uint3 id : SV_DispatchThreadID) {
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float pHeight = HeightMap[pIndex];
+
+	float3 upDir = float3(0, 0, gridSideSize);
+	if (id.y != g_sideLength - 1) {
+		float upHeight = HeightMap[Compute2DIndex(id.xy + int2(0, 1), g_sideLength)];
+		upDir[1] = upHeight - pHeight;
+	}
+
+	float3 rightDir = float3(gridSideSize, 0, 0);
+	if (id.x != g_sideLength - 1) {
+		float rightHeight = HeightMap[Compute2DIndex(id.xy + int2(1, 0), g_sideLength)];
+		rightDir[1] = rightHeight - pHeight;
+	}
+
+	float3 aNormal = cross(upDir, rightDir);
+
+	float3 baseNormal = float3(0, 1, 0);
+
+	float cosAlpha = dot(baseNormal, aNormal) / (length(baseNormal)* length(aNormal));
+	float sinAlpha = sqrt(1 - cosAlpha*cosAlpha);
+
+	float capacity = kc_SedimentCapacityConstant * sinAlpha * length(VelocityMap[pIndex]);
+
+	float dVal = 0; //todo delete
+	float suspendedSediment = SedimentMap[pIndex];
+	float pSediment1 = SedimentMap_1[pIndex];
+	if (capacity > suspendedSediment) { // capacity zawsze większe jest od susSediment.
+		float sedimentChangeAmount = ks_DissolvingConstant*(capacity - suspendedSediment);
+		HeightMap[pIndex] = pHeight - sedimentChangeAmount;
+		SedimentMap_1[pIndex] = pSediment1 + sedimentChangeAmount;
+		dVal = sedimentChangeAmount;
+	}
+	else {
+		float sedimentChangeAmount = kd_DepositionConstant*( suspendedSediment - capacity);
+		HeightMap[pIndex] = pHeight + sedimentChangeAmount;
+		SedimentMap_1[pIndex] = pSediment1-sedimentChangeAmount;
+		dVal = -1;// sedimentChangeAmount;
+	}
+
+	float xx = length(VelocityMap[pIndex]);
+	debugWriteToTexture(id.xy, xx/4);
+}
+
+CS_NUMTHREADS_ONE
+void CSMei_SedimentTransportation(uint3 id : SV_DispatchThreadID) {
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float2 velocity = VelocityMap[pIndex];
+	float2 uv = id.xy - velocity * deltaT;
+
+	uv = float2(
+		clamp(uv.x, 0, g_sideLength - 1),
+		clamp(uv.y, 0, g_sideLength - 1)
+		);
+	uv = float2(
+		uv.x / (g_sideLength - 1),
+		uv.y / (g_sideLength - 1)
+		);
+
+	int maxIndex = g_sideLength - 1;
+
+	int x1 = floor(uv.x * maxIndex);
+	int x2 = ceil(uv.x * maxIndex);
+	float x1Weight = 1 - (uv.x * maxIndex - x1);
+
+	int y1 = floor(uv.y * maxIndex);
+	int y2 = ceil(uv.y * maxIndex);
+	float y1Weight = 1 - (uv.y * maxIndex - y1);
+
+	float lerpOutput = lerp(
+		lerp(SedimentMap_1[Compute2DIndex(uint2(x1, y1), g_sideLength)], SedimentMap_1[Compute2DIndex(uint2(x2, y1), g_sideLength)], x1Weight),
+		lerp(SedimentMap_1[Compute2DIndex(uint2(x1, y2), g_sideLength)], SedimentMap_1[Compute2DIndex(uint2(x2, y2), g_sideLength)], x1Weight),
+		y1Weight
+	);
+
+	SedimentMap[pIndex] = lerpOutput;
+}
+
+CS_NUMTHREADS_ONE
+void CSMei_Evaporation(uint3 id : SV_DispatchThreadID) {
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float oldWater = WaterMap_2[pIndex];
+	WaterMap[pIndex] = oldWater * (1 - ke_EvaporationConstant * deltaT);
+}

@@ -1,0 +1,51 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CS_Main
+
+StructuredBuffer<int> Triangles;
+StructuredBuffer<float3> Vertices;
+StructuredBuffer<float3> Normals;
+RWStructuredBuffer<float> OutEdgeAngle;
+
+#include "../shaders/npr_adjacency.hlsl"
+#include "../shaders/npr_feature_common.txt"
+#include "../shaders/npr_feature_ridgeValley.hlsl"  
+
+StructuredBuffer<AdjacencyInfo> Adjacency;
+
+[numthreads(1,1,1)] 
+void  CS_Main(uint3 id : SV_DispatchThreadID)
+{
+	// triangle index
+	int ti = id.x;
+
+	AdjacencyInfo adjacent = Adjacency[ti];
+
+	float3 pos[3];
+	pos[0] = Vertices[Triangles[ti * 3 + 0]];
+	pos[1] = Vertices[Triangles[ti * 3 + 1]];
+	pos[2] = Vertices[Triangles[ti * 3 + 2]];
+
+	float3 nrm[3];
+	nrm[0] = Normals[Triangles[ti * 3 + 0]];
+	nrm[1] = Normals[Triangles[ti * 3 + 1]];
+	nrm[2] = Normals[Triangles[ti * 3 + 2]];
+
+	float3 normalTrian = getNormal(pos[0].xyz, pos[1].xyz, pos[2].xyz);
+
+	[loop]
+	for (int i = 0; i < 3; i += 1) {
+
+		int auxIndex = (i + 1) % 3;
+
+		float3 auxNormal = getNormal(pos[i].xyz, adjacent.pos[i].xyz, pos[auxIndex].xyz);
+
+		geometry_edge_situation situation = make_geometry_edge_situation( pos[i], pos[auxIndex],
+			normalTrian, auxNormal, i, auxIndex);
+
+		geometry_camera_situation cs;
+		
+		float trait = ridgeFeature_geometry_traitGenerator(situation, cs);
+
+		OutEdgeAngle[Triangles[ti * 3 + i]] = trait;
+	}
+}

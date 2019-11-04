@@ -1,0 +1,82 @@
+﻿#pragma kernel CSRoad_Engrave
+
+#define CS_NUMTHREADS_ONE [numthreads(1,1,1)] //todo extract this from commonComp!
+#include "../shaders/noise.hlsl"
+
+cbuffer ConstantGlobalParameters {
+	float4 g_TextureSize;
+	float4 g_Uvs; //todo use it, as sometimes only part of HeightTexture might be used!
+	float4 g_GlobalCoords;
+	float g_MaxProximity;
+	float g_MaxDelta;
+	float g_StartSlopeProximity;
+	float g_EndSlopeProximity; //większe niż start
+
+};
+
+sampler2D HeightTexture;
+RWTexture2D<float> OutHeightTexture;
+Texture2D<float4> PathProximityTexture;
+
+float2 CalculateUv(uint2 inputPos) {
+	float2 uv;
+	uv.x = (inputPos.x) / g_TextureSize[0];
+	uv.y = (inputPos.y) / g_TextureSize[1];
+	return uv;
+}
+
+float CalculateRoadCenterHeight(float2 uv) {
+	return tex2Dlod(HeightTexture, float4(uv, 0, 0));
+}
+
+float FractalNormalAround(float2 globalPosition, float2 seed, float min, float max) {
+	return min + fractal_improvedValueNoise2D_3(globalPosition + seed) * (max - min);
+}
+
+CS_NUMTHREADS_ONE
+void CSRoad_Engrave(uint3 id : SV_DispatchThreadID) {
+	float2 uv = CalculateUv(id.xy);
+	float2 globalPosition = g_GlobalCoords.xy + float2(uv.x * g_GlobalCoords.z, uv.y * g_GlobalCoords.w);
+	
+	float thisHeight =  tex2Dlod(HeightTexture, float4(uv.x, uv.y, 0, 0));
+	
+	float4 pathProximityInfo = PathProximityTexture[id.xy];
+	
+	float distanceToRoad = (pathProximityInfo.x + pathProximityInfo.y / 255)*g_MaxProximity;
+
+	float2 pixelsPerUnit = float2(
+		g_TextureSize.x / g_GlobalCoords[2],
+		g_TextureSize.y / g_GlobalCoords[3]);
+	float2 deltaInPixels = pathProximityInfo.zw; // encoded, <0,1> values
+	deltaInPixels = (deltaInPixels - 0.5) * 2; // remapped to <-1,1>
+
+	deltaInPixels.x *= pixelsPerUnit[0]; // <to pixel space>
+	deltaInPixels.y *= pixelsPerUnit[1];
+
+	float2 deltaToRoad = deltaInPixels * g_MaxDelta; // decoded!
+	float2 roadUv = CalculateUv(id.xy - deltaToRoad); //delta is position - road
+
+	float roadDepression = FractalNormalAround(globalPosition, float2(42.22, 653.11), 0.00004, 0.00008);
+
+	float edgeRoadHeight = CalculateRoadCenterHeight(roadUv);
+	float depressedRoadHeight = CalculateRoadCenterHeight(roadUv)-roadDepression;
+
+	float jittedStartSlopeProximity = g_StartSlopeProximity * FractalNormalAround(globalPosition, float2(47.31, -63.26), 0.9, 1.1);
+	float jittedEndSlopeProximity = g_EndSlopeProximity * FractalNormalAround(globalPosition, float2(14.54, 23.26), 0.9, 1.1);
+
+	if (distanceToRoad > jittedEndSlopeProximity) {
+		OutHeightTexture[id.xy] = thisHeight;
+	}
+	else if (distanceToRoad > jittedStartSlopeProximity)
+	{
+		float slopeFactor = (distanceToRoad - jittedStartSlopeProximity) / (jittedEndSlopeProximity - jittedStartSlopeProximity);
+		float jitterFactor = FractalNormalAround(globalPosition, float2(0, 0), 0.9, 1.1);
+
+		OutHeightTexture[id.xy] = 0;// lerp(edgeRoadHeight, thisHeight, slopeFactor * jitterFactor);
+	}
+	else {
+		float slopeFactor = distanceToRoad / jittedStartSlopeProximity;
+		OutHeightTexture[id.xy] = 0;// lerp(depressedRoadHeight, edgeRoadHeight, slopeFactor);
+	}
+}
+

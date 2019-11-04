@@ -1,0 +1,42 @@
+﻿#ifndef FILLING_VARIABLES_INC
+#define  FILLING_VARIABLES_INC
+
+
+			sampler2D _MainTex;
+			sampler2D _StrokeTex;
+			sampler2D _DummyStage1Texture;
+			float _DebugScalar;
+			float _ArcCurvatureMargin;
+			float _HatchLength;
+			float  _DistanceLinkingMargin;
+			int _RotationSliceIndex;
+			float _ScreenCellHeightMultiplier;
+			float4 _Stage1RenderingSize;
+
+			int _RotationSlicesCount;
+			float2 _BlockSize;
+			float2 _BlockCount;
+
+			sampler2D _WorldPositionTex;
+			sampler2D _VectorsTex;
+			Texture3D<float4> _SeedPositionTex3D;
+			float _MaximumPointToSeedDistance;
+			float4x4 _MyUnityMatrixVP;
+			float _SeedSamplingMultiplier;
+			float _MZoomPowFactor;
+			float _SeedDensityF;
+
+			float _DistanceToLineTreshold;
+
+			int _TierCount;
+			int _VectorQuantCount;
+			int _LightHatchErasureMode;
+			float _LightHatchErasureMode3Factor;
+			int _ZoomHatchErasureMode;
+			float _Stage1BlockCoordsFilterPrimaryMargin;
+			int _SelectSgmRetrivalMethod;
+
+			static float PI = 3.14159;
+
+
+#endif

@@ -1,0 +1,117 @@
+﻿// Principal Highlights
+// Required:
+//
+//			_PrincipalCurvatureBuffer;
+//			_InterpolatedNormalsBuffer;
+//
+//		_ph_Test6Cutoff) 
+//		_ph_TestDerivativeCutoff) 
+
+#if IN_ph_FEATURE_DETECTION_MODE != DETECTION_MODE_VERTEX
+#error "Principal highlights only be detected in vertex"
+#endif
+
+#if ! (IN_ph_FEATURE_APPLY_MODE == APPLY_MODE_FILLING || IN_ph_FEATURE_APPLY_MODE == APPLY_MODE_LINE_FILLING)
+#error "Principal highlights can only be applied by filling or line filling"
+#endif
+
+
+			struct ph_contoursComputationInput {
+				float ndotv;
+				float dwtg;
+				float test6;
+			};
+
+			ph_contoursComputationInput ph_make_contoursComputationInput(float ndotv, float dwtg, float test6) {
+				ph_contoursComputationInput input;
+				input.ndotv = ndotv;
+				input.dwtg = dwtg;
+				input.test6 = test6;
+				return input;
+			}
+
+			ph_contoursComputationInput ph_workOutContoursComputationInput(float3 viewDir, float3 objectNrm, PrincipalCurvatureInfo info) {
+				float3 worldNrm = normalize(mul((float3x3)unity_ObjectToWorld, normalize(objectNrm))); //n(p) z (1)
+				float ndotv = dot(worldNrm,viewDir); //cos(alpha)
+
+				float3 w = normalize(viewDir - worldNrm * dot(viewDir, worldNrm));
+				float u = dot(w,(info.direction1)); //cos(fi) Fi więc jest kątem między w a direction1
+				float v = dot(w,(info.direction2)); //sin(fi) direction1 i direction2 są zawsze ortogonalne
+				float u2 = u * u; //cos(fi)2
+				float v2 = v*v; // sin(fi)2 
+
+				float u_v = u*v;
+				// obliczanie pochodnych. 
+				float dwII = (u2 *u *info.derivative.x) + (3 * u * u_v *info.derivative.y) + (3 * u_v * v * info.derivative.z) + (v*v2*info.derivative.w);
+				float dwtg = dwII + 2 * info.value1 * info.value2 * ndotv / sqrt(1 - pow(ndotv, 2));
+
+				float test6 = (pow(info.value1, 2) - pow(info.value2, 2))*u;
+				return ph_make_contoursComputationInput(ndotv, dwtg, test6);
+			}
+
+// algorithm-native functions
+
+struct ph_VertexOutBuffer{
+	ph_contoursComputationInput contoursInput;
+};
+#define	Transfer_ph_VertexOutBuffer 1
+
+ph_VertexOutBuffer ph_VertexFilter(VertexSituation situation, appdata v) {
+
+	float3 vertexWorldPos = mul(unity_ObjectToWorld , v.pos);
+	float3 viewDir = normalize(_WorldSpaceCameraPos - vertexWorldPos); //camera to vertex v(p) z (1)
+
+	float3 objectNrm = _InterpolatedNormalsBuffer[situation.vid];
+
+	PrincipalCurvatureInfo info = _PrincipalCurvatureBuffer[situation.vid];
+
+	ph_VertexOutBuffer buffer;
+	buffer.contoursInput = ph_workOutContoursComputationInput(viewDir, objectNrm, info);
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct ph_GeometryOutBuffer {
+	ph_contoursComputationInput contoursInput;
+};
+#define	Transfer_ph_GeometryOutBuffer 1
+
+
+void ph_GeometryFilter(ph_VertexOutBuffer inBuffer[3], inout ph_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout ph_GeometryOutBuffer finBuffer){
+	outBuffer[triangleIndex].contoursInput = inBuffer[triangleIndex].contoursInput; // we simply copy
+	finBuffer.contoursInput = ph_make_contoursComputationInput(0,0,0);
+}
+
+////////////////////// PIXEL SHADER
+
+#if IN_USE_GEOMETRY_SHADER
+	#define ph_FragmentInBuffer ph_GeometryOutBuffer
+#else
+	#define ph_FragmentInBuffer ph_VertexOutBuffer
+#endif
+
+void ph_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, ph_FragmentInBuffer phIn, inout float4 color) {
+}
+
+void ph_FragmentFinFilter( ph_FragmentInBuffer phIn, inout float4 color) {
+}
+
+
+void ph_FragmentFillingFilter(ph_FragmentInBuffer buffer, inout float4 color){
+
+				if (abs(buffer.contoursInput.dwtg) > _ph_TestDerivativeCutoff) {
+					float test6 = abs(buffer.contoursInput.test6);
+					float test6_2 = (test6 - test6*pow(buffer.contoursInput.ndotv, 2));
+					float specialMultiplier = 0;
+#if IN_sh_FEATURE_APPLY_MODE == APPLY_MODE_LINE_FILLING
+					specialMultiplier =  fwidth(test6_2)*10;
+#endif
+					//float a1 = _ph_Test6Cutoff * specialMultiplier; ALTERNATIVE METHID
+					//o.applyColor=true;
+					//o.color = invLerp(a1*0.5, a1*1.5, test6_2)  ;
+
+					if (test6_2 < _ph_Test6Cutoff * specialMultiplier) {
+						color = float4(0.9,0.2,0,1);
+					}
+				}
+}

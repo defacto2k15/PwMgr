@@ -1,0 +1,95 @@
+﻿#pragma kernel CSTerrainWelding_Main
+
+#define CS_NUMTHREADS_ONE [numthreads(1,1,1)]
+
+struct TerrainSidePixelChangesInfo
+{
+	int IsVertical;
+	int ConstantCoord;
+	int Range1;
+	int Range2;
+	int SamplingDistance;
+	int Lod;
+};
+
+struct WeldTexturePixelChangesInfo
+{
+	int ConstantCoord;
+	int Range1;
+	int Range2;
+};
+
+StructuredBuffer<WeldTexturePixelChangesInfo> WeldTextureChangesInfo;
+StructuredBuffer<TerrainSidePixelChangesInfo> TerrainSideChangesInfos;
+
+RWTexture2D<float> WeldTexture;
+
+Texture2D<float> FirstHeightTexture;
+Texture2D<float> SecondHeightTexture;
+
+float floorTo(float x, float target) {
+	return floor(x / target) * target;
+}
+
+float ceilTo(float x, float target) {
+	return ceil(x / target) * target;
+}
+
+int floorToInt(int x, int target) {
+	return x - (x%target);
+}
+
+int ceilToNextInt(int x, int target) {
+	if (x%target == 0) {
+		return x+target;
+	}
+	return floorToInt(x, target) + target;
+}
+
+float CalculateOneSideFinalHeight(uint idx, float rootPercent, float rootLength, TerrainSidePixelChangesInfo side1) {
+	int side1Length =  side1.Range2 - side1.Range1 - 1; 
+	int side1SamplingDistance =  side1.SamplingDistance;
+	//float side1FloatPixelIndex = side1Length*rootPercent; 
+	//0, 1, 2, 3, 4, 5, 6, 
+
+	int2 side1PixelIndexes = int2(
+		side1.Range1 +  floorToInt(idx, side1SamplingDistance)/(side1SamplingDistance), 
+		side1.Range1 + ceilToNextInt(idx, side1SamplingDistance)/(side1SamplingDistance)
+		);
+
+	float2 side1PixelWeights = float2(
+			1.0 - abs((idx /(float)side1SamplingDistance)- side1PixelIndexes[0]),
+			1.0 - abs(side1PixelIndexes[1] - (idx/(float)side1SamplingDistance ))
+		);
+
+	uint4 side1Pos = uint4(
+		side1.ConstantCoord, side1PixelIndexes[0],
+		side1.ConstantCoord, side1PixelIndexes[1]);
+	if (side1.IsVertical < 0.5) {
+		side1Pos = side1Pos.yxwz;
+	}
+
+	float2 side1Heights = float2(
+		SecondHeightTexture.mips[side1.Lod][side1Pos.xy], //todo use lod!
+		SecondHeightTexture.mips[side1.Lod][side1Pos.zw]
+		);
+	float side1FinalHeight = (side1Heights[0] * side1PixelWeights[0] + side1Heights[1] * side1PixelWeights[1]) / (side1PixelWeights[0] + side1PixelWeights[1]);
+	return  side1FinalHeight;// side1Heights[1] - side1Heights[0];
+}
+
+CS_NUMTHREADS_ONE
+void  CSTerrainWelding_Main(uint3 id : SV_DispatchThreadID) { 
+	WeldTexturePixelChangesInfo rootInfo = WeldTextureChangesInfo[0];
+	TerrainSidePixelChangesInfo side1 = TerrainSideChangesInfos[0];
+	TerrainSidePixelChangesInfo side2 = TerrainSideChangesInfos[1];
+
+	int rootLength =  rootInfo.Range2 - rootInfo.Range1 - 1;
+	float rootPercent = (float)(id.x) / (rootInfo.Range2 - rootInfo.Range1  -1);
+
+
+	//float side1FinalHeight = CalculateOneSideFinalHeight(id.x, rootPercent, rootLength, side1);
+	rootLength = 120;
+	float side2FinalHeight = CalculateOneSideFinalHeight(id.x, rootPercent, rootLength, side2);
+
+	WeldTexture[uint2(rootInfo.ConstantCoord, rootInfo.Range1 + id.x)] =  side2FinalHeight;
+}

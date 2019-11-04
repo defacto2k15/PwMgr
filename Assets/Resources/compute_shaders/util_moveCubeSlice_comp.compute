@@ -1,0 +1,13 @@
+﻿#pragma kernel CS_Main
+
+cbuffer ConstantGlobalParameters {
+	int g_SliceIndex;
+};
+Texture3D<float> _CubeTexture;
+RWTexture2D<float> _BufferTexture;
+
+[numthreads(1,1,1)]
+void  CS_Main(uint3 id : SV_DispatchThreadID)
+{
+	_BufferTexture[id.xy] =  _CubeTexture[uint3(id.xy, g_SliceIndex)];
+}

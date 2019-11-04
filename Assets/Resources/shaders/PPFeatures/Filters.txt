@@ -1,0 +1,111 @@
+﻿// filter feature
+
+	float pp_sampler_objectid(float2 uv, float2 centerUv) {
+		float2 smp = PP_SAMPLE_FEATURE_TEXTURE(objectid, uv);
+		return UnpackUInt16Bit(smp);
+	}
+
+	float pp_sampler_normals(float2 uv, float2 centerUv) {
+		float4 t0 = PP_SAMPLE_FEATURE_TEXTURE(normals, centerUv);
+		float3 normalValueCenter;
+		float depthValueCenter;
+		DecodeDepthNormal(t0, depthValueCenter, normalValueCenter);
+
+		float4 t = PP_SAMPLE_FEATURE_TEXTURE(normals, uv);
+		float3 normalValue;
+		float depthValue;
+		DecodeDepthNormal(t, depthValue, normalValue);
+
+		return length(normalValueCenter - normalValue);
+	}
+
+	float pp_sampler_depth(float2 uv, float2 centerUv) {
+		float4 t = PP_SAMPLE_FEATURE_TEXTURE(normals, uv);
+		float3 normalValue;
+		float depthValue;
+		DecodeDepthNormal(t, depthValue, normalValue);
+
+		return depthValue;
+	}
+
+#define pp_generate_filter_sobel(factorName) \
+	float pp_filter_sobel_##factorName(float2 uv) {	\
+		float3x3 G[2]; \
+		G[0] = float3x3(1.0, 2.0, 1.0, 0.0, 0.0, 0.0, -1.0, -2.0, -1.0);	\
+		G[1] = float3x3(1.0, 0.0, -1.0, 2.0, 0.0, -2.0, 1.0, 0.0, -1.0);	\
+		float3x3 I;	\
+		for (int i = 0; i < 3; i++) {	\
+			for (int j = 0; j < 3; j++) {	\
+				I[i][j] =  pp_sampler_##factorName( uv + intScreenCoords_to_uv(int2(i - 1, j - 1)), uv);	\
+			}	\
+		}	\
+		float cnv[2];	\
+		for (int i=0; i<2; i++) {	\
+			float dp3 = dot(G[i][0], I[0]) + dot(G[i][1], I[1]) + dot(G[i][2], I[2]);	\
+			cnv[i] = dp3 * dp3;		\
+		}	\
+		return 0.5 * sqrt(cnv[0] * cnv[0] + cnv[1] * cnv[1]);	\
+	}
+
+
+#define pp_generate_filter_roberts(factorName) \
+	float pp_filter_roberts_##factorName(float2 uv) {	\
+		float2x2 G[2];	\
+		G[0] = float2x2(1,0,0,-1);	\
+		G[1] = float2x2(0, 1, -1, 0);	\
+		float2x2 I;	\
+		for (int i = 0; i < 2; i++) {	\
+			for (int j = 0; j < 2; j++) {	\
+				I[i][j] =  pp_sampler_##factorName( uv + intScreenCoords_to_uv(int2(i, j)), uv );	\
+			}	\
+		}	\
+		float cnv[2];	\
+		for (int i=0; i<2; i++) {	\
+			float dp3 = dot(G[i][0], I[0]) + dot(G[i][1], I[1]);	\
+			cnv[i] = dp3 * dp3;		\
+		}	\
+		return sqrt(cnv[0] * cnv[0] + cnv[1] * cnv[1]);	\
+	}
+
+#define pp_generate_filter_fwidth(factorName)	\
+	float pp_filter_fwidth_##factorName(float2 uv) {	\
+		return	\
+			fwidth(pp_sampler_##factorName(uv, uv)) +	\
+			fwidth(pp_sampler_##factorName( uv + intScreenCoords_to_uv(int2(1,1)),		uv)) +	\
+			fwidth(pp_sampler_##factorName( uv + intScreenCoords_to_uv(int2(-1,-1)),	uv))	\
+			;	\
+	}
+
+#define pp_generate_filter_freiChen(factorName)	\
+	float pp_filter_freiChen_##factorName(float2 uv) {	\
+		float3x3 G[9];	\
+		G[0] = 1.0/(2.0*sqrt(2.0)) * float3x3( 1.0, sqrt(2.0), 1.0, 0.0, 0.0, 0.0, -1.0, -sqrt(2.0), -1.0 );	\
+		G[1] = 1.0/(2.0*sqrt(2.0)) * float3x3( 1.0, 0.0, -1.0, sqrt(2.0), 0.0, -sqrt(2.0), 1.0, 0.0, -1.0 );	\
+		G[2] = 1.0/(2.0*sqrt(2.0)) * float3x3( 0.0, -1.0, sqrt(2.0), 1.0, 0.0, -1.0, -sqrt(2.0), 1.0, 0.0 );	\
+		G[3] = 1.0/(2.0*sqrt(2.0)) * float3x3( sqrt(2.0), -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0, -sqrt(2.0) );	\
+		G[4] = 1.0/2.0 * float3x3( 0.0, 1.0, 0.0, -1.0, 0.0, -1.0, 0.0, 1.0, 0.0 );	\
+		G[5] = 1.0/2.0 * float3x3( -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0 );	\
+		G[6] = 1.0/6.0 * float3x3( 1.0, -2.0, 1.0, -2.0, 4.0, -2.0, 1.0, -2.0, 1.0 );	\
+		G[7] = 1.0/6.0 * float3x3( -2.0, 1.0, -2.0, 1.0, 4.0, 1.0, -2.0, 1.0, -2.0 );	\
+		G[8] = 1.0/3.0 * float3x3( 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 );	\
+		float3x3 I;	\
+		for (int i = 0; i < 3; i++) {	\
+			for (int j = 0; j < 3; j++) {	\
+				I[i][j] = pp_sampler_##factorName(uv + intScreenCoords_to_uv(int2(i - 1, j - 1)), uv);	\
+			}	\
+		}	\
+		float cnv[9];	\
+		for (int i=0; i<9; i++) {	\
+			float dp3 = dot(G[i][0], I[0]) + dot(G[i][1], I[1]) + dot(G[i][2], I[2]);	\
+			cnv[i] = dp3 * dp3;		\
+		}	\
+		float M = (cnv[0] + cnv[1]) + (cnv[2] + cnv[3]);	\
+		float S = (cnv[4] + cnv[5]) + (cnv[6] + cnv[7]) + (cnv[8] + M);		\
+		return sqrt(M/S);	\
+	}
+
+#define pp_apply_usage(usageIndex, factorName, filterName, uv, inColors) { \
+	if(pp_filter_##filterName##_##factorName(uv) > IN_filter##usageIndex##_TRESHOLD){	\
+		PP_SET_DESTINATION_FEATURE( conc(filter, usageIndex), inColors, IN_filter##usageIndex##_COLOR ); \
+	}	\
+}

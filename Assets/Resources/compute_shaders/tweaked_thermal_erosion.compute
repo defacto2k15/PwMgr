@@ -1,0 +1,97 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+
+#define VARIANT_NHOOD_BIG9
+
+#pragma kernel CSTweakedThermal_Precalculation 
+#pragma kernel CSTweakedThermal_Erosion
+
+#include "structureGeneration.hlsl"
+#include "neighbours.hlsl"
+#include "commonComp.hlsl"
+
+cbuffer ConstantGlobalParameters {
+	float g_tParam;
+	float g_cParam;
+	int g_sideLength;
+};
+
+GENERATE_CLASS_2( ThermalEroderPointPrecalculatedInfo,
+	float, differenceTotal,
+	float, differenceMax)
+
+RWBuffer<float> HeightBuffer0;
+RWBuffer<float> HeightBuffer1;
+
+RWStructuredBuffer<ThermalEroderPointPrecalculatedInfo> MidTextureBuffer;
+
+//RWTexture2D<float4> OutputHeightSum; //I THINK IT WAS FOR DEBUG
+
+CS_NUMTHREADS_ONE
+void CSTweakedThermal_Precalculation (uint3 id : SV_DispatchThreadID)
+{
+	uint2 size = uint2(g_sideLength, g_sideLength);
+
+	NeighboursList list = FindNeighbours(id.xy, size);
+
+	float pHeight = HeightBuffer0[Compute2DIndex(id.xy, size)]; 
+
+	float differenceTotal = 0;
+	float differenceMax = 0;
+	int neighbourPresence = 0;
+	float debugScalar = 0;
+
+	for (int i = 0; i < NEIGHBOURHOOD_COUNT; i++) {  
+		OneNeighbourData neighbourData = list.array[i];
+		if (is_OneNeighbourData_active(neighbourData)) {
+			float difference = pHeight - HeightBuffer0[Compute2DIndex(neighbourData.position, size)];
+			if (difference < g_tParam && difference > 0 ) {
+				differenceTotal += difference;
+				if (difference > differenceMax) {
+					differenceMax = difference;
+				}
+			}
+		}
+	}
+
+	MidTextureBuffer[Compute2DIndex(id.xy, size)] = new_ThermalEroderPointPrecalculatedInfo( differenceTotal, differenceMax);
+	HeightBuffer1[Compute2DIndex(id.xy, size)] = HeightBuffer0[Compute2DIndex(id.xy, size)];
+}
+
+CS_NUMTHREADS_ONE
+void CSTweakedThermal_Erosion (uint3 id : SV_DispatchThreadID)
+{
+	uint2 size = uint2(g_sideLength, g_sideLength);
+
+	float changeInHeight = 0;
+	float debScalar = 0;
+
+	float pHeight = HeightBuffer1[Compute2DIndex(id.xy, size)];
+	ThermalEroderPointPrecalculatedInfo pPrecalculatedInfo = MidTextureBuffer[Compute2DIndex(id.xy, size)];
+
+	NeighboursList list = FindNeighbours(id.xy, size);
+	for (int i = 0; i < NEIGHBOURHOOD_COUNT; i++) {
+		OneNeighbourData neighbourData = list.array[i];
+		if (is_OneNeighbourData_active(neighbourData)) {
+			ThermalEroderPointPrecalculatedInfo nPrecalculatedInfo = MidTextureBuffer[Compute2DIndex(neighbourData.position, size)];
+			float nHeight = HeightBuffer1[Compute2DIndex(neighbourData.position, size)];
+			float difference = pHeight - nHeight;
+			if ( pPrecalculatedInfo.differenceMax > 0 ) {
+				if (difference > 0 && difference < g_tParam) { // we are higher than neighbour
+					float moved = g_cParam * (pPrecalculatedInfo.differenceMax ) * (difference / pPrecalculatedInfo.differenceTotal);
+					changeInHeight += -moved;
+					debScalar = 1; // ja zabieram
+				}
+			}
+			if (nPrecalculatedInfo.differenceMax > 0) {
+				float minusDifference = -difference;
+				if (minusDifference < g_tParam && minusDifference > 0 ) {
+					float moved = g_cParam * (nPrecalculatedInfo.differenceMax) * (minusDifference / nPrecalculatedInfo.differenceTotal);
+					changeInHeight += moved;
+					//on mi zabiera
+				}
+			}
+		}
+	}
+	//OutputHeightSum[id.xy] = float4(debScalar,0,0,1);
+	HeightBuffer0[Compute2DIndex(id.xy, size)] = pHeight+changeInHeight; //pHeight + changeInHeight;
+}

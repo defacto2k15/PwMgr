@@ -1,0 +1,32 @@
+﻿// SUGGESTIVE HIGHLIGHTS PP
+//			_sh_IntensityDifferenceTreshold("_IntensityDifferenceTreshold", Range(0,0.5)) = 0.1
+//			_sh_BrighterCountFactor("_BrighterCountFactor", Range(0,1)) = 0.74
+//			_sh_FilterRadius("FilterRadius",Int) = 2
+
+
+void sh_ppApplication(float2 uv, inout float4 inColors[4]){
+					int2 centerCoords = uv_to_intScreenCoords(uv);
+					float centerIntensity = PP_SAMPLE_FEATURE_TEXTURE(sh, intScreenCoords_to_uv(centerCoords));
+
+					int brighterCount = 0;
+					float min_intensity = centerIntensity;
+					int radius = _sh_FilterRadius;
+
+					for (int x = -radius; x <= radius; x++) {
+						for (int y = -radius; y <= radius; y++) {
+							int2 currentCoords = centerCoords + int2(x, y);
+							float currentIntensity = PP_SAMPLE_FEATURE_TEXTURE(sh, intScreenCoords_to_uv(currentCoords));
+							if (currentIntensity > centerIntensity) {
+								brighterCount++;
+							}
+							min_intensity = min(currentIntensity, min_intensity);
+						}
+					}
+
+					if ((centerIntensity - min_intensity) > _sh_IntensityDifferenceTreshold*radius) {
+						if (((float)brighterCount) / pow(radius*2 + 1, 2) < _sh_BrighterCountFactor) {
+							inColors[0] = float4(0,0,1,1);
+						}
+					}
+
+}

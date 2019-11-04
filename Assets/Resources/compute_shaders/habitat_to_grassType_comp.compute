@@ -1,0 +1,165 @@
+﻿#pragma kernel CSHabitatToGrassType_Debug1
+#pragma kernel CSHabitatToGrassType_Debug2
+
+#include "../shaders/noise.hlsl"
+#define CS_NUMTHREADS_ONE [numthreads(1,1,1)]
+
+#define HabitatType_Forest_Index (0)
+#define HabitatType_Meadow_Index (1)
+#define HabitatType_Scrub_Index (2)
+#define HabitatType_Grassland_Index (3)
+#define HabitatType_Fell_Index (4)
+#define HabitatType_NotSpecified_Index (5)
+
+#define GrassType_Debug1_Index (0)
+#define GrassType_Debug2_Index (1)
+
+cbuffer ConstantGlobalParameters {
+	float4 g_Coords;
+	float4 g_OutTextureSize;
+	float4 g_PathProximityUv;
+	float g_MaxProximity;
+};
+
+
+Buffer<int> InputHabitatTypePositions;
+Buffer<int> OutputGrassTypePositions;
+
+Texture2DArray<float3> HabitatTexturesArray;
+SamplerState  _LinearClamp;
+
+Texture2D<float4> PathProximityTexture;
+
+RWBuffer<float> OutIntensityBuffer;
+
+float2 ToGlobalCoords(float2 uv) {
+	return float2(g_Coords[0] + uv[0] * g_Coords[2], g_Coords[1] + uv[1] *g_Coords[3]);
+}
+
+float2 retriveSeedUv(inout float oldSeed) {
+	oldSeed = fmod(oldSeed * 32.16, 6234.232);
+	return float2(oldSeed, oldSeed + 52.872);
+}
+
+float processBorder(float inputIntensity, float processedIntensity, inout float seed, float2 uv) {
+	float borderNoise = remap2(fractal_simplePerlinNoise2D_3(ToGlobalCoords(uv) / 8 + retriveSeedUv(seed)));
+	float borderFactor = saturate(borderNoise  - (1-inputIntensity));
+
+	return lerp(min(borderFactor, processedIntensity), processedIntensity, 
+			invLerpClamp(0.8, 1, inputIntensity));
+}
+
+float Forest_To_Debug1(float inputForestIntensity, float2 uv) {
+	float rareIslandsIntensity =  saturate(remap(fractal_improvedValueNoise2D_3(ToGlobalCoords(uv) / 40 + float2(-94.221, 231.44)) - 1.38)) * 8;
+	float fastNoiseOffset =  remap(fractal_simplePerlinNoise2D_3(ToGlobalCoords(uv) / 4 + float2(0.443, -1.987)))* 0.6 + 0.6;
+	float processedIntensity =  saturate(inputForestIntensity * rareIslandsIntensity * fastNoiseOffset);
+
+	float borderNoise = remap2(fractal_simplePerlinNoise2D_3(ToGlobalCoords(uv) / 8));
+	float borderFactor = saturate(borderNoise  - (1-inputForestIntensity));
+
+	float seed = 2;
+	float outIntensity = processBorder(inputForestIntensity, processedIntensity, seed, uv);
+
+	return outIntensity;
+}
+
+float Fell_To_Debug1(float inputForestIntensity, float2 uv) {
+	float rareIslandsIntensity =  saturate(remap(fractal_improvedValueNoise2D_3(ToGlobalCoords(uv) / 40) - 1.68)) * 8;
+	float fastNoiseOffset =  remap(fractal_simplePerlinNoise2D_3(ToGlobalCoords(uv) / 4))* 0.6 + 0.6;
+	float processedIntensity =  saturate(inputForestIntensity * rareIslandsIntensity * fastNoiseOffset);
+
+	float borderNoise = remap2(fractal_simplePerlinNoise2D_3(ToGlobalCoords(uv) / 8));
+	float borderFactor = saturate(borderNoise  - (1-inputForestIntensity));
+
+	float seed = 3;
+	float outIntensity = processBorder(inputForestIntensity, processedIntensity, seed, uv);
+
+	return outIntensity;
+}
+
+float Meadow_To_Debug2(float inputMeadowIntensity, float2 uv) {
+	float seed = 3;
+
+	float rareIslandsIntensity= saturate(remap(
+		fractal_improvedValueNoise2D_3(ToGlobalCoords(uv) / 30 + retriveSeedUv(seed)) - 1.28) * 2);
+
+	float fastNoiseOffset =
+		(remap(fractal_simplePerlinNoise2D_3(ToGlobalCoords(uv) /10 + retriveSeedUv(seed)))* 0.6 + 0.6) * 0.5;
+
+	float processedIntensity = inputMeadowIntensity - rareIslandsIntensity - fastNoiseOffset;
+
+	return processBorder(inputMeadowIntensity, processedIntensity, seed, uv);
+}
+
+float Fell_To_Debug2(float inputFellIntensity, float2 uv) {
+	return Meadow_To_Debug2(inputFellIntensity, uv);
+}
+
+#define GEN_Habitat_to_Grass_Intensity(HabitatName, GrassName) \
+float Partial_ ## HabitatName ## _To_ ## GrassName(float2 uv) { \
+		int inputHabitatIndex = InputHabitatTypePositions[HabitatType_ ## HabitatName ## _Index]; \
+		if (inputHabitatIndex < 50) { \
+			float habitatIntensity = HabitatTexturesArray.SampleLevel(_LinearClamp, float3(uv, inputHabitatIndex), 0).r; \
+				return HabitatName ## _To_ ## GrassName ## (habitatIntensity, uv); \
+		} \
+		return 0; \
+} \
+
+GEN_Habitat_to_Grass_Intensity(Forest, Debug1)
+GEN_Habitat_to_Grass_Intensity(Fell, Debug1)
+GEN_Habitat_to_Grass_Intensity(Meadow, Debug2)
+GEN_Habitat_to_Grass_Intensity(Fell, Debug2)
+
+#define AddToSum( HabitatName, GrassName, uv ) saturate( Partial_ ## HabitatName ## _To_ ## GrassName(uv))
+
+#define WriteToOutBuffer( l_GrassType, l_outIntensity, l_id) \
+	int outputTextureIndex = OutputGrassTypePositions[GrassType_ ## l_GrassType ## _Index]; \
+	float oneTextureOffetLength = g_OutTextureSize.x * g_OutTextureSize.y; \
+	OutIntensityBuffer[oneTextureOffetLength * outputTextureIndex + l_id.y * g_OutTextureSize.x + l_id.x] = l_outIntensity; 
+	
+float RemoveRoadIntensity(float oldIntensity, float2 globalUv) {
+	float2 localUv = float2(
+		g_PathProximityUv[0] + globalUv.x*g_PathProximityUv[2] + 0.015,
+		g_PathProximityUv[1] + globalUv.y*g_PathProximityUv[3] + 0.015
+		);
+	float4 pathProximityInfo = PathProximityTexture.SampleLevel(_LinearClamp, localUv, 0).r;
+	float distanceToRoad = (pathProximityInfo.x + pathProximityInfo.y / 255)*g_MaxProximity;
+	return invLerpClamp(0.6*g_MaxProximity, g_MaxProximity, distanceToRoad) * oldIntensity;
+}
+
+CS_NUMTHREADS_ONE
+void  CSHabitatToGrassType_Debug1(uint3 id : SV_DispatchThreadID) { 
+	float2 uv = float2(
+		(id.x) / g_OutTextureSize.x,
+		(id.y) / g_OutTextureSize.y);
+
+	float outIntensity = 0;
+	outIntensity += AddToSum(Forest, Debug1, uv);
+	outIntensity += AddToSum(Fell, Debug1, uv );
+	outIntensity = RemoveRoadIntensity(outIntensity, uv);
+
+	//outIntensity = 1;
+	//outIntensity = 0;
+	//outIntensity = 0;
+	WriteToOutBuffer(Debug1, outIntensity, id)
+}
+
+
+CS_NUMTHREADS_ONE
+void  CSHabitatToGrassType_Debug2(uint3 id : SV_DispatchThreadID) { 
+	float2 uv = float2(
+		(id.x) / g_OutTextureSize.x,
+		(id.y) / g_OutTextureSize.y);
+
+	float outIntensity = 0;
+	outIntensity += AddToSum(Meadow, Debug2, uv );
+	outIntensity += AddToSum(Fell, Debug2, uv );
+	outIntensity = RemoveRoadIntensity(outIntensity, uv);
+
+	//outIntensity = 0.2;
+	//outIntensity = 0;
+	WriteToOutBuffer(Debug2, outIntensity, id)
+}
+// Debug1 -> Forrest
+// Debug2 -> Meadow
+// Debug2 -> Fell

@@ -1,0 +1,28 @@
+﻿
+#pragma kernel CSMain
+
+#define CS_NUMTHREADS_ONE [numthreads(1,1,1)]
+
+cbuffer ConstantGlobalParameters {
+	int g_oneClearLineSize;
+	int g_bufferLength;
+}
+
+			struct MMStage1ToRenderingFragment
+			{
+				float2 screenCoords;
+				float strokeAngle;
+				float alphaMultiplier;
+				int id;
+			};
+
+			RWStructuredBuffer<MMStage1ToRenderingFragment> _StrokeSeedGridBuffer;
+
+
+CS_NUMTHREADS_ONE
+void CSMain(uint3 id : SV_DispatchThreadID) {
+	uint index = id.x + g_oneClearLineSize * id.y;
+	if (index < g_bufferLength) {
+		_StrokeSeedGridBuffer[index].alphaMultiplier = 0;
+	}
+}

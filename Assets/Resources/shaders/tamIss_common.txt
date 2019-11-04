@@ -1,0 +1,63 @@
+﻿#ifndef TAMISS_COMMON_INC
+#define TAMISS_COMMON_INC
+			struct TamIdFragment {
+				uint XAndY;
+				uint TAndId;
+			};
+
+			uint upperByteFromShort(uint x){
+				return x << 8;
+			}
+
+			uint lowerByteFromShort(uint x){
+				return x & 255;
+			}
+
+#define MAX_16_BIT ( 0xFFFF  )
+#define UPPER_16_BIT_MASK  (0xFFFF0000 )
+
+			uint getLowerShortFromUint(uint x){
+				return x & MAX_16_BIT;
+			}
+
+			uint setLowerShortToUint(uint x, uint valueToSet){
+				return (x & UPPER_16_BIT_MASK) | (valueToSet & MAX_16_BIT);
+			}
+
+			uint getUpperShortFromUint(uint x){
+				return (x >> 16) & MAX_16_BIT ;
+			}
+
+			uint setUpperShortToUint(uint x, uint valueToSet){
+				return (x & MAX_16_BIT) | ((valueToSet & MAX_16_BIT )  << 16);
+			}
+
+			uint retriveIdFromTamIdFragment(TamIdFragment fragment){
+				return getLowerShortFromUint(fragment.TAndId);
+			};
+
+			float retriveTFromTamIdFragment(TamIdFragment fragment){
+				return  getUpperShortFromUint(fragment.TAndId) / ((float)MAX_16_BIT);
+			};
+
+			float retriveXUvFromTamIdFragment(TamIdFragment fragment){
+				return getLowerShortFromUint(fragment.XAndY)/1000.0;// / ((float)MAX_16_BIT);
+			}
+
+			float retriveYUvFromTamIdFragment(TamIdFragment fragment){
+				return getUpperShortFromUint(fragment.XAndY)/1000.0;
+			}
+
+			TamIdFragment make_TamIdFragment(float X, float Y, float t, uint id){
+				TamIdFragment f;
+				uint xAndY = 0;
+				xAndY = setLowerShortToUint(xAndY, round(X*1000));
+				xAndY = setUpperShortToUint(xAndY, round(Y*1000));
+				f.XAndY = xAndY;
+				uint tAndId = 0;
+				tAndId = setLowerShortToUint(tAndId, id);
+				tAndId = setUpperShortToUint(tAndId, ((uint)round( (t)* MAX_16_BIT  )));
+				f.TAndId = tAndId;
+				return f;
+			}
+#endif

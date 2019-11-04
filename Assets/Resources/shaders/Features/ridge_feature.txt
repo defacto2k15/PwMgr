@@ -1,0 +1,124 @@
+﻿
+// Required:
+//		_EdgeAngleBuffer
+//		_ridgeTreshold
+//		_SurfaceLineWidth
+
+#if IN_ridge_FEATURE_DETECTION_MODE == DETECTION_MODE_PIXEL
+#error "Ridge cannot be detected in pixel"
+#endif
+
+struct  ridge_VertexOutBuffer{
+#if IN_ridge_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX
+	float ridgeStatus[3]; 
+#endif
+};
+
+#if IN_ridge_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX
+	#define	Transfer_ridge_VertexOutBuffer 1
+#else
+	#define	Transfer_ridge_VertexOutBuffer 0
+#endif
+
+ridge_VertexOutBuffer ridge_VertexFilter(VertexSituation situation, appdata a) {
+	ridge_VertexOutBuffer buffer;
+
+#if IN_ridge_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX
+	for(int i = 0; i < 3; i++){
+		uint vid = situation.pid*3 + i;
+		float edgeAngle = _EdgeAngleBuffer[vid];
+		buffer.ridgeStatus[i] = edgeAngle < _ridgeTreshold ? 0 : 1;
+	}
+#endif
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct ridge_GeometryOutBuffer {
+#if IN_ridge_FEATURE_APPLY_MODE == APPLY_MODE_SURFACE_LINE
+	float ridgeStatus[3]; 
+#elif IN_ridge_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+	bool shouldColor;
+#endif
+};
+
+#if IN_ridge_FEATURE_APPLY_MODE == APPLY_MODE_OFF
+	#define	Transfer_ridge_GeometryOutBuffer 0
+#else
+	#define	Transfer_ridge_GeometryOutBuffer 1
+#endif
+
+float ridgeFeature_geometry_traitGenerator1(geometry_edge_situation s, geometry_camera_situation camera_situation) {
+	return signedAngle(s.t1Norm, s.t2Norm, normalize(s.v1Pos - s.v2Pos));
+}
+
+void ridge_GeometryFilter(ridge_VertexOutBuffer inBuffer[3], inout ridge_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout ridge_GeometryOutBuffer finBuffer){
+
+#if IN_ridge_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX
+	#if IN_ridge_FEATURE_APPLY_MODE ==  APPLY_MODE_SURFACE_LINE
+		outBuffer[triangleIndex].ridgeStatus = inBuffer[triangleIndex].ridgeStatus; // we simply copy
+
+		finBuffer.ridgeStatus[0] = 0;
+		finBuffer.ridgeStatus[1] = 0;
+		finBuffer.ridgeStatus[2] = 0;
+	#elif IN_ridge_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+		outBuffer[triangleIndex].shouldColor = false;
+		if( inBuffer[triangleIndex].ridgeStatus[s.v1Index] == 1){
+			shouldCreateFins = true;	
+			finBuffer.shouldColor = true;
+		}else{ 
+			finBuffer.shouldColor = false;
+		}
+	#endif
+#endif
+
+#if IN_ridge_FEATURE_DETECTION_MODE == DETECTION_MODE_GEOMETRY
+	#if IN_ridge_FEATURE_APPLY_MODE ==  APPLY_MODE_SURFACE_LINE
+		outBuffer[0].ridgeStatus[triangleIndex] = ridgeFeature_geometry_traitGenerator1(s,camera_situation) < _ridgeTreshold ? 0 : 1; // we simply 
+		outBuffer[1].ridgeStatus[triangleIndex] = ridgeFeature_geometry_traitGenerator1(s,camera_situation) < _ridgeTreshold ? 0 : 1; // we simply 
+		outBuffer[2].ridgeStatus[triangleIndex] = ridgeFeature_geometry_traitGenerator1(s,camera_situation) < _ridgeTreshold ? 0 : 1; // we simply 
+
+		finBuffer.ridgeStatus[0] = 0;
+		finBuffer.ridgeStatus[1] = 0;
+		finBuffer.ridgeStatus[2] = 0;
+	#elif IN_ridge_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+		outBuffer[triangleIndex].shouldColor = false;
+		if( ridgeFeature_geometry_traitGenerator1(s,camera_situation) < _ridgeTreshold ){
+			shouldCreateFins = true;
+			finBuffer.shouldColor = true;
+		}else{
+			finBuffer.shouldColor = false;
+		}
+	#endif
+#endif
+}
+
+////////////////////// PIXEL SHADER
+
+	#if IN_USE_GEOMETRY_SHADER
+		#define ridge_FragmentInBuffer ridge_GeometryOutBuffer
+	#else
+		#define ridge_FragmentInBuffer ridge_VertexOutBuffer
+	#endif
+
+void ridge_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, ridge_FragmentInBuffer ridgeIn, inout float4 color) {
+
+#if IN_ridge_FEATURE_APPLY_MODE == APPLY_MODE_SURFACE_LINE
+	if (ridgeIn.ridgeStatus[situation.edgeIndex] > 0.5) {
+		color = float4(1,0,0,1);
+	}
+#endif
+}
+
+void ridge_FragmentFinFilter( ridge_FragmentInBuffer ridgeIn, inout float4 color) {
+
+#if IN_ridge_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+	if (ridgeIn.shouldColor ){
+		applyColor = true;
+		color = float4(1,0,0,1);
+	}
+#endif
+}
+
+void ridge_FragmentFillingFilter(ridge_FragmentInBuffer contoursInput, inout float4 color){
+}

@@ -1,0 +1,116 @@
+﻿#ifndef COMMON_INC
+#define COMMON_INC
+	half fPI(){
+		return 3.14;
+	}
+
+	half remapNeg(half x){ // from (0,1) to (-1,1)
+		return (x-0.5)*2;
+	}
+	
+	float2 remapNeg_2f(float2 x ){
+		return float2(remapNeg(x.x), remapNeg(x.y));
+	}
+
+	half remap(half x){ // from (-1,1) to (0,1)
+		return (x+1)/2;
+	}
+
+	float2 remap_2f(float2 x){ // from (-1,1) to (0,1)
+		return float2(remap(x.x), remap(x.y));
+	}
+
+	half remap2(half x){ 
+		return remap(remap(x));
+	}
+
+	half4 assertNotZero(half4 inVal){
+		return normalize(max(inVal, half4(0.01, 0.01, 0.01, 0)));
+	}
+
+	half invLerp(half min, half max, half value){
+		return clamp((value - min) / (max-min),0,1);
+	}
+
+	half invLerpClamp(half min, half max, half value){// nie zadziała jak min < max
+		return clamp(( clamp(value, min, max) - min) / (max-min),0,1);
+	}
+
+	half invLerpClamp2( half min, half max, half value){
+		if( value < min){
+			return 0.;
+		}
+		if( value > max){
+			return 1.;
+		}
+		return invLerp(min, max, value);
+	}
+
+	half weightedAverage( half4 values, half4 weights ){
+		return (values.x * weights.x +
+				values.y * weights.y +
+				values.z * weights.z +
+				values.w * weights.w) / 
+					( weights.x + weights.y + weights.z + weights.w);
+	}
+
+	// gets value val that is in <min, max>
+	// returns normalized to <0, 1>
+	half normalizeTo( half min, half max, half val){
+		return clamp( (val - min)/(max-min), 0.0, 1.0);
+	}
+
+	float3 encodeNormal(float3 normal){
+		return (normalize(normal) + 1)/2;
+	}
+
+	float3 decodeNormal(float3 encoded){
+		return (encoded -0.5 )*2;
+	}
+
+	float DenormalizePlainHeight(float normalized) {
+		return 197 + normalized * 2385;
+	}
+
+	float2 memberwiseMultiply(float2 a, float2 b) {
+		return float2(a[0] * b[0], a[1] * b[1]);
+	}
+
+	// from <0,1> to <OX,OY> + UV*BX 
+	float2 remapUVToBox(float2 uv, float2 offset, float2 boxSize) { 
+		return memberwiseMultiply(uv, boxSize) + offset;
+	}
+
+	// from ??? to <0,1>
+	float2 inv_remapUVToBox(float2 uv, float2 offset, float2 boxSize) { 
+		return memberwiseMultiply(uv - offset, 1.0 / boxSize);
+	}
+
+	bool isInUvRange(float2 uv) {
+		return uv[0] >= 0 && uv[0] <= 1 && uv[1] >= 0 && uv[1] <= 1;
+	}
+
+	float2 PackUInt16Bit(uint i) {
+		return float2(i % 256 / 255.0, floor(i / 255.0) / 255.0);
+	}
+
+	uint UnpackUInt16Bit(float2 i) {
+		return i.x * 255.0 + i.y * 255.0*255.0;
+	}
+
+// mymod(-0.1, 1) is 0.9!!
+float mymod(float x, float y)
+{
+	return x - y * floor(x / y);
+}
+
+float3 mymod(float3 x, float y)
+{
+	return float3(
+		mymod(x.x, y),
+		mymod(x.y, y),
+		mymod(x.z, y)
+		);
+}
+
+#endif

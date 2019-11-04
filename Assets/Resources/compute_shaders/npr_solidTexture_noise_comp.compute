@@ -1,0 +1,67 @@
+﻿#pragma kernel CS_FractalNoise
+#pragma kernel CS_Checkerboard
+
+#include "../shaders/KeijiroShaders/ClassicNoise3D.hlsl"
+#include "../shaders/noise.hlsl"
+
+cbuffer ConstantGlobalParameters {
+	int g_SideSize;
+	int g_DispatchLoopIndex;
+	int g_SlicesPerDispatch;
+	int g_DispatchOffset;
+};
+RWTexture3D<float> _OutTexture3D;
+
+float3 GetCoords(uint3 id) {
+	return id / ((float)(g_SideSize));
+}
+
+uint3 GetId(uint3 id) {
+	return id + uint3(0, 0,  (g_DispatchOffset + g_DispatchLoopIndex)*g_SlicesPerDispatch);
+}
+
+[numthreads(1,1,1)]
+void CS_Checkerboard(uint3 id : SV_DispatchThreadID)
+{
+	uint3 newId = GetId(id);
+	float3 coords = GetCoords(newId);
+	float cellCount = 32;
+
+	int3 a = round(cellCount*coords);
+	int c = (a.x + a.y + a.z) % 2;
+
+	_OutTexture3D[newId] = c;
+}
+
+GEN_fractalNoise3D( cloudNoise, 5, snoise3D, -1, 1)
+
+float4 sampleWithWrapMargins(float3 coords, float repeatScale, float marginSize, float intraScale, float offset) {
+	coords = mymod(coords*repeatScale, 1);
+
+	float standardSample = cloudNoise(coords*intraScale+offset);
+	float3 topSamples = float3(
+		cloudNoise(float3(-(1-coords.x), coords.y, coords.z)*intraScale+offset),  
+		cloudNoise(float3(coords.x, -(1-coords.y), coords.z)*intraScale+offset),
+		cloudNoise(float3(coords.x, coords.y, -(1-coords.z))*intraScale+offset));
+
+	float margin = marginSize;
+	float3 weights = float3(
+		invLerp(1 - margin, 1, coords.x),
+		invLerp(1 - margin, 1, coords.y),
+		invLerp(1 - margin, 1, coords.z));
+
+	float standardWeight = saturate(1 - weights.x - weights.y - weights.z);
+	return (standardSample*standardWeight
+		+ topSamples.x * weights.x
+		+ topSamples.y * weights.y
+		+ topSamples.z * weights.z) / (standardWeight + weights.x + weights.y + weights.z);
+}
+
+[numthreads(1,1,1)]
+void CS_FractalNoise(uint3 id : SV_DispatchThreadID)
+{
+	uint3 newId = GetId(id);
+	float3 coords = GetCoords(newId);
+
+	_OutTexture3D[newId] =  remap(sampleWithWrapMargins(coords, 1, 0.1, 10, 0));
+}

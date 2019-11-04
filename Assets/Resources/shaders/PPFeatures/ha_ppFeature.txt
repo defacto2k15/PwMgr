@@ -1,0 +1,98 @@
+﻿// Hybrid apparent ridgesPP
+//			_ha_TauFactor("ha_TauFactor", Range(0,100)) = 1
+//			_ha_Lambda("ha_Lambda", Range(0,1)) = 1
+
+
+				struct ha_HybridApparentRidgesStage1 {
+					float q1;
+					float2 t1;
+				};
+
+				ha_HybridApparentRidgesStage1 ha_UnpackStage1Result(float3 input) {
+					ha_HybridApparentRidgesStage1 o; 
+					o.q1 = input.r; // we ignore Tau and pow(2 !!!
+					o.t1 = input.gb * 2 - 1;
+					return o;
+				}
+
+void ha_ppApplication(float2 uv, inout float4 inColors[4]){
+					float pi = 3.14159;
+
+					int2 coords = uv_to_intScreenCoords(uv);
+					ha_HybridApparentRidgesStage1 Stages[3][3];
+
+					for (int x = -1; x <= 1; x++) {
+						for (int y = -1; y <= 1; y++) {
+							float3  pixel = PP_SAMPLE_FEATURE_TEXTURE(ha, intScreenCoords_to_uv(coords + int2(x, y)));
+							Stages[x + 1][y + 1] = ha_UnpackStage1Result(pixel);
+
+							//if(x==0 && y == 0 && length(pixel) < 0.0001){
+							//	return;
+							//}
+						}
+					}
+
+
+					float a = sqrt(2.0) / 2.0;
+					float b = cos(pi / 8);
+					float lambda = _ha_Lambda;
+					float l1 = 1 + lambda;
+					float l2 = 1 + 2 * _ha_Lambda;
+					float eplison = 0.00000000000001;
+
+					float v = 0;
+					float2 diff;
+
+					fixed4 color;
+					color = 0;
+					float2 t1 =(Stages[1][1].t1);
+					float2 t1n = normalize(t1);
+					if (length(t1) > eplison ) { 
+						float2 d1 = float2(1, 0);
+						float2 d2 = float2(a, a);
+						float2 d3 = float2(0, 1);
+						float2 d4 = float2(-a, a);
+
+						v = (8 + 8 * lambda)*Stages[1][1].q1;
+
+						// wartosci zgodne z figure4.4
+						float M[3][3];
+						if (abs(dot(t1n, d1)) > b) { 
+							color = float4(1, 0, 0,0);
+							M[0][0] = l1;	M[0][1] = 1;	M[0][2] = l1;
+							M[1][0] = l2;	M[1][1] = 0;	M[1][2] = l2;
+							M[2][0] = l1;	M[2][1] = 1;	M[2][2] = l1;
+						}
+						else if (abs(dot(t1n, d2)) > b) {
+							color = float4(1, 1, 0,0);
+							M[0][0] = 1;	M[0][1] = l1;	M[0][2] = l2;
+							M[1][0] = l1;	M[1][1] = 0;	M[1][2] = l1;
+							M[2][0] = l2;	M[2][1] = l1;	M[2][2] = 1;
+						}
+						else if (abs(dot(t1n, d3)) > b) {
+							color = float4(0, 1, 0,0);
+							M[0][0] = l1;	M[0][1] = l2;	M[0][2] = l1;
+							M[1][0] = 1;	M[1][1] = 0;	M[1][2] = 1;
+							M[2][0] = l1;	M[2][1] = l2;	M[2][2] = l1;
+						}
+						else {
+							color = float4(0, 1, 1,0);
+							M[0][0] = l2;	M[0][1] = l1;	M[0][2] = 1;
+							M[1][0] = l1;	M[1][1] = 0;	M[1][2] = l1;
+							M[2][0] = 1;	M[2][1] = l1;	M[2][2] = l2;
+						}
+
+						for (int x = 0; x > 3; x++) {
+							for (int y = 0; y < 3; y++) {
+								v -= Stages[x][y].q1 * M[x][y];
+							}
+						}
+					}
+
+					color = 1;
+					if (v > 0.2) {
+						color = 1 - (v-0.2)*(1/0.8);
+					}
+
+					PP_SET_DESTINATION_FEATURE(ha, inColors, color);
+}

@@ -1,0 +1,44 @@
+﻿#pragma kernel CS_ResolveSpots
+
+#include "commonComp.hlsl"
+#include "structureGeneration.hlsl" 
+
+cbuffer ConstantGlobalParameters {
+	float4 g_GlobalPosition;
+};
+
+struct InputPositionsStruct {
+	float X;
+	float Y;
+};
+
+GENERATE_CLASS_4(OutputSpotDataStruct,
+	float, normalX,
+	float, normalY,
+	float, normalZ,
+	float, height);
+
+RWStructuredBuffer<InputPositionsStruct> InputPositionsBuffer;
+RWStructuredBuffer<OutputSpotDataStruct> OutputDataBuffer;
+sampler2D TerrainTexture;
+sampler2D NormalsTexture;
+
+
+CS_NUMTHREADS_ONE
+void CS_ResolveSpots(uint3 id : SV_DispatchThreadID)
+{
+	InputPositionsStruct inputPos = InputPositionsBuffer[id.x];
+	float2 uv;
+	uv.x = (inputPos.X - g_GlobalPosition[0]) / g_GlobalPosition[2];
+	uv.y = (inputPos.Y - g_GlobalPosition[1]) / g_GlobalPosition[3];
+
+	float height =   tex2Dlod(TerrainTexture, float4(uv.x, uv.y, 0, 0));
+	float3 normals = decodeNormal( tex2Dlod(NormalsTexture, float4(uv.x, uv.y, 0, 0)));
+
+	OutputDataBuffer[id.x] = new_OutputSpotDataStruct(
+		normals.x,
+		normals.y,
+		normals.z,
+		height
+	);
+}

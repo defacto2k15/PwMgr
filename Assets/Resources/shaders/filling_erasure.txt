@@ -1,0 +1,9 @@
+﻿#ifndef filling_erasure_INC
+#define  filling_erasure_INC
+
+			float generateLightHatchErasureBound(uint id) {
+				return  (sin(id*((double)0.123443231)) / 2.0 + 0.5)*0.98;
+			}
+
+
+#endif

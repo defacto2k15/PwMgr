@@ -1,0 +1,22 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CS_Main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+StructuredBuffer<int> Triangles;
+StructuredBuffer<float3> Vertices;
+StructuredBuffer<float3> Normals;
+RWStructuredBuffer<float3> OutVertices;
+
+[numthreads(1,1,1)]
+void  CS_Main(uint3 id : SV_DispatchThreadID)
+{
+	int i = id.x;
+	int i1 = Triangles[i * 3 + 0];
+	int i2 = Triangles[i * 3 + 1];
+	int i3 = Triangles[i * 3 + 2];
+
+	OutVertices[i*3 + 0] = Vertices[i1];
+	OutVertices[i*3 + 1] = Vertices[i2];
+	OutVertices[i*3 + 2] = Vertices[i3];
+}

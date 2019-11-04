@@ -1,0 +1,65 @@
+﻿
+// Required:
+//		_BarycentricCoordinatesBuffer
+
+#if IN_barycentric_ASPECT_MODE == DETECTION_MODE_PIXEL
+#error "barycentric cannot be detected in pixel"
+#endif
+
+struct barycentric_VertexOutBuffer{
+#if IN_barycentric_ASPECT_MODE == DETECTION_MODE_VERTEX
+	float2 barycentric_coords;
+#endif
+};
+
+#if IN_barycentric_ASPECT_MODE == DETECTION_MODE_VERTEX
+	#define	Transfer_barycentric_VertexOutBuffer 1
+#else
+	#define	Transfer_barycentric_VertexOutBuffer 0
+#endif
+
+barycentric_VertexOutBuffer barycentric_VertexFilter(VertexSituation situation) {
+	barycentric_VertexOutBuffer buffer;
+
+#if  IN_barycentric_ASPECT_MODE == DETECTION_MODE_VERTEX
+	buffer.barycentric_coords =  _BarycentricCoordinatesBuffer[situation.vid];
+#endif
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct barycentric_GeometryOutBuffer {
+#if IN_barycentric_ASPECT_MODE != DETECTION_MODE_OFF
+	float2 barycentric_coords;
+#endif
+};
+
+#if IN_barycentric_ASPECT_MODE != DETECTION_MODE_OFF
+	#define	Transfer_barycentric_GeometryOutBuffer 1
+#else
+	#define	Transfer_barycentric_GeometryOutBuffer 0
+#endif
+
+
+void barycentric_GeometryFilter(barycentric_VertexOutBuffer inBuffer[3], inout barycentric_GeometryOutBuffer outBuffer[3], int triangleIndex, inout barycentric_GeometryOutBuffer finBuffer){
+
+#if IN_barycentric_ASPECT_MODE == DETECTION_MODE_VERTEX 
+	outBuffer[triangleIndex] = inBuffer[triangleIndex];
+	finBuffer.barycentric_coords = 0;
+#endif
+#if IN_barycentric_ASPECT_MODE == DETECTION_MODE_GEOMETRY
+	outBuffer[0].barycentric_coords = float2(1, 0);
+	outBuffer[1].barycentric_coords = float2(0, 1);
+	outBuffer[2].barycentric_coords = float2(0, 0);
+	finBuffer.barycentric_coords = 0;
+#endif
+
+}
+
+////////////////////// PIXEL SHADER
+
+	#if IN_USE_GEOMETRY_SHADER
+		#define barycentric_FragmentInBuffer barycentric_GeometryOutBuffer
+	#else
+		#define barycentric_FragmentInBuffer barycentric_VertexOutBuffer
+	#endif

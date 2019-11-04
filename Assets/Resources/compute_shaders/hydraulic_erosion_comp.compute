@@ -1,0 +1,225 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSHydraulicErosion_Water
+#pragma kernel CSHydraulicErosion_Erosion
+#pragma kernel CSHydraulicErosion_DeltaSum
+#pragma kernel CSHydraulicErosion_ClearDelta
+#pragma kernel CSHydraulicErosion_Evaporation
+#pragma kernel CSHydraulicErosion_SedimentationToGround
+
+#define VARIANT_NHOOD_BIG9
+
+#include "neighbours.hlsl"
+#include "commonComp.hlsl"
+
+cbuffer ConstantGlobalParameters {
+	int g_sideLength;
+	float g_krParam;
+	float g_ksParam;
+	float g_keParam;
+	float g_kcParam;
+};
+
+GENERATE_CLASS_2(CellDeltaInfo,
+	float, water,
+	float, sediment);
+
+struct CellDeltaInfoPack {
+	CellDeltaInfo array[NEIGHBOURHOOD_COUNT+1];
+};
+
+CellDeltaInfoPack new_CellDeltaInfoPack(CellDeltaInfo array[NEIGHBOURHOOD_COUNT + 1]) {
+	CellDeltaInfoPack pack;
+	pack.array = array;
+	return pack;
+}
+
+RWBuffer<float> HeightMap;
+RWBuffer<float> WaterMap;
+RWStructuredBuffer<CellDeltaInfoPack> DeltaBuffer;
+RWBuffer<float> SedimentMap;
+
+RWTexture2D<float4> DebugTexture;
+
+void debug_writeToTexture(uint2 pos, float value) {
+	float4 outColor = float4(0, 0, 0, 1);
+	float colorVal = value;
+
+	if (colorVal > 0) {
+		outColor.g = colorVal;
+	}
+	else {
+		outColor.r = -colorVal;
+	}
+	DebugTexture[pos] = outColor;
+}
+
+CS_NUMTHREADS_ONE
+void CSHydraulicErosion_Water (uint3 id : SV_DispatchThreadID)
+{
+	// adding water
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+
+	float oldWater = WaterMap[pIndex];
+	float newWater = oldWater + g_krParam;
+	WaterMap[pIndex] = newWater;
+
+	float amountChangedToSediment = g_ksParam * newWater;
+	HeightMap[pIndex] = HeightMap[pIndex] - amountChangedToSediment;
+	SedimentMap[pIndex] = SedimentMap[pIndex] + amountChangedToSediment;
+
+}
+
+
+GENERATE_CLASS_3(HydraulicErosionNeighbourInfo,
+	int2, position,
+	float, totalHeight,
+	float, totalHeightDifference);
+
+bool is_hydraulicErosionNeighbourhoodInfo_active(HydraulicErosionNeighbourInfo neighbourInfo) {
+	return neighbourInfo.position.x < 99999 && neighbourInfo.position.y < 99999;
+}
+
+CS_NUMTHREADS_ONE
+void CSHydraulicErosion_Erosion (uint3 id : SV_DispatchThreadID)
+{
+	// eroding
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float pTotalHeight = HeightMap[pIndex] + WaterMap[pIndex];
+
+	NeighboursList list = FindNeighbours(id.xy, g_sideLength);
+	HydraulicErosionNeighbourInfo neighbourhoodInfoList[NEIGHBOURHOOD_COUNT];
+
+	float nTotalDifferenceSum = 0;
+	float nTotalHeightSum = 0;
+	int nActiveNeighboursCount = 0;
+
+	for (int i = 0; i < NEIGHBOURHOOD_COUNT; i++) {
+		OneNeighbourData neighbourData = list.array[i];
+		if (is_OneNeighbourData_active(neighbourData)) {
+			int nIndex = Compute2DIndex(neighbourData.position, g_sideLength);
+			float nTotalHeight = HeightMap[nIndex] + WaterMap[nIndex];
+			float nTotalDifference = pTotalHeight - nTotalHeight;
+
+			if (nTotalDifference > 0) {
+				nTotalDifferenceSum += nTotalDifference;
+				nTotalHeightSum += nTotalHeight;
+				nActiveNeighboursCount++;
+
+				neighbourhoodInfoList[i] = new_HydraulicErosionNeighbourInfo(
+					neighbourData.position,
+					nTotalHeight,
+					nTotalDifference
+				);
+			}
+			else {
+				neighbourhoodInfoList[i] = new_HydraulicErosionNeighbourInfo(int2(99999, 99999), 0, 0);
+			}
+		}
+		else {
+			neighbourhoodInfoList[i] = new_HydraulicErosionNeighbourInfo(int2(99999, 99999), 0, 0);
+		}
+	}
+
+
+	float pWater = WaterMap[pIndex];
+	float pSediment = SedimentMap[pIndex];
+
+	if (pWater < 0.00000001f) {
+		return;
+	}
+	if (nActiveNeighboursCount == 0) {
+		return;
+	}
+
+	float avgTotalHeight = (nTotalHeightSum + pTotalHeight) / (nActiveNeighboursCount+1);
+	float pDeltaA = pTotalHeight - avgTotalHeight;
+	float pMin = min(pDeltaA, pWater);
+
+	float movedSedimentSum = 0;
+
+	CellDeltaInfo deltaArray[NEIGHBOURHOOD_COUNT+1];
+	for (int j = 0; j < NEIGHBOURHOOD_COUNT; j++) {
+		OneNeighbourData neighbourData = list.array[j];
+		HydraulicErosionNeighbourInfo neighbourInfo = neighbourhoodInfoList[j];
+		if (is_OneNeighbourData_active(neighbourData) && is_hydraulicErosionNeighbourhoodInfo_active(neighbourInfo)) {
+			float nMovedWater = pMin * (neighbourInfo.totalHeightDifference / nTotalDifferenceSum);
+			float addedSediment = pSediment * (nMovedWater / pWater);
+			movedSedimentSum += addedSediment;
+			deltaArray[j] = new_CellDeltaInfo(nMovedWater, addedSediment);
+		}
+		else {
+			deltaArray[j] = new_CellDeltaInfo(0, 0);
+		}
+	}
+	deltaArray[NEIGHBOURHOOD_COUNT] = new_CellDeltaInfo(-pMin, -movedSedimentSum);
+
+	DeltaBuffer[pIndex] = new_CellDeltaInfoPack(deltaArray);
+
+	debug_writeToTexture(id.xy, pMin*400);
+}
+
+CS_NUMTHREADS_ONE
+void CSHydraulicErosion_DeltaSum(uint3 id : SV_DispatchThreadID)
+{
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float waterChangeSum = 0;
+	float sedimentationChangeSum = 0;
+
+	NeighboursList list = FindNeighbours(id.xy, g_sideLength);
+	for (int i = 0; i < NEIGHBOURHOOD_COUNT; i++) {
+		OneNeighbourData neighbourData = list.array[i];
+		if (is_OneNeighbourData_active(neighbourData) ) {
+			int nIndex = Compute2DIndex(neighbourData.position, g_sideLength);
+
+			CellDeltaInfoPack pack = DeltaBuffer[nIndex];
+
+			int oppositeIndex = (i + (NEIGHBOURHOOD_COUNT/2) ) % NEIGHBOURHOOD_COUNT;
+			CellDeltaInfo info = pack.array[oppositeIndex];
+
+			waterChangeSum += info.water;
+			sedimentationChangeSum += info.sediment;
+		}
+	}
+
+	CellDeltaInfo centralInfo = DeltaBuffer[pIndex].array[NEIGHBOURHOOD_COUNT];
+	waterChangeSum += centralInfo.water;
+	sedimentationChangeSum += centralInfo.sediment;
+
+	WaterMap[pIndex] = WaterMap[pIndex] + waterChangeSum;
+	SedimentMap[pIndex] = SedimentMap[pIndex] + sedimentationChangeSum;
+}
+
+CS_NUMTHREADS_ONE
+void CSHydraulicErosion_ClearDelta(uint3 id : SV_DispatchThreadID)
+{
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	CellDeltaInfo zeroArray[NEIGHBOURHOOD_COUNT + 1];
+	for (int i = 0; i < NEIGHBOURHOOD_COUNT + 1; i++) { // todo maybe delete?
+		zeroArray[i] = new_CellDeltaInfo(0, 0);
+	}
+	DeltaBuffer[pIndex] = new_CellDeltaInfoPack(zeroArray);
+}
+
+CS_NUMTHREADS_ONE
+void CSHydraulicErosion_Evaporation(uint3 id : SV_DispatchThreadID)
+{
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float water = WaterMap[pIndex];
+	water = water * (1 - g_keParam);
+	WaterMap[pIndex] = water;
+
+	float pSedimentMax = g_kcParam * water;
+	float pSediment = SedimentMap[pIndex];
+	float deltaSediment = max(0, pSediment - pSedimentMax);
+	SedimentMap[pIndex] = pSediment - deltaSediment;
+	HeightMap[pIndex] = HeightMap[pIndex] + deltaSediment;
+
+}
+
+CS_NUMTHREADS_ONE
+void CSHydraulicErosion_SedimentationToGround(uint3 id : SV_DispatchThreadID)
+{
+	int pIndex = Compute2DIndex(id.xy, g_sideLength);
+	float pSediment = SedimentMap[pIndex];
+	HeightMap[pIndex] = HeightMap[pIndex] + pSediment;
+}

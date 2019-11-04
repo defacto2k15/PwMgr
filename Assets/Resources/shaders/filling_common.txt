@@ -1,0 +1,130 @@
+﻿#ifndef FILLING_COMMON_INC
+#define  FILLING_COMMON_INC
+
+			uint2 uv_to_intScreenCoords(float2 uv) {
+				return uint2(floor(uv.x * _ScreenParams.x), floor(uv.y * _ScreenParams.y));
+			}
+
+			float2 intScreenCoords_to_uv(int2 coords) {
+				return float2(coords.x / _ScreenParams.x, coords.y / _ScreenParams.y);
+			}
+
+			float2 intScreenCoords_to_sampleuv(int2 coords) {
+				return float2((0.5+coords.x) / _ScreenParams.x, (0.5+coords.y) / _ScreenParams.y);
+			}
+
+			uint2 uint2Multiply(uint2 a, uint2 b) {
+				return uint2(a.x*b.x, a.y*b.y);
+			}
+
+			int2 int2Multiply(int2 a, int2 b) {
+				return int2(a.x*b.x, a.y*b.y);
+			}
+
+			float2 float2Multiply(float2 a, float2 b){
+				return float2(a.x*b.x, a.y*b.y);
+			}
+
+
+
+			float myMod1_f(float x) {
+				float a = frac(x);
+				if (a < 0) {
+					return -1;
+				}
+				else {
+					return a;
+				}
+			}
+
+			float2 myMod1_f2(float2 x) {
+				return float2(myMod1_f(x.x), myMod1_f(x.y));
+			}
+
+			float3 myMod1_f3(float3 x) {
+				return float3(myMod1_f(x.x), myMod1_f(x.y), myMod1_f(x.z));
+			}
+
+			float3 memberwiseMultiplyF3(float3 a, float3 b) {
+				return float3(a.x*b.x, a.y*b.y, a.z*b.z);
+			}
+
+			float2 memberwiseMultiplyF2(float2 a, float2 b) {
+				return float2(a.x*b.x, a.y*b.y);
+			}
+
+ #define UNITY_LOD_TEX2D(tex,coord) tex.CalculateLevelOfDetail (sampler##tex,coord)
+ #define UNITY_SAMPLE_TEX2DARRAY_BIAS(tex,coord, bias) tex.SampleBias (sampler##tex,coord, bias)
+
+		float3 debugIntToColor(int x) {
+			int perColorSteps = 6;
+			float fPerColorSteps = ((float)perColorSteps);
+			x = min(perColorSteps*perColorSteps*perColorSteps,x);
+			x = max(0, x);
+
+			int rIdx = floor(x/ (fPerColorSteps*fPerColorSteps) );
+			int gIdx = floor(  (x- rIdx*perColorSteps*perColorSteps)/ fPerColorSteps );
+			int bIdx = floor(  (x- rIdx*perColorSteps*perColorSteps - gIdx*perColorSteps) );
+
+			return float3(
+				rIdx / fPerColorSteps,
+				gIdx / fPerColorSteps,
+				bIdx / fPerColorSteps
+				);
+		}
+
+			float2 to2ByteValue(float input, float max) {
+				float ni = (input + max) / (2 * max); //normalized to 0-1
+
+				float r1 = round(ni * 255) / 255.0;
+				float r2 = round( frac(ni * 256) * 255) / 255.0;
+
+				return float2(r1, r2);
+			}
+
+		float4 uintTo4Bytes(uint u) {
+			float4 outF;
+			for (int i = 0; i < 4; i++) {
+				uint byte = u % 256;
+				//u -= byte; I think not needed
+				u = u >> 8;
+				outF[i] = byte / ((float)255.0);
+			}
+			return outF;
+		}
+
+		// METODA 7 z https://aras-p.info/texts/CompactNormalStorage.html , opisz TODO
+			float2 PackNormalToTwoChannels(float3 n) {
+				float scale = 1.7777;
+				float2 enc = n.xy / (n.z + 1);
+				enc /= scale;
+				enc = enc * 0.5 + 0.5;
+				return enc;
+			}
+
+		float3 UnpackNormalFromTwoChannels(float2 enc) {
+			float scale = 1.7777;
+			float3 nn =
+				float3(enc.xy, 0)*float3(2 * scale, 2 * scale, 0) +
+				float3(-scale, -scale, 1);
+			float g = 2.0 / dot(nn.xyz, nn.xyz);
+			float3 n;
+			n.xy = g * nn.xy;
+			n.z = g - 1;
+			return normalize(n);
+		}
+
+
+			uint PackScreenCoordsToUint(float2 screenCoords) {
+				uint xComponent = round(screenCoords.x * 32);
+				uint yComponent = round(screenCoords.y * 32);
+				return xComponent + (yComponent << 16);
+			}
+
+			float2 UnpackScreenCoordsFromUint(uint packedScreenCoords) {
+				uint xComponent = packedScreenCoords & (65535);
+				uint yComponent = packedScreenCoords >> 16;
+				return float2(xComponent / 32.0, yComponent / 32.0);
+			}
+
+#endif

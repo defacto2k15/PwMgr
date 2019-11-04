@@ -1,0 +1,44 @@
+﻿#ifndef FILLING_SGM_FROM_TEXTURES_INC
+#define FILLING_SGM_FROM_TEXTURES_INC
+
+
+
+ 		//	SSGMPixel calculateSgmColorFromTextures(int tierIndex, int2 RAblockCoords, uint rotationSliceIndex, ConstantParametersPack paramPack) {
+
+			//	float maxRotation = 2 * PI; // TODO take this from constant params
+			//	float rotationSlicesCount = _RotationSlicesCount;
+			//	float rotationSliceLength = (maxRotation) / rotationSlicesCount;
+
+			//	float sliceRotationAngle = ( /*rotationSlicesCount -*/  (rotationSliceIndex + (rotationSlicesCount/4)) % rotationSlicesCount) * rotationSliceLength;
+			//	float strokeInSliceRotationAngle = rotationSliceIndex * rotationSliceLength;
+
+			//	int2 RAsampleCoord = int2(RAblockCoords.x * paramPack.blockSize.x, RAblockCoords.y * paramPack.blockSize.y) +  paramPack.blockSize/ 2.0;
+
+			//	int2 sampleCoord = round(rotateAroundPivot(RAsampleCoord, -sliceRotationAngle, _ScreenParams.xy / 2));
+
+			//	float2 sampleUv = intScreenCoords_to_uv(sampleCoord);
+
+			//	float4 worldSpacePos = tex2D(_WorldPositionTex, sampleUv);
+
+			//	VectorsSet genuineVectorsSet = RetriveVectorsFromTextures(sampleUv);
+			//	int quantCount = 4;
+			//	float2 quantizationOffset = 0;
+			//	QuantizationResult quantizationResult = ProcessAndQuantisizeVectors(genuineVectorsSet, quantizationOffset, quantCount);
+			//	VectorsSet quantisizedVectorsSet = quantizationResult.vectors;
+
+			//	float strokeAngle = tex2D(_AngleTex, sampleUv).r;
+
+			//	SSGMPixel pixel= calculateSgmColor(worldSpacePos, make_VectorsSetPair(genuineVectorsSet,quantisizedVectorsSet) , strokeAngle, tierIndex, paramPack, sampleCoord);
+			//	if (!( abs(strokeAngle - strokeInSliceRotationAngle) <= rotationSliceLength * 2)) {  //TODO what if rotation from 2 deg to 357 deg
+			//		pixel.sParam = 0;
+			//	}
+
+			//	float2 seedSpaceMultipliers = calculateTwoSeedSpaceMultipliers(RAsampleCoord, worldSpacePos, genuineVectorsSet.alignmentVector, genuineVectorsSet.crossAlignmentVector, paramPack);
+			//	if( pixel.sParam <  seedSpaceMultipliers.y ){
+			//		pixel.sParam = 0;
+			//	}
+
+			//	return pixel;
+			//}
+
+#endif

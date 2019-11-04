@@ -1,0 +1,73 @@
+﻿// Depth normals
+// Required:
+//	_ObjectID
+// _InterpolatedNormalsBuffer
+
+#if IN_dn_FEATURE_DETECTION_MODE != DETECTION_MODE_PIXEL 
+#error "depth and normal can only be detected in pixel"
+#endif
+
+#if IN_dn_FEATURE_APPLY_MODE != APPLY_MODE_FILLING 
+#error "depth and normal can only be applied by filling "
+#endif
+
+
+
+// algorithm-native functions
+
+struct dn_VertexOutBuffer{
+	float3 nrm;
+	float depth;
+};
+#define	Transfer_dn_VertexOutBuffer 1
+
+dn_VertexOutBuffer dn_VertexFilter(VertexSituation situation, appdata v) {
+
+	dn_VertexOutBuffer buffer;
+	buffer.nrm = mul((float3x3)UNITY_MATRIX_IT_MV, v.nrm);
+	//buffer.nrm = v.nrm;
+	//buffer.nrm =  _InterpolatedNormalsBuffer[situation.vid];
+	buffer.depth = -(mul( UNITY_MATRIX_MV, v.pos ).z * _ProjectionParams.w);
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct dn_GeometryOutBuffer {
+	float3 nrm;
+	float depth;
+};
+#define	Transfer_dn_GeometryOutBuffer 1
+
+
+void dn_GeometryFilter(dn_VertexOutBuffer inBuffer[3], inout dn_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout dn_GeometryOutBuffer finBuffer){
+	outBuffer[triangleIndex] = inBuffer[triangleIndex];
+	finBuffer = inBuffer[triangleIndex];
+}
+
+////////////////////// PIXEL SHADER
+
+#if IN_USE_GEOMETRY_SHADER
+	#define dn_FragmentInBuffer dn_GeometryOutBuffer
+#else
+	#define dn_FragmentInBuffer dn_VertexOutBuffer
+#endif
+
+void dn_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, dn_FragmentInBuffer dnIn, inout float4 color) {
+}
+
+void dn_FragmentFinFilter(dn_FragmentInBuffer buffer, inout float4 color){
+}
+
+#define dn_PI 3.1415926536f
+half2 dn_encodeNormal (half3 n)
+{
+      return (half2(atan2(n.y,n.x)/dn_PI, n.z)+1.0)*0.5;
+}
+
+void dn_FragmentFillingFilter(dn_FragmentInBuffer buffer, inout float4 color){
+	//color.xy = dn_encodeNormal(buffer.nrm);
+	//color.zw = 0;
+	color = EncodeDepthNormal(buffer.depth, buffer.nrm);
+
+
+}

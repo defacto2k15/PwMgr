@@ -1,0 +1,62 @@
+﻿#ifndef H_NPR_FEATURE_COMMON_INC
+#define H_NPR_FEATURE_COMMON_INC
+
+
+			struct geometry_edge_featureSpecification {
+				bool flag;
+			};
+
+			geometry_edge_featureSpecification make_geometry_edge_featureSpecification(bool flag) {
+				geometry_edge_featureSpecification specification;
+				specification.flag = flag;
+				return specification;
+			}
+
+			struct geometry_edge_situation {
+				float3 v1Pos;
+				float3 v2Pos;
+				float3 t1Norm;
+				float3 t2Norm;
+				int v1Index;
+				int v2Index;
+			};
+
+			geometry_edge_situation make_geometry_edge_situation( float3 v1Pos, float3 v2Pos,
+				float3 t1Norm, float3 t2Norm,  int v1Index, int v2Index ) {
+
+				geometry_edge_situation situation;
+				situation.v1Pos = v1Pos;
+				situation.v2Pos = v2Pos;
+				situation.t1Norm = t1Norm;
+				situation.t2Norm = t2Norm;
+				situation.v1Index = v1Index;
+				situation.v2Index = v2Index;
+				return situation;
+			}
+
+			struct geometry_camera_situation {
+				float3 viewDirect;
+				float3 t2Direct;
+			};
+
+			geometry_camera_situation make_geometry_camera_situation(float3 viewDirect, float3 t2Direct) {
+				geometry_camera_situation s;
+				s.viewDirect = viewDirect;
+				s.t2Direct = t2Direct;
+				return s;
+			}
+
+
+			float3 getNormal(float3 v1, float3 v2, float3 v3) {
+				return normalize(cross(normalize(v2 - v1), normalize(v3 - v1)));
+			}
+
+			float signedAngle(float3 vA, float3 vB, float3 vN) {
+				float d1 = acos(dot(vA, vB));
+				float3 c1 = cross(vA, vB);
+				if (dot(vN, c1) < 0) {
+					d1 = -d1;
+				}
+				return d1;
+			}
+#endif

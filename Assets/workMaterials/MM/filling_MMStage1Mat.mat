@@ -1,0 +1,141 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: filling_MMStage1Mat
+  m_Shader: {fileID: 4800000, guid: a7f132160dad4a54fa42891a524f3b09, type: 3}
+  m_ShaderKeywords: _FILTERBYBLOCKCOORDS_ON _FILTERBYSAMPLINGCELLSIZE_ON _FILTERBYSEEDVECTORS_ON
+    _FILTERBYSLICEINDEX_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlignmentTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _AngleTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SeedPositionTex3D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _StrokeSeedGridMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _StrokeTex:
+        m_Texture: {fileID: 2800000, guid: eb1193015064fda4caf57b545641be81, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _VectorsTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WorldPositionTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _ArcCurvatureMargin: 0.428
+    - _BumpScale: 1
+    - _Cutoff: 0.5
+    - _DebugScalar: 0.314
+    - _DetailNormalMapScale: 1
+    - _DistanceLinkingMargin: 1.98
+    - _DistanceToLineTreshold: 2.4
+    - _DstBlend: 0
+    - _FilterByBlockCoords: 1
+    - _FilterBySamplingCellSize: 1
+    - _FilterBySeedVectors: 1
+    - _FilterBySliceIndex: 1
+    - _GlobalMMultiplier: 1.38
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
+    - _GlossyReflections: 1
+    - _HatchErasureMode: 0
+    - _HatchErasureMode3Factor: 2.1
+    - _HatchErasureMode3Multiplier: 0.44
+    - _HatchLength: 82
+    - _LightHatchErasureMode: 3
+    - _LightHatchErasureMode3Factor: 1
+    - _MZoomPowFactor: 1.05
+    - _MaximumPointToSeedDistance: 7.05
+    - _Metallic: 0
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _RotationSliceIndex: 12.1
+    - _RotationSlicesCount: 32
+    - _SamplingCellSizeLength: 15
+    - _ScreenCellHeightMultiplier: 1
+    - _SeedDensityF: 5.35
+    - _SeedSamplingMultiplier: 0.1
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _Stage1BlockCoordsFilterPrimaryMargin: 5
+    - _Stage1ResolutionMultiplier: 20
+    - _TierCount: 4
+    - _UVSec: 0
+    - _VectorQuantCount: 8
+    - _ZWrite: 1
+    - _ZoomHatchErasureMode: 4
+    m_Colors:
+    - _BlockCount: {r: 161, g: 107, b: 0, a: 0}
+    - _BlockSize: {r: 8, g: 8, b: 0, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Stage1RenderingSize: {r: 256, g: 128, b: 0, a: 0}

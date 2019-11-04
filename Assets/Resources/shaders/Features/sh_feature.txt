@@ -1,0 +1,145 @@
+﻿
+// SUGGESTIVE HIGHLIGHTS
+// Required:
+//
+//			_PrincipalCurvatureBuffer;
+//			_InterpolatedNormalsBuffer;
+//
+//		_sh_FeatureSize
+//		_sh_SuggestiveContourLimit
+//		_sh_DwKrLimit
+//		_sh_JeroenMethod
+
+#if IN_sh_FEATURE_DETECTION_MODE != DETECTION_MODE_VERTEX
+#error "Suggestive contours can only be detected in vertex"
+#endif
+
+#if ! (IN_sh_FEATURE_APPLY_MODE == APPLY_MODE_FILLING || IN_sh_FEATURE_APPLY_MODE == APPLY_MODE_LINE_FILLING)
+#error "Suggestive contours can only be applied by filling or line filling"
+#endif
+
+
+
+			struct sh_contoursComputationInput {
+				float ndotv;
+				float kr;
+				float dwkr;
+			};
+
+			sh_contoursComputationInput sh_make_contoursComputationInput(float ndotv, float kr, float dwkr) {
+				sh_contoursComputationInput input;
+				input.ndotv = ndotv;
+				input.kr = kr;
+				input.dwkr = dwkr;
+				return input;
+			}
+
+			sh_contoursComputationInput sh_workOutContoursComputationInput(float3 viewDir, float3 objectNrm, PrincipalCurvatureInfo info) {
+				float3 worldNrm = normalize(mul((float3x3)unity_ObjectToWorld, normalize(objectNrm))); //n(p) z (1)
+				float ndotv = dot(worldNrm,viewDir); //cos(alpha)
+
+				// w to powinno być - w defined as the (unnormalized) projection of the view vector v onto the tangent plane at p
+				// i rzeczywiście, to jest taki niepełny wzór na rzucowanie, ale zauważcie że potem robimy normalizacje
+				float3 w = normalize(viewDir - worldNrm * dot(viewDir, worldNrm));
+				float u = dot(w,(info.direction1)); //cos(fi) Fi więc jest kątem między w a direction1
+				float v = dot(w,(info.direction2)); //sin(fi) direction1 i direction2 są zawsze ortogonalne
+				float u2 = u * u; //cos(fi)2
+				float v2 = v*v; // sin(fi)2 
+				float kr = (info.value1*u2) + (info.value2*v2); //wzór (6)
+
+				float u_v = u*v;
+				// obliczanie pochodnych. 
+				// Opis obliczenia pochodnych, bardzo ładne ale po holendersku, znaleźć można w pracy pana Jeroena Baerta, strona 30, plik masterproef.pdf
+				float dwII = (u2 *u *info.derivative.x) + (3 * u * u_v *info.derivative.y) + (3 * u_v * v * info.derivative.z) + (v*v2*info.derivative.w);
+				float dwkr = dwII + 2 * info.value1 * info.value2 * ndotv / sqrt(1 - pow(ndotv, 2));
+				// wzór 4.11, masterproef.pdf  
+				// warto zauważyć, że zgodnie z 4.10i4.11 cos(fi) = sqrt(1-pow(ndotv, 2))
+				//DwKr ze wzoru (2)
+				return sh_make_contoursComputationInput(ndotv, kr, dwkr);
+			}
+
+// algorithm-native functions
+
+struct sh_VertexOutBuffer{
+	sh_contoursComputationInput contoursInput;
+};
+#define	Transfer_sh_VertexOutBuffer 1
+
+sh_VertexOutBuffer sh_VertexFilter(VertexSituation situation, appdata v) {
+
+	float3 vertexWorldPos = mul(unity_ObjectToWorld , v.pos);
+	float3 viewDir = normalize(_WorldSpaceCameraPos - vertexWorldPos); //camera to vertex v(p) z (1)
+
+	float3 objectNrm = _InterpolatedNormalsBuffer[situation.vid];
+
+	PrincipalCurvatureInfo info = _PrincipalCurvatureBuffer[situation.vid];
+
+	sh_VertexOutBuffer buffer;
+	buffer.contoursInput = sh_workOutContoursComputationInput(viewDir, objectNrm, info);
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct sh_GeometryOutBuffer {
+	sh_contoursComputationInput contoursInput;
+};
+#define	Transfer_sh_GeometryOutBuffer 1
+
+
+void sh_GeometryFilter(sh_VertexOutBuffer inBuffer[3], inout sh_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout sh_GeometryOutBuffer finBuffer){
+	outBuffer[triangleIndex].contoursInput = inBuffer[triangleIndex].contoursInput; // we simply copy
+	finBuffer.contoursInput = sh_make_contoursComputationInput(0,0,0);
+}
+
+////////////////////// PIXEL SHADER
+
+#if IN_USE_GEOMETRY_SHADER
+	#define sh_FragmentInBuffer sh_GeometryOutBuffer
+#else
+	#define sh_FragmentInBuffer sh_VertexOutBuffer
+#endif
+
+void sh_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, sh_FragmentInBuffer shIn, inout float4 color) {
+}
+
+void sh_FragmentFinFilter( sh_FragmentInBuffer shIn, inout float4 color) {
+}
+
+void sh_FragmentFillingFilter(sh_FragmentInBuffer buffer, inout float4 color){
+
+				sh_contoursComputationInput contoursInput = buffer.contoursInput;
+
+				float fz = _sh_FeatureSize;
+				float sc_limit = _sh_SuggestiveContourLimit;
+				float dwkr_limit = _sh_DwKrLimit;
+
+
+#if IN_sh_FEATURE_APPLY_MODE == APPLY_MODE_FILLING
+				float kr = fz * abs(contoursInput.kr);
+				float dwkr = fz*fz*contoursInput.dwkr;
+				float dwkr2 = (dwkr - dwkr*pow(contoursInput.ndotv, 2)); //this is dwkr*sin(fi)
+				float dwkr3 = dwkr*(pow(contoursInput.ndotv, 2)); //this is dwkr*cos(fi)
+
+				float sc_limit2;
+				if (_sh_JeroenMethod > 0) {
+					sc_limit2 = sc_limit*(kr / dwkr3);
+				}
+				else {
+					sc_limit2 = sc_limit*(dwkr);
+				}
+
+				if (sc_limit2 < 1 && dwkr3 < dwkr_limit) {
+					color = float4(1,0,0.5,1);
+				}
+#elif IN_sh_FEATURE_APPLY_MODE == APPLY_MODE_LINE_FILLING
+
+				if( abs( contoursInput.kr) < sc_limit * fwidth(contoursInput.kr)) {
+					if( contoursInput.dwkr < 0){
+						if( contoursInput.ndotv < dwkr_limit){
+							color = float4(1,0,0.5,1); 
+						}
+					}
+				}
+#endif
+
+}

@@ -1,0 +1,31 @@
+﻿// SUGGESTIVE Contours PP
+//			_sc_IntensityDifferenceTreshold("_IntensityDifferenceTreshold", Range(0,0.5)) = 0.1
+//			_sc_DarkerCountFactor("_DarkerCountFactor", Range(0,1)) = 0.36
+//			_sc_FilterRadius("FilterRadius",Int) = 2
+
+
+void sc_ppApplication(float2 uv, inout float4 inColors[4]){
+					int2 centerCoords = uv_to_intScreenCoords(uv);
+					float centerIntensity = PP_SAMPLE_FEATURE_TEXTURE(sc, intScreenCoords_to_uv(centerCoords));
+
+					int darkerCount = 0;
+					float max_intensity = centerIntensity;
+					int radius = _sc_FilterRadius;
+
+					for (int x = -radius; x <= radius; x++) {
+						for (int y = -radius; y <= radius; y++) {
+							int2 currentCoords = centerCoords + int2(x, y);
+							float currentIntensity =  PP_SAMPLE_FEATURE_TEXTURE(sc, intScreenCoords_to_uv(currentCoords));
+							if (currentIntensity < centerIntensity) {
+								darkerCount++;
+							}
+							max_intensity = max(currentIntensity, max_intensity);
+						}
+					}
+
+					if ((max_intensity - centerIntensity) > _sc_IntensityDifferenceTreshold*radius) {
+						if (((float)darkerCount) / pow(radius*2 + 1, 2) < _sc_DarkerCountFactor) {
+							inColors[0] = float4(1,0,0,1);
+						}
+					}
+}

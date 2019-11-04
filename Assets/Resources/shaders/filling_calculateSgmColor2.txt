@@ -1,0 +1,742 @@
+﻿#ifndef CALCULATE_SGM_COLOR_INC
+#define  CALCULATE_SGM_COLOR_INC
+
+			struct ConstantParametersPack {
+				float rotationSliceLength;
+				int rotationSlicesCount;
+				uint2 blockSize;
+				uint2 blockCount;
+				float maxRotation;
+				float3 gridSpaceMultiplier;
+				float seedDensityF;
+				float mZoomPowFactor;
+				float maximumPointToSeedDistance;
+				float seedSamplingMultiplier;
+				float2 sFilterMargins;
+				int vectorQuantCount;
+				float hatchLength;
+				float hatchWidth;
+				float screenCellHeightMultiplier ;
+				float4 stage1RenderingSize;
+				float stage1BlockCoordsFilterPrimaryMargin;
+				int tierCount;
+			};
+
+			ConstantParametersPack createFromProperties_ConstantParametersPack() {
+				ConstantParametersPack p;
+				p.maxRotation = 2 * PI;
+				p.rotationSlicesCount = _RotationSlicesCount;
+				p.rotationSliceLength = (p.maxRotation) / p.rotationSlicesCount;
+				p.blockSize = uint2( round(_BlockSize.x), round(_BlockSize.y) );
+				p.blockCount = uint2(round(_BlockCount.x), round(_BlockCount.y));
+				p.screenCellHeightMultiplier = _ScreenCellHeightMultiplier ;
+				p.gridSpaceMultiplier = float3(1, 1, p.screenCellHeightMultiplier);
+				p.seedDensityF = _SeedDensityF;
+				p.mZoomPowFactor = _MZoomPowFactor;
+				p.maximumPointToSeedDistance = _MaximumPointToSeedDistance;
+				p.seedSamplingMultiplier = _SeedSamplingMultiplier;
+				p.sFilterMargins= float2(0.2,0.8); //TODO make it paramatrizable
+				p.vectorQuantCount = round(_VectorQuantCount);
+				p.hatchLength = _HatchLength;
+				p.hatchWidth = _DistanceToLineTreshold;
+				p.stage1RenderingSize= _Stage1RenderingSize;
+				p.stage1BlockCoordsFilterPrimaryMargin = _Stage1BlockCoordsFilterPrimaryMargin ;
+				p.tierCount = _TierCount;
+				return p;
+			}
+
+
+			struct MMStage1ToRenderingFragment
+			{
+				float2 screenCoords;
+				float strokeAngle;
+				float alphaMultiplier;
+				int id;
+			};
+
+			MMStage1ToRenderingFragment make_MMStage1ToRenderingFragment( float2 screenCoords, float strokeAngle, float alphaMultiplier, int id )
+			{
+				MMStage1ToRenderingFragment f;
+				f.screenCoords= screenCoords;
+				f.strokeAngle= strokeAngle;
+				f.alphaMultiplier= alphaMultiplier;
+				f.id= id;
+				return f;
+			}
+
+			struct SSGMPixel{
+				float2 screenCoords;
+				float strokeAngle;
+				bool seedIsInSparseLevelToo;
+				uint id;
+			};
+
+			SSGMPixel make_SSGMPixel( float2 screenCoords, float strokeAngle, bool seedIsInSparseLevelToo, uint id ){
+				SSGMPixel p;
+				p.screenCoords = screenCoords;
+				p.strokeAngle = strokeAngle;
+				p.seedIsInSparseLevelToo = seedIsInSparseLevelToo;
+				p.id = id;
+				return p;
+			};
+
+			struct ClosestSeedSpecification {
+				float3 position;
+				bool seedIsInSparseLevelToo;
+				bool isActive;
+				uint id;
+			};
+
+			ClosestSeedSpecification make_ClosestSeedSpecification( float3 position, bool seedIsInSparseLevelToo, bool isActive, uint id ){
+				ClosestSeedSpecification s;
+				s.position = position;
+				s.seedIsInSparseLevelToo = seedIsInSparseLevelToo;
+				s.isActive = isActive;
+				s.id = id;
+				return s;
+			};
+
+			struct Plane {
+				float3 normal;
+				float3 positionOnPlane; 
+			};
+
+			Plane make_Plane(float3 normal, float3 positionOnPlane) {
+				Plane p;
+				p.normal = normal;
+				p.positionOnPlane = positionOnPlane;
+				return p;
+			}
+
+			struct Ray {
+				float3 origin;
+				float3 direction;
+			};
+
+			Ray make_Ray(float3 origin, float3 direction) {
+				Ray ray;
+				ray.origin = origin;
+				ray.direction = direction;
+				return ray;
+			}
+
+			struct VectorsSet {
+				float3 normalVector;
+				float3 alignmentVector;
+				float3 crossAlignmentVector;
+			};
+
+			VectorsSet make_VectorsSet( float3 normalVector, float3 alignmentVector, float3 crossAlignmentVector) {
+				VectorsSet s;
+				s.normalVector = normalVector;
+				s.alignmentVector = alignmentVector;
+				s.crossAlignmentVector = crossAlignmentVector;
+				return s;
+			}
+
+			struct VectorsSetPair{
+				VectorsSet genuine;
+				VectorsSet quantisized;
+			};
+
+			VectorsSetPair make_VectorsSetPair( VectorsSet genuine, VectorsSet quantisized ){
+				VectorsSetPair p;
+				p.genuine = genuine;
+				p.quantisized = quantisized;
+				return p;
+			}
+
+			struct QuantizationResult {
+				VectorsSet vectors;
+				float minimalStrength;
+			};
+
+			QuantizationResult make_QuantizationResult( VectorsSet vectors, float minimalStrength ) {
+				QuantizationResult p;
+				p.vectors = vectors;
+				p.minimalStrength =  minimalStrength;
+				return p;
+			}
+
+			struct SingleSliceSSGMUpdateSpec {
+				uint3 ssgmCoords;
+				bool shouldUpdate;
+			};
+
+			SingleSliceSSGMUpdateSpec make_SingleSliceSSGMUpdateSpec( uint3 ssgmCoords, bool shouldUpdate ) {
+				SingleSliceSSGMUpdateSpec s;
+				s.ssgmCoords = ssgmCoords;
+				s.shouldUpdate = shouldUpdate;
+				return s;
+			}
+
+			struct SSGMUpdateInstanceSpec {
+				SingleSliceSSGMUpdateSpec slice1;
+				SingleSliceSSGMUpdateSpec slice2;
+				SSGMPixel pixel;
+			};
+
+			SSGMUpdateInstanceSpec make_SSGMUpdateInstanceSpec ( SingleSliceSSGMUpdateSpec slice1, SingleSliceSSGMUpdateSpec slice2,  SSGMPixel pixel)
+			{
+				SSGMUpdateInstanceSpec s;
+				s.slice1= slice1;
+				s.slice2 = slice2;
+				s.pixel = pixel;
+				return s;
+			}
+
+
+			float3  findIntersectionPoint (Ray ray, Plane plane) {
+				float3 diff = ray.origin - plane.positionOnPlane;
+				double prod1 = dot(diff, plane.normal);
+				double prod2 = dot( ray.direction, plane.normal);
+				double prod3 = prod1 / prod2;
+				return ray.origin - ray.direction * prod3;
+			}
+
+
+			uint generateIdForSeed(float3 worldSpaceSeedPosition){
+				uint3 az = round(abs(worldSpaceSeedPosition+8)*128) % 1024;
+				return az.x | (az.y << 10) | (az.z) << 20;
+			}
+
+			//seed2BlockCoords - values 0-3
+			//	2 bits per channel - 6 bits
+			//bigBlockCoords
+			// 8 bits per channel
+			// Id has 32 bits - 2b free 8b BBC-X 8b BBC-y 8b BBC-z 2b S2BC-X 2b S2BC-Y 2b SSBC-Z
+/*			uint generateIdForSeed(int3 bigBlockCoords, uint3 seed2BlockCoords){
+				bigBlockCoords= (bigBlockCoords+2048 + 128)%256;
+				uint  id = 0;
+				
+				id = id | bigBlockCoords.x;
+				id << 8;
+				id = id | bigBlockCoords.y;
+				id << 8;
+				id = id | bigBlockCoords.z;
+				id << 8;
+
+				id = id | seed2BlockCoords.x;
+				id << 2;
+				id = id | seed2BlockCoords.y;
+				id << 2;
+				id = id | seed2BlockCoords.z;
+				return id;
+			}
+*/
+
+			ClosestSeedSpecification retriveClosestSeed(float3 s_uv, float3 gssQuantisizedNormalVector , float3 gssGenuineNormalVector, float2 bias ) { // s_uv - nonRepeatable, 0-1 in 4x4
+				int3 bigBlockCoords = floor(s_uv); //  nonRepeatable, 0-1 in 4x4
+				float3 positive_s_uv = myMod1_f3(s_uv);
+
+				float3 inRepBlockUv = myMod1_f3(s_uv / 2); // repeatable 0-1 in 8x8
+				uint3 cellCoords = floor(positive_s_uv * 4) % 4; // repetable, 0-3 in 4x4
+				float3 inCellUv = frac(positive_s_uv * 4); // repeatable, 0-1 in 1x1
+
+				int3 downBottomLeftCellOffset = floor( inCellUv - 0.5);
+				//downBottomLeftCellOffset = 0;
+
+				ClosestSeedSpecification closestSeed = make_ClosestSeedSpecification(0,0,false, 0);
+				float smallestDistance = 999999999;
+				for (int x = 0; x < 2; x++) {
+					for (int y = 0; y < 2; y++) {
+						for (int z = 0; z < 1; z++) {
+							int3 baseBlockCoords = cellCoords + downBottomLeftCellOffset + uint3(x, y, z);
+
+							uint3 seed2BlockCoords = (baseBlockCoords+4) % 4;
+							seed2BlockCoords.z=0;
+
+							float4 seedPosSample = _SeedPositionTex3D[seed2BlockCoords];
+
+							float3 seed2Offset = seedPosSample.xyz;
+							float3 seed2Position = seed2Offset / 4.0 +  baseBlockCoords / 4.0 + bigBlockCoords;
+
+							float cycleFloat = seedPosSample.w;
+							int cycleInt = round(cycleFloat *  7.0);
+							uint3 cycleLastBits = 0;
+							cycleLastBits[2] = floor( (cycleInt%8)/4.0);
+							cycleLastBits[1] = floor( (cycleInt%4)/2.0);
+							cycleLastBits[0] = floor( (cycleInt%2)/1.0);
+
+							float3 positive_seed2Position = myMod1_f3(seed2Position/2)*2; // repeatable 0-2 values in 8x8
+							int3 w2 = ( floor(positive_seed2Position)) % 2;
+							bool seedIsInSparseLevelToo =
+									(w2.x == cycleLastBits.x % 2) && (w2.y == cycleLastBits.y % 2);// && (w2.z == cycleLastBits.z % 2); TODO last element should work only for 3D grid
+
+							float3 iPoint = findIntersectionPoint(make_Ray(seed2Position, gssQuantisizedNormalVector), make_Plane( gssGenuineNormalVector, s_uv));
+
+							float distanceToSeed = length(  float2Multiply(iPoint.xy,bias) -  float2Multiply(s_uv.xy,bias));
+
+							if ( !closestSeed.isActive || distanceToSeed< smallestDistance){
+								smallestDistance = distanceToSeed;
+								closestSeed = make_ClosestSeedSpecification(seed2Position, seedIsInSparseLevelToo, true, generateIdForSeed(seed2Position));
+							}  
+						}
+					}
+				}
+				return closestSeed;
+			}
+
+			float2 worldSpacePosToScreenUv(float3 worldSpacePos) {
+				float4 clipPos = mul(CUSTOM_MATRIX_VP, float4(worldSpacePos, 1.0));
+				float2 clipPosNorm= (clipPos / clipPos.w).xy;
+				clipPosNorm = (clipPosNorm + 1) / 2;
+				clipPosNorm.y = 1 - clipPosNorm.y;
+				return clipPosNorm;
+			}
+
+			float2 worldSpacePosToScreenCoords(float3 worldSpacePos) {
+				float2 clipPosNorm = worldSpacePosToScreenUv(worldSpacePos);
+				return float2(clipPosNorm.x * _ScreenParams.x, clipPosNorm.y * _ScreenParams.y);
+			}
+
+			float3 projectPointOnPlane(float3 origin, float3 normal, float3 p) {
+				float3 v = p - origin;
+				float dist = dot(v, normal);
+				return p - dist * normal;
+			}
+
+			float2 rotateAroundPivot(float2 p, float angle, float2 pivot) {
+				angle = -angle;
+				float sinX = sin (angle);
+				float cosX = cos (angle);
+				float2x2 rotationMatrix = float2x2( cosX, -sinX, sinX, cosX);
+
+				return mul(rotationMatrix, p-pivot) + pivot;
+			}
+
+			float _GlobalAngleOffset;
+			float computeSliceRotationAngle(int tierIndex, int rotationSliceIndex, ConstantParametersPack paramPack) {
+				float sliceRotationAngle = (  (rotationSliceIndex + (paramPack.rotationSlicesCount/4)) % paramPack.rotationSlicesCount) * paramPack.rotationSliceLength;
+				float perTierOffset = (paramPack.rotationSliceLength / paramPack.tierCount)*tierIndex;
+				return fmod(paramPack.maxRotation+sliceRotationAngle + perTierOffset, paramPack.maxRotation);
+			}
+
+			int calculateRotationSliceIndex(int tierIndex, float angle, ConstantParametersPack paramPack){
+				float perTierOffset = (paramPack.rotationSliceLength / paramPack.tierCount)*tierIndex;
+				return round(paramPack.rotationSlicesCount+perTierOffset  + paramPack.rotationSlicesCount * angle / paramPack.maxRotation) % paramPack.rotationSlicesCount;
+			}
+
+			struct RAScreenInfo {
+				int2 RABlockCoords;
+				float2 RAScreenCoords;
+				uint2 RAInBlockCoords;
+			};
+
+			RAScreenInfo make_RAScreenInfo(int2 RABlockCoords, float2 RAScreenCoords, uint2 RAInBlockCoords) {
+				RAScreenInfo p;
+				p.RABlockCoords = RABlockCoords;
+				p.RAScreenCoords = RAScreenCoords;
+				p.RAInBlockCoords = RAInBlockCoords;
+				return p;
+			}
+
+			RAScreenInfo calculateRAScreenInfo(int tierIndex, int2 screenCoords, int rotationSliceIndex, ConstantParametersPack paramPack) {
+				float sliceRotationAngle = computeSliceRotationAngle(tierIndex, rotationSliceIndex, paramPack);
+				// looping negative coords
+				float2 RAScreenCoords = rotateAroundPivot(screenCoords, sliceRotationAngle, _ScreenParams.xy / 2);
+				int2 RABlockCoords = int2(floor(RAScreenCoords.x / (float)paramPack.blockSize.x), floor(RAScreenCoords.y / (float)paramPack.blockSize.y));
+				RABlockCoords = (RABlockCoords + paramPack.blockCount * 2) % paramPack.blockCount;
+				RAScreenCoords = float2(
+					fmod(RAScreenCoords.x + paramPack.blockCount.x*paramPack.blockSize.x, paramPack.blockCount.x*paramPack.blockSize.x),
+					fmod(RAScreenCoords.y + paramPack.blockCount.y*paramPack.blockSize.y, paramPack.blockCount.y*paramPack.blockSize.y));
+
+				int2 RAInBlockCoords =  RAScreenCoords - int2(RABlockCoords.x*paramPack.blockSize.x, RABlockCoords.y*paramPack.blockSize.y);
+
+				return make_RAScreenInfo(RABlockCoords, RAScreenCoords, RAInBlockCoords);
+			}
+
+			uint ComputeSSGBIndex(uint4 coords, ConstantParametersPack paramPack) {
+				uint3 size = uint3(
+					paramPack.blockCount.x,
+					paramPack.blockCount.y,
+					paramPack.rotationSlicesCount
+					);
+
+				return
+					coords[0] +
+					coords[1] * size[0] +
+					coords[2] * size[0] * size[1] +
+					coords[3] * size[0] * size[1] * size[2];
+			}
+
+
+			////// Vector sets and effects of quantization calculations
+
+
+			float2 getYawAndPitch(float3 v) {
+				//return float2(v.x / -v.y, sqrt(v.x *v.x + v.y*v.y) / v.z);
+				float at2 = atan2(v.x, v.z);
+				if (isnan(at2)) {
+					at2 = 0;
+				}
+
+				return float2(at2, asin(-v.y));
+			}
+
+			float3 yawAndPitchToVector(float2 yawAndPitch) {
+				float alpha = yawAndPitch.x;
+				float beta = yawAndPitch.y;
+				float3 v = float3(
+					sin(alpha)*cos(beta), 
+					-sin(beta),
+					cos(alpha) * cos(beta)
+				);
+				return v;
+			}
+
+			float4 quantisizeNormalizedVectorWithOffsetToYAndP(float3 nn, int quantCount, float2 quantizationOffset) {
+				//if (quantizationOffset.x == 0){
+				//	quantizationOffset.x += 0.01;
+				//}
+				//if (quantizationOffset.x == 1){
+				//	quantizationOffset.x -= 0.01;
+				//}
+				//if (quantizationOffset.y == 0){
+				//	quantizationOffset.y += 0.01;
+				//}
+				//if (quantizationOffset.y == 1){
+				//	quantizationOffset.y -= 0.01;
+				//}
+
+				float2 yAndP = getYawAndPitch(nn); // X: <-PI,PI> Y: <-PI/2, PI/2>
+				yAndP.y *= 2; //<-PI, PI>
+
+				float2 a = yAndP / PI; //<-1,1>
+				a = (a / 2.0) + 0.5; // <0,1>
+				a = a * quantCount; //<0,quantCount-1> == <0,q>
+				a = a + quantizationOffset; //<o, q+o>
+				int2 fa = floor(a ) ; //<0,q>
+				fa = fa % quantCount;
+				float2 ffa = fa - quantizationOffset;
+
+				float2 strength = 1- abs( fmod(a,quantCount) - fa - 0.5)*2;
+
+				float2 qYAndP = ffa/(float)(quantCount); // <0,1>
+				qYAndP = qYAndP * 2 * PI; //<0,2*PI>
+				qYAndP = qYAndP - PI; //<-PI,PI>
+
+				qYAndP.y /= 2; //X: <-PI, PI> Y:<-PI/2, PI/2>
+
+				return float4(qYAndP, strength);
+			}
+
+			float3 projectOnPlane(float3 u, float3 planeN) {
+				return u - dot(u, planeN)*planeN / pow(length(planeN), 2);
+			}
+
+			QuantizationResult ProcessAndQuantisizeVectors(VectorsSet genuineVectorsSet, float2 quantizationOffset, int quantCount) {
+				float4 qNormal = quantisizeNormalizedVectorWithOffsetToYAndP(genuineVectorsSet.normalVector, quantCount, quantizationOffset);
+				float3 qNormalVector = normalize(yawAndPitchToVector(qNormal.xy));
+				float4 qAlignment = quantisizeNormalizedVectorWithOffsetToYAndP(genuineVectorsSet.alignmentVector, quantCount, quantizationOffset);
+				float3 qAlignmentVector = normalize(yawAndPitchToVector(qAlignment.xy));
+				qAlignmentVector = normalize(projectOnPlane(qAlignmentVector, qNormalVector));
+
+				float minStrength = min(min(qNormal.z, qNormal.w), min(qAlignment.z, qAlignment.w));
+				minStrength = pow(minStrength,0.3) ;
+
+				float3 crossAlignmentVector = normalize(cross(qNormalVector, qAlignmentVector));
+				return make_QuantizationResult(make_VectorsSet(qNormalVector, qAlignmentVector, crossAlignmentVector), minStrength);
+			}
+
+
+			SSGMPixel GenerateSgmColor(float3 worldSpacePos, VectorsSetPair vPair, ClosestSeedSpecification seedSpec, float seedPointStrokeAngle, ConstantParametersPack paramPack) {
+				float3 worldSpaceSeedPositionOnSurface = findIntersectionPoint(make_Ray(seedSpec.position, vPair.quantisized.normalVector), make_Plane( vPair.genuine.normalVector, worldSpacePos));
+				float2 seedCoords = worldSpacePosToScreenCoords(worldSpaceSeedPositionOnSurface);
+				return make_SSGMPixel( seedCoords.xy, seedPointStrokeAngle, seedSpec.seedIsInSparseLevelToo, seedSpec.id);
+			}
+
+			/////////////////////////// Other
+
+			int CalculateNeighbourSliceIndex(int rotationSliceIndex, float strokeAngle, ConstantParametersPack paramPack) {
+				float inSliceAngle = fmod(strokeAngle, paramPack.rotationSliceLength);
+				float inSlicePercent = (inSliceAngle / paramPack.rotationSliceLength);
+				int extraRotationSliceIndex = 0;
+				if (inSlicePercent < 0.5) {
+					extraRotationSliceIndex = (rotationSliceIndex + paramPack.rotationSlicesCount - 1)
+						% paramPack.rotationSlicesCount;
+				}
+				else {
+					extraRotationSliceIndex = (rotationSliceIndex + 1) % paramPack.rotationSlicesCount;
+				}
+				return extraRotationSliceIndex;
+			}
+
+			int retriveSeedPointSliceIndex(int tierIndex, float2 seedCoords, ConstantParametersPack paramPack){
+				LightIntensityAngleOccupancy liao = unpackLightIntensityAngleOccupancy( tex2Dlod(_WorldPositionTex, float4(intScreenCoords_to_sampleuv( seedCoords),0,0)).a );
+				float seedPointRotationAngle = liao.angle;
+				int  seedPointSliceIndex = calculateRotationSliceIndex(tierIndex, seedPointRotationAngle, paramPack);
+				return seedPointSliceIndex;
+			}
+
+			struct SSGMFilterState{
+				bool filterBySliceIndex;
+				bool filterByBlockCoords;
+				bool filterBySamplingCellSize;
+				bool filterBySeedVectors;
+			};
+
+			SSGMFilterState make_SSGMFilterState(
+				bool filterBySliceIndex,
+				bool filterByBlockCoords,
+				bool filterBySamplingCellSize,
+				bool filterBySeedVectors
+			){
+				SSGMFilterState s;
+				s.filterBySliceIndex = filterBySliceIndex;
+				s.filterByBlockCoords= filterByBlockCoords;
+				s.filterBySamplingCellSize = filterBySamplingCellSize;
+				s.filterBySeedVectors = filterBySeedVectors;
+				return s;
+			}
+
+			bool shouldUpdateSSGM(int tierIndex, RAScreenInfo info, float2 seedCoords, float2 seedPointRotationAngle,
+				int samplePointSliceIndex, int rotationSliceFilterMargin, SSGMFilterState filterState, ConstantParametersPack paramPack) {
+				float sliceRotationAngle = computeSliceRotationAngle(tierIndex, samplePointSliceIndex, paramPack);
+				float2 RASeedPosition = rotateAroundPivot(seedCoords, sliceRotationAngle, _ScreenParams.xy / 2);
+
+				// looping negative coords
+				RASeedPosition = float2(
+					fmod(RASeedPosition.x + paramPack.blockCount.x*paramPack.blockSize.x, paramPack.blockCount.x*paramPack.blockSize.x),
+					fmod(RASeedPosition.y + paramPack.blockCount.y*paramPack.blockSize.y, paramPack.blockCount.y*paramPack.blockSize.y));
+
+				int2 seedBlockCoords =
+					int2(floor(RASeedPosition.x / (float)paramPack.blockSize.x), floor(RASeedPosition.y / (float)paramPack.blockSize.y));
+
+				float blockFilter = paramPack.stage1BlockCoordsFilterPrimaryMargin;
+				if ( filterState.filterByBlockCoords && !(
+					abs(seedBlockCoords.x - info.RABlockCoords.x) <= blockFilter && abs(seedBlockCoords.y - info.RABlockCoords.y) <= blockFilter)) {
+					return false;
+				}
+
+				int seedPointSliceIndex = calculateRotationSliceIndex(tierIndex, seedPointRotationAngle, paramPack);
+
+				if(filterState.filterBySliceIndex &&  ! (abs(samplePointSliceIndex - seedPointSliceIndex) <= rotationSliceFilterMargin) ){
+					return false;
+				}
+				return true;
+			}
+
+			uint3 calculateTierAwareSSGMCoords(int tierIndex, uint3 nonAwareSSGMCoords, ConstantParametersPack paramPack) {
+				return nonAwareSSGMCoords + uint3(0, 0, tierIndex*paramPack.rotationSlicesCount);
+			}
+
+			VectorsSet RetriveVectorsFromTextures(float2 uv){
+				float3 normal =  UnpackNormalFromTwoChannels(tex2D(_VectorsTex, uv).xy);
+				float3 alignmentVector = UnpackNormalFromTwoChannels(tex2D(_VectorsTex, uv).zw);
+				return make_VectorsSet(normal, alignmentVector, cross( alignmentVector, normal));
+			}
+
+			bool FilterOutBySeedVectors(float2 seedPointUv, VectorsSetPair vPair, ConstantParametersPack paramPack){
+				VectorsSet seedPointGenuineSet = RetriveVectorsFromTextures(seedPointUv);
+				int quantCount = paramPack.vectorQuantCount;
+				float2 quantizationOffset = 0;
+				VectorsSet seedPointQuantizationVPair = ProcessAndQuantisizeVectors(seedPointGenuineSet, 0, quantCount).vectors;
+				
+				return (
+					max( 
+						length( seedPointQuantizationVPair.normalVector - vPair.quantisized.normalVector),
+						length( seedPointQuantizationVPair.alignmentVector- vPair.quantisized.alignmentVector))
+						< 0.1);
+			}
+
+			SSGMUpdateInstanceSpec GenerateSSGMUpdateData(int tierIndex, float3 worldSpacePos, VectorsSetPair vPair, float samplePointStrokeAngle,
+					  uint2 screenCoords, SSGMPixel pixel, SSGMFilterState filterState, ConstantParametersPack paramPack) {
+				float2 seedCoords = pixel.screenCoords;
+				float2 seedPointUv =intScreenCoords_to_sampleuv(seedCoords);
+
+				LightIntensityAngleOccupancy liao = unpackLightIntensityAngleOccupancy(   tex2Dlod( _WorldPositionTex,float4(seedPointUv,0,0)).a);
+				float seedPointRotationAngle = liao.angle;
+
+				bool must = true; 
+				if(filterState.filterBySeedVectors){
+					must = must && FilterOutBySeedVectors(seedPointUv, vPair, paramPack);
+				}
+
+				int samplePointSliceIndex = calculateRotationSliceIndex(tierIndex, samplePointStrokeAngle, paramPack);
+				RAScreenInfo s1_RAinfo = calculateRAScreenInfo(tierIndex, screenCoords,  samplePointSliceIndex, paramPack);
+				bool s1_shouldUpdate = shouldUpdateSSGM(tierIndex, s1_RAinfo, seedCoords, seedPointRotationAngle, samplePointSliceIndex, 0, filterState, paramPack);
+				SingleSliceSSGMUpdateSpec s1_spec = make_SingleSliceSSGMUpdateSpec(uint3(s1_RAinfo.RABlockCoords, samplePointSliceIndex), s1_shouldUpdate && must);
+
+				int extraRotationSliceIndex = CalculateNeighbourSliceIndex(samplePointSliceIndex, samplePointStrokeAngle, paramPack);
+				RAScreenInfo s2_RAinfo = calculateRAScreenInfo(tierIndex, screenCoords, extraRotationSliceIndex, paramPack);
+				bool s2_shouldUpdate = shouldUpdateSSGM(tierIndex, s2_RAinfo, seedCoords, seedPointRotationAngle, extraRotationSliceIndex, 1, filterState, paramPack);
+				s2_shouldUpdate=true;
+				SingleSliceSSGMUpdateSpec s2_spec = make_SingleSliceSSGMUpdateSpec(uint3(s2_RAinfo.RABlockCoords, samplePointSliceIndex), s2_shouldUpdate);
+
+				return make_SSGMUpdateInstanceSpec(s1_spec, s2_spec, pixel);
+			}
+
+			//float2 computeSeedScreenPositionWithProjectionOnSurface(float3 worldSpacePos, float3 normalVector, float3 worldSpaceSeedPosition) { I dont think it should be used, need to take intersection into account
+			//	float3 worldSpaceSeedPositionOnSurface = projectPointOnPlane(worldSpacePos, normalVector, worldSpaceSeedPosition);
+			//	return worldSpacePosToScreenCoords(worldSpaceSeedPositionOnSurface);
+			//}
+
+			float3 transportToGridSpace(float3 newStraight, float3 newUp, float3 p) {
+				//p.xyz = p.zyx;
+				float3 X1 = float3(1, 0, 0); // straight
+				float3 X2 = float3(0, 1, 0); // up 
+				float3 X3 = float3(0, 0, 1); //right
+				if (dot(X1, newStraight) > 0.999) {
+					return p;
+				}
+
+				// These vectors are the local X,Y,Z of the rotated object
+				float3 X1Prime = newStraight; // newStraight
+				float3 X2Prime = newUp;
+				float3 X3Prime = normalize(cross(X1Prime, X2Prime)); // right;
+
+				// This matrix will transform points from the world back to the rotated axis
+				float3x3 WorldToLocalTransform = 
+				{
+					  dot(X1Prime, X1),
+					  dot(X1Prime, X2),
+					  dot(X1Prime, X3),
+					  dot(X2Prime, X1),
+					  dot(X2Prime, X2),
+					  dot(X2Prime, X3),
+					  dot(X3Prime, X1),
+					  dot(X3Prime, X2),
+					  dot(X3Prime, X3),
+				};
+				return mul(WorldToLocalTransform, p);
+			}
+
+			float3 transportFromGridSpace(float3 newStraight, float3 newUp, float3 p) {
+				float3 X1 = float3(1, 0, 0); // straight
+				float3 X2 = float3(0, 1, 0); // up 
+				float3 X3 = float3(0, 0, 1); //right
+				if (dot(X1, newStraight) > 0.999) {
+					return p;
+				}
+
+				// These vectors are the local X,Y,Z of the rotated object
+				float3 X1Prime = newStraight; // newStraight
+				float3 X2Prime = newUp;
+				float3 X3Prime = normalize(cross(X1Prime, X2Prime)); // right;
+
+				// This matrix will transform points from the rotated axis to the world
+				float3x3 LocalToWorldTransform = 
+				{
+					  dot(X1, X1Prime),
+					  dot(X1, X2Prime),
+					   dot(X1, X3Prime),
+					  dot(X2, X1Prime),
+					  dot(X2, X2Prime),
+					  dot(X2, X3Prime),
+					  dot(X3, X1Prime),
+					  dot(X3, X2Prime),
+					  dot(X3, X3Prime),
+				};
+				
+				float3 r = mul(LocalToWorldTransform, p);
+				//r.xyz = r.zyx;
+				return r;
+			}
+
+			float _GlobalMMultiplier;
+
+			float calculateMZoom(int tierIndex, uint2 screenCoords, float3 worldSpacePos, float3 testVector1, float3 testVector2, ConstantParametersPack paramPack) {
+				float mp = 0.0001;
+				float a1 = length(worldSpacePosToScreenCoords(worldSpacePos) - worldSpacePosToScreenCoords(worldSpacePos + testVector1*mp));
+				float a2 = length(worldSpacePosToScreenCoords(worldSpacePos) - worldSpacePosToScreenCoords(worldSpacePos + testVector2*mp));
+				float a3 = length(worldSpacePosToScreenCoords(worldSpacePos) - worldSpacePosToScreenCoords(worldSpacePos + (testVector1+testVector2)*mp));
+				float G = min(min(a1,a2),a3) / mp;
+				G /= 100;
+
+				float T = paramPack.gridSpaceMultiplier.z;
+				T = 1;
+				float F = paramPack.seedDensityF;
+				float inp = G * T * F;
+				// by tier division - div for tiers
+				// 0 - 1
+				// 1 - 1.25
+				// 2 - 1.5
+				// 3 - 1.75
+				float div = 1 + ((float)tierIndex)/paramPack.tierCount;
+				inp = inp / div;
+
+
+				float M = -log2(inp);
+				M = M * _GlobalMMultiplier;
+				float rt = M - (-4.5); // For M = -4.5 rt = 0  For M = -2.5 rt = 2
+				if (rt > 0) { // M > -4.5
+					rt = pow(rt, paramPack.mZoomPowFactor);
+				}
+				M = rt - 4.5;
+				return M;
+			}
+
+			float2 calculateTwoSeedSpaceMultipliers(int tierIndex, uint2 screenCoords, float3 worldSpacePos, float3 alignmentVector, float3 crossAlignmentVector, ConstantParametersPack paramPack) {
+				float M = calculateMZoom(tierIndex, screenCoords, worldSpacePos, alignmentVector, crossAlignmentVector , paramPack);
+				//M= -1;
+
+				float seedSpaceMultiplier = pow(2, -floor(M))*paramPack.seedSamplingMultiplier;
+				float m = M - floor(M);
+
+				return float2(seedSpaceMultiplier, m);
+			}
+
+			float3 calculateTierWorldSpaceOffset(int tierIndex){
+				return float3( 123.33*tierIndex , 4.812*tierIndex, 91.783*tierIndex);
+			}
+
+			float3 moveToGSSpace( float3 worldSpacePos, float3 normalVector, float3 alignmentVector, float seedSpaceMultiplier, int tierIndex, ConstantParametersPack paramPack) {
+				worldSpacePos += calculateTierWorldSpaceOffset(tierIndex);
+
+				float3 GSSpacePos = transportToGridSpace(normalVector, alignmentVector, worldSpacePos);
+				GSSpacePos = memberwiseMultiplyF3(GSSpacePos, paramPack.gridSpaceMultiplier);
+				GSSpacePos *= seedSpaceMultiplier;
+				GSSpacePos = GSSpacePos.zyx;
+
+				return GSSpacePos;
+			}
+
+			float3 backFromGSSpace(float3 gsSpacePos, float seedSpaceMultiplier, float3 normalVector, float3 alignmentVector, int tierIndex, ConstantParametersPack paramPack) {
+				gsSpacePos = gsSpacePos.zyx;
+				gsSpacePos = memberwiseMultiplyF3(gsSpacePos, 1 / paramPack.gridSpaceMultiplier) / seedSpaceMultiplier;
+				float3 worldSpacePos = transportFromGridSpace(normalVector, alignmentVector, gsSpacePos );
+				return worldSpacePos - calculateTierWorldSpaceOffset (tierIndex);
+			}
+
+			SSGMPixel calculateSgmColor( float3 worldSpacePos, VectorsSetPair vPair, float strokeAngle, int tierIndex, ConstantParametersPack paramPack, uint2 screenCoords) {
+				float seedSpaceMultiplier = calculateTwoSeedSpaceMultipliers(tierIndex, screenCoords, worldSpacePos, vPair.genuine.alignmentVector , vPair.genuine.crossAlignmentVector, paramPack).x;
+
+				/// SGM CALC!!
+				float3 GSSpacePos =  moveToGSSpace(worldSpacePos, vPair.quantisized.normalVector,  vPair.quantisized.alignmentVector, seedSpaceMultiplier, tierIndex, paramPack);
+
+				float3 gssQuantisizedNormalVector = float3(0, 0, 1);
+				float3 gssGenuineNormalVector =	moveToGSSpace(vPair.genuine.normalVector, vPair.quantisized.normalVector, vPair.quantisized.alignmentVector, seedSpaceMultiplier, tierIndex, paramPack);
+
+				ClosestSeedSpecification spec = retriveClosestSeed(GSSpacePos, gssQuantisizedNormalVector, gssGenuineNormalVector, float2(1,paramPack.screenCellHeightMultiplier ));
+				spec.position = backFromGSSpace(spec.position, seedSpaceMultiplier,  vPair.quantisized.normalVector,  vPair.quantisized.alignmentVector, tierIndex, paramPack);
+
+				if (spec.isActive) {
+					return GenerateSgmColor(worldSpacePos, vPair, spec, strokeAngle, paramPack); 
+				}
+				else {
+					return make_SSGMPixel(0,0,0,0);
+				}
+			}
+
+			SSGMPixel calculateSgmPixel(int tierIndex, float3 worldSpacePos, VectorsSetPair vPair, float seedSpaceMultiplier, float samplePointStrokeAngle, ConstantParametersPack paramPack) {
+				float3 GSSpacePos = moveToGSSpace(worldSpacePos, vPair.quantisized.normalVector,  vPair.quantisized.alignmentVector, seedSpaceMultiplier, tierIndex, paramPack);
+				float3 gssQuantisizedNormalVector = float3(0, 0, 1);
+				float3 gssGenuineNormalVector =	moveToGSSpace(vPair.genuine.normalVector, vPair.quantisized.normalVector, vPair.quantisized.alignmentVector, seedSpaceMultiplier, tierIndex, paramPack);
+				ClosestSeedSpecification spec = retriveClosestSeed(GSSpacePos, gssQuantisizedNormalVector, gssGenuineNormalVector, float2(1,paramPack.screenCellHeightMultiplier ));
+				spec.position = backFromGSSpace(spec.position, seedSpaceMultiplier,  vPair.quantisized.normalVector,  vPair.quantisized.alignmentVector, tierIndex, paramPack);
+
+				float3 worldSpaceSeedPositionOnSurface = findIntersectionPoint(make_Ray(spec.position, vPair.quantisized.normalVector), make_Plane( vPair.genuine.normalVector, worldSpacePos));
+				float2 seedCoords = worldSpacePosToScreenCoords(worldSpaceSeedPositionOnSurface);
+
+				float2 seedPointUv =intScreenCoords_to_sampleuv(seedCoords);
+				LightIntensityAngleOccupancy liao = unpackLightIntensityAngleOccupancy( tex2Dlod(_WorldPositionTex, float4(seedPointUv,0,0)).a );
+				float4 seedPointRotationAngle = liao.angle;
+
+				SSGMPixel sgmColorX = GenerateSgmColor(worldSpacePos, vPair, spec, seedPointRotationAngle, paramPack);
+				return sgmColorX;
+			}
+
+
+
+#endif

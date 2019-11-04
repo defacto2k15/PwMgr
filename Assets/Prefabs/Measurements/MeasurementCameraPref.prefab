@@ -1,0 +1,272 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7870528459141484020
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7870528459141484025}
+  - component: {fileID: 7870528459141484026}
+  - component: {fileID: 7870528459141484031}
+  - component: {fileID: 7870528459141484027}
+  - component: {fileID: 7870528459141484029}
+  - component: {fileID: 7870528459141483971}
+  - component: {fileID: 7870528459141483970}
+  - component: {fileID: 7870528459141483969}
+  - component: {fileID: 3696661348817489553}
+  - component: {fileID: 7870528459141484030}
+  - component: {fileID: 819942440020255601}
+  m_Layer: 0
+  m_Name: MeasurementCameraPref
+  m_TagString: MainCamera
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7870528459141484025
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_LocalRotation: {x: -0, y: -0.012790754, z: -0.9999182, w: 0}
+  m_LocalPosition: {x: 0, y: -0.07, z: -2.81}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 181.466, y: 180, z: 0}
+--- !u!20 &7870528459141484026
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.99215686, g: 0.8666667, b: 0, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_FocalLength: 50
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: -1
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!114 &7870528459141484031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 5fa1b5b4020c71b4394ff1ced1164196, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraSensitivity: 90
+  climbSpeed: 4
+  normalMoveSpeed: 10
+  slowMoveFactor: 0.25
+  zRotationSpeed: 1
+  fastMoveFactor: 3
+  RotationEnabled: 0
+--- !u!95 &7870528459141484027
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &7870528459141484029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 5461559f6f292494cacb14c24eff43ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  HatchedObject: {fileID: 0}
+  Configuration:
+    MeshToUse:
+      MeshToUse: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+      MeshBufferName: plane
+      Scale: {x: 1, y: 1, z: 1}
+    GeneratingMode: 3
+    CameraTimelineAsset: {fileID: 11400000, guid: b3189bf283a31ee4b955408819aa4799,
+      type: 2}
+    LightTimelineAsset: {fileID: 0}
+    TestResultsDirectoryPath: C:\mgr\TestingResults\Test1\
+    TestName: 
+    SequenceFramesCount: 0
+    FirstTestFrame: 0
+    TestFramesCount: 0
+    UseImageTestingRunnerSupport: 1
+    UseMeasurementRunnerSupport: 0
+    UseScreenshotTakingRunnerSupport: 1
+    UsePerformanceEvaluatorRunnerSupportOC: 0
+    TakeScreenshotEveryNthFrame: -1
+--- !u!114 &7870528459141483971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 92914ca24b2bf974b92f459270768b3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IdOfLineToDraw: 0
+  MTestImageRenderingMat: {fileID: 2100000, guid: 7cb53c785fb0e164094eb1e9ef2f223e,
+    type: 2}
+--- !u!114 &7870528459141483970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 3e65fe3a3e530bc4e91ab0ad0ebfba01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TimeToWaitBetweenTests: 0.15
+  FramesToWaitBeforeTesting: 5
+  TestOneFrame: 0
+--- !u!114 &7870528459141483969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 571e07909b89eb944a63a1d0d9580760, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TakeScreenshotEveryNthFrame: -1
+  MeasurementIndexToTakeScreenshotIn: 1
+--- !u!114 &3696661348817489553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 2dbd0042d48a4f34d86a236e9adafc18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &7870528459141484030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: a4dff9280e8b71c488e6beda9648806b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SkeletonizerMaterial: {fileID: 2100000, guid: f09e8bba27993f941b1329b299840528,
+    type: 2}
+  OneTestConfiguration:
+    MeshToUse:
+      MeshToUse: {fileID: 0}
+      MeshBufferName: 
+      Scale: {x: 0, y: 0, z: 0}
+    GeneratingMode: 0
+    CameraTimelineAsset: {fileID: 11400000, guid: 7664b296015e4694aa3489a9724670ea,
+      type: 2}
+    LightTimelineAsset: {fileID: 0}
+    TestResultsDirectoryPath: 
+    TestName: 
+    SequenceFramesCount: 0
+    FirstTestFrame: 0
+    TestFramesCount: 0
+    UseImageTestingRunnerSupport: 0
+    UseMeasurementRunnerSupport: 0
+    UseScreenshotTakingRunnerSupport: 0
+    UsePerformanceEvaluatorRunnerSupportOC: 0
+    TakeScreenshotEveryNthFrame: -1
+  CameraDirector: {fileID: 0}
+  LightDirector: {fileID: 0}
+  PointLightObject: {fileID: 0}
+--- !u!114 &819942440020255601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870528459141484020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 46019d2d5b9e24442b213aca358af82f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Target: {fileID: 0}
+  DistanceFromCamera: 1
+  XRotation: 0
+  YRotation: 0
+  MovingEnabled: 0

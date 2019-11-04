@@ -1,0 +1,235 @@
+﻿#ifndef MF_COMMON_INC
+#define  MF_COMMON_INC
+
+		UNITY_DECLARE_TEX2DARRAY(_TamIdTex);
+		float _TamIdTexBias;
+		int _TamIdTexTonesCount;
+		int _TamIdTexLayersCount;
+		float2 _TamIdTexScale;
+
+		float3 mf_getDirectionVector(float3 sampleWorldPosition) {
+				float3 lightWorldPos = float3(
+					unity_4LightPosX0[0],
+					unity_4LightPosY0[0],
+					unity_4LightPosZ0[0]
+					);
+
+				return normalize(sampleWorldPosition - lightWorldPos);
+		}
+
+			float computeLightIntensity(float3 vertexWorldPos, float3 vertexWorldNrm){
+				float3 lightWorldPos = float3(
+					unity_4LightPosX0[0],
+					unity_4LightPosY0[0],
+					unity_4LightPosZ0[0]
+					);
+
+				float3 lightDir = normalize( lightWorldPos - vertexWorldPos);
+
+				float lightIntensity = saturate(dot(normalize(vertexWorldNrm), lightDir));
+#if  LIGHT_SHADING_ON
+				return lightIntensity;//*unity_LightColor[0].a;
+#endif
+				//return 0.3;
+				return unity_LightColor[0].a;
+			}
+
+//#define MEASUREMENT
+		struct mf_MRTFragmentOutput
+		{
+			float4 dest0 : SV_Target0; // Artistic 
+#ifdef MEASUREMENT
+			float4 dest1 : SV_Target1;	// Hatch main
+			float4 dest2 : SV_Target2;	// hatch ID
+			float4 dest3 : SV_Target3;	// world Pos1
+			float4 dest4 : SV_Target4;	// world Pos2
+#endif
+		};
+
+		mf_MRTFragmentOutput make_mf_MRTFragmentOutput(float4 dest0, float4 dest1, float4 dest2, float4 dest3, float4 dest4) {
+			mf_MRTFragmentOutput o;
+			o.dest0 = dest0;
+#ifdef MEASUREMENT
+			o.dest1 = dest1;
+			o.dest2 = dest2;
+			o.dest3 = dest3;
+			o.dest4 = dest4;
+#endif
+			return o;
+		}
+
+
+		struct mf_retrivedHatchPixel {
+			uint id;
+			float tParam;
+			bool isHatchThere;
+			float blendingHatchStrength;
+			int lodLevel;
+		};
+
+		mf_retrivedHatchPixel make_mf_retrivedHatchPixel(
+			uint id,
+			float tParam,
+			bool isHatchThere,
+			float blendingHatchStrength,
+			int lodLevel
+		){
+			mf_retrivedHatchPixel r;
+			r.id = id;
+			r.tParam = tParam;
+			r.isHatchThere = isHatchThere;
+			r.blendingHatchStrength = blendingHatchStrength;
+			r.lodLevel = lodLevel;
+			return r;
+		};
+
+		mf_retrivedHatchPixel make_empty_mf_retrivedHatchPixel() {
+			return make_mf_retrivedHatchPixel(0, 0, false, 0, 0);
+		}
+
+#define MAX_TAMID_LAYER_COUNT (4)
+#define MAX_HATCH_BLEND_COUNT (4)
+
+		struct mf_weightedRetrivedData {
+			mf_retrivedHatchPixel pixel[MAX_TAMID_LAYER_COUNT];
+			float weight;
+		};
+
+		mf_weightedRetrivedData make_mf_weightedRetrivedData (
+			mf_retrivedHatchPixel pixel[MAX_TAMID_LAYER_COUNT],
+			float weight
+		){
+			mf_weightedRetrivedData d;
+			d.pixel = pixel;
+			d.weight = weight;
+			return d;
+		};
+
+		mf_weightedRetrivedData make_empty_mf_weightedRetrivedData() {
+			mf_retrivedHatchPixel pixel[MAX_TAMID_LAYER_COUNT];
+			for (int i = 0; i < MAX_TAMID_LAYER_COUNT; i++) {
+				pixel[i] = make_empty_mf_retrivedHatchPixel();
+			}
+			return make_mf_weightedRetrivedData(pixel, 0);
+		}
+
+		void sampleTamIdTexture( out mf_retrivedHatchPixel outArray[MAX_TAMID_LAYER_COUNT], float2 uv, float lightIntensity, float lodLevel, uint idPrefixBits) {
+			uv = float2Multiply(uv, _TamIdTexScale.xy);
+			if (lodLevel < 0) {
+				lodLevel=  _TamIdTex.CalculateLevelOfDetail(sampler_TamIdTex, uv) + _TamIdTexBias;
+			}
+
+
+			for (int i = 0; i < MAX_TAMID_LAYER_COUNT; i++) {
+				outArray[i] = make_empty_mf_retrivedHatchPixel();
+			}
+
+			int2 uvCellsIndex = (floor(uv) + 64 ) % 128;
+			int2 offsetDirections = round(frac(uv))*2 - 1; // Values -1 and 1
+
+			int toneIndex = round((_TamIdTexTonesCount)  * (1 - lightIntensity));
+
+			if (toneIndex != 0) {
+				for (int layerIdx = 0; layerIdx < _TamIdTexLayersCount; layerIdx++) {
+					int arrayElementSelector = (toneIndex-1) * _TamIdTexLayersCount + layerIdx;
+					//arrayElementSelector = 0;
+					//lodLevel = 0;
+					float4 c = UNITY_SAMPLE_TEX2DARRAY_LOD(_TamIdTex, float3(uv, arrayElementSelector), lodLevel);
+
+					uint2 idBytes;
+					idBytes[0] = round(c.r * 255);
+					idBytes[1] = round(c.g * 255);
+
+					uint offsetXBit = saturate(idBytes[1] & (1 << 6));
+					uint offsetYBit = saturate (idBytes[1] & (1 << 7));
+
+					int2 newUvCellsIndex = uvCellsIndex +int2(offsetXBit*offsetDirections[0], offsetYBit*offsetDirections[1]);
+					uint cellIdPrefix = (newUvCellsIndex[0] << 23) + (newUvCellsIndex[1] << 16);
+					uint idPrefix = cellIdPrefix | (idPrefixBits << 30);
+					uint id = idBytes[0] + (idBytes[1] & 63) * 256 + idPrefix;
+					bool isThereHatch = false;
+					if (c.a > 0) {
+						isThereHatch = true;
+					}
+
+					outArray[layerIdx] = make_mf_retrivedHatchPixel(id, c.b, isThereHatch, c.a, lodLevel);
+				}
+			}
+		}
+
+
+		mf_MRTFragmentOutput retrivedPixelToFragmentOutput(mf_retrivedHatchPixel p, float3 worldSpacePos, float lightIntensity) {
+			float4 artisticColor = 0;
+			float4 bkg = float4(0.6,0.6,1,1);
+			artisticColor = lerp(bkg,0,p.blendingHatchStrength);
+			artisticColor.a = 1;//p.blendingHatchStrength;
+
+			float4 hatchMainColor = 0;
+			hatchMainColor.r = round(p.blendingHatchStrength);
+			hatchMainColor.g = lightIntensity;
+			hatchMainColor.b = p.tParam;
+			hatchMainColor.a = 1; // signal that this is hatched element
+
+			float4 idColor = uintTo4Bytes(p.id);
+
+			float4 positions1Color = 0;
+			float4 positions2Color = 0;
+
+			float max = 10;
+			positions1Color.rg = to2ByteValue(worldSpacePos.x, max);
+			positions1Color.ba = to2ByteValue(worldSpacePos.y, max);
+			positions2Color.rg = to2ByteValue(worldSpacePos.z, max);
+
+			return make_mf_MRTFragmentOutput(artisticColor, hatchMainColor, idColor, positions1Color, positions2Color);
+		}
+
+		mf_MRTFragmentOutput retrivedPixelToFragmentOutputAlphaArtistic(mf_retrivedHatchPixel p, float3 worldSpacePos, float lightIntensity) {
+			float4 artisticColor = 0;
+			float4 bkg = float4(0.6,0.6,1,1);
+			if(p.blendingHatchStrength< 0.01 ){
+				artisticColor= bkg;
+			}
+			artisticColor.a = p.blendingHatchStrength;
+
+			float4 hatchMainColor = 0;
+			float4 idColor = 0;
+			float4 positions1Color = 0;
+			float4 positions2Color = 0;
+
+			return make_mf_MRTFragmentOutput(artisticColor, hatchMainColor, idColor, positions1Color, positions2Color);
+		}
+
+		mf_MRTFragmentOutput retrivedPixelToFragmentOutputArtistic(mf_retrivedHatchPixel p, float3 worldSpacePos, float lightIntensity) {
+			float4 artisticColor = 0;
+			float4 bkg = float4(0.6,0.6,1,1);
+			artisticColor = lerp(bkg,0,p.blendingHatchStrength);
+			artisticColor.a = 1;
+
+			float4 hatchMainColor = 0;
+			float4 idColor = 0;
+			float4 positions1Color = 0;
+			float4 positions2Color = 0;
+
+			return make_mf_MRTFragmentOutput(artisticColor, hatchMainColor, idColor, positions1Color, positions2Color);
+		}
+
+		mf_retrivedHatchPixel findMaximumActivePixel( mf_weightedRetrivedData retrivedDatas[MAX_HATCH_BLEND_COUNT]) {
+				mf_retrivedHatchPixel maxPixel = make_empty_mf_retrivedHatchPixel();
+				for (int j = 0; j < MAX_HATCH_BLEND_COUNT; j++) {
+					mf_weightedRetrivedData d = retrivedDatas[j];
+					if (d.weight > 0) {
+						for (int i = 0; i < MAX_TAMID_LAYER_COUNT; i++) {
+							mf_retrivedHatchPixel p = d.pixel[i];
+							p.blendingHatchStrength *= d.weight;
+							if (p.blendingHatchStrength > maxPixel.blendingHatchStrength) {
+								maxPixel = p;
+							}
+						}
+					}
+				}
+				return maxPixel;
+		}
+
+
+
+#endif

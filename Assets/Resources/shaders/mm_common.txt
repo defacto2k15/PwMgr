@@ -1,0 +1,55 @@
+﻿#ifndef MM_COMMON_INC
+#define MM_COMMON_INC
+
+#define MAX_ANGLE (2*3.14159)
+#define MAX_15BIT (0x7FFF)
+
+struct LightIntensityAngleOccupancy{
+	float lightIntensity;
+	float angle;
+	bool occupancy;
+};
+
+LightIntensityAngleOccupancy make_LightIntensityAngleOccupancy ( float lightIntensity, float angle, bool occupancy){
+	LightIntensityAngleOccupancy o;
+	o.lightIntensity=lightIntensity;
+	o.angle=angle;
+	o.occupancy=occupancy;
+	return o;
+}
+
+float packLightIntensityAngleOccupancy(float lightIntensity, float angle, bool occupancy){
+	// 15 bits for intensity, 15 for angle, 2 for occupancy
+	lightIntensity=saturate(lightIntensity);
+	uint lightIntensityUInt = round(lightIntensity*MAX_15BIT);
+
+	float normalizedAngle = fmod(angle+MAX_ANGLE, MAX_ANGLE) / MAX_ANGLE;
+	uint angleUInt = round(normalizedAngle*MAX_15BIT);
+
+	uint occupancyUInt = 0;
+	if(occupancy){
+		occupancyUInt = 3;
+	}
+
+	uint final = 0;
+	final = final | lightIntensityUInt;
+	final = final | (angleUInt << 15 );
+	final = final | (occupancyUInt << 30 );
+	return asfloat(final);
+}
+
+
+LightIntensityAngleOccupancy unpackLightIntensityAngleOccupancy(float liao ){
+	uint liaoUint = asuint(liao);
+	uint lightIntensityUInt = liaoUint & MAX_15BIT;
+	float lightIntensity = lightIntensityUInt / ((float)MAX_15BIT);
+
+	liaoUint = liaoUint >> 15;
+	uint angleUInt = liaoUint & MAX_15BIT;
+	float angle = (angleUInt / ((float)MAX_15BIT)) * MAX_ANGLE;
+
+	liaoUint = liaoUint >> 15;
+	return make_LightIntensityAngleOccupancy(lightIntensity,angle, liaoUint>0);
+}
+
+#endif

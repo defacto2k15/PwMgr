@@ -1,0 +1,18 @@
+﻿#pragma kernel CSTextureMoving_Move
+
+#include "commonComp.hlsl"
+#include "HeightColorTransformComp.hlsl"
+
+
+cbuffer ConstantGlobalParameters {
+	int g_offsetX;
+	int g_offsetY;
+};
+
+Texture2D<float4> SourceTexture;
+RWTexture2D<float4> DestTexture;
+
+CS_NUMTHREADS_ONE
+void  CSTextureMoving_Move(uint3 id : SV_DispatchThreadID) {
+	DestTexture[id.xy + uint2(g_offsetX, g_offsetY)] = SourceTexture[id.xy];
+}

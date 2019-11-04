@@ -1,0 +1,89 @@
+﻿
+
+#if (IN_silhouette_FEATURE_DETECTION_MODE == DETECTION_MODE_PIXEL) || (IN_silhouette_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX)
+#error "Silhouette can only be detected in geometry
+#endif
+
+struct  silhouette_VertexOutBuffer{
+};
+
+#define	Transfer_silhouette_VertexOutBuffer 0
+
+silhouette_VertexOutBuffer silhouette_VertexFilter(VertexSituation situation, appdata a) {
+	silhouette_VertexOutBuffer buffer;
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct silhouette_GeometryOutBuffer {
+#if IN_silhouette_FEATURE_APPLY_MODE == APPLY_MODE_SURFACE_LINE
+	float silhouetteStatus[3]; 
+#elif IN_silhouette_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+	bool shouldColor;
+#endif
+};
+
+#if IN_silhouette_FEATURE_APPLY_MODE == APPLY_MODE_OFF
+	#define	Transfer_silhouette_GeometryOutBuffer 0
+#else
+	#define	Transfer_silhouette_GeometryOutBuffer 1
+#endif
+
+float silhouetteFeature_geometry_traitGenerator1(geometry_edge_situation s, geometry_camera_situation cs) {
+	return (dot(s.t1Norm, cs.viewDirect) < 0) && (dot(s.t2Norm, cs.t2Direct) >= 0.0f) ? 1 : 0;
+}
+
+void silhouette_GeometryFilter(silhouette_VertexOutBuffer inBuffer[3], inout silhouette_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout silhouette_GeometryOutBuffer finBuffer){
+
+#if IN_silhouette_FEATURE_DETECTION_MODE == DETECTION_MODE_GEOMETRY
+	#if IN_silhouette_FEATURE_APPLY_MODE ==  APPLY_MODE_SURFACE_LINE
+		outBuffer[0].silhouetteStatus[triangleIndex] = silhouetteFeature_geometry_traitGenerator1(s, camera_situation);
+		outBuffer[1].silhouetteStatus[triangleIndex] = silhouetteFeature_geometry_traitGenerator1(s, camera_situation);
+		outBuffer[2].silhouetteStatus[triangleIndex] = silhouetteFeature_geometry_traitGenerator1(s, camera_situation);
+
+		finBuffer.silhouetteStatus[0] = 0;
+		finBuffer.silhouetteStatus[1] = 0;
+		finBuffer.silhouetteStatus[2] = 0;
+	#elif IN_silhouette_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+		outBuffer[triangleIndex].shouldColor = false;
+		if( silhouetteFeature_geometry_traitGenerator1(s,camera_situation) > 0.5 ){
+			shouldCreateFins = true;
+			finBuffer.shouldColor = true;
+		}else{
+			finBuffer.shouldColor = false;
+		}
+	#endif
+#endif
+}
+
+////////////////////// PIXEL SHADER
+
+	#if IN_USE_GEOMETRY_SHADER
+		#define silhouette_FragmentInBuffer silhouette_GeometryOutBuffer
+	#else
+		#define silhouette_FragmentInBuffer silhouette_VertexOutBuffer
+	#endif
+
+void silhouette_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, silhouette_FragmentInBuffer silhouetteIn, inout float4 color) {
+
+#if IN_silhouette_FEATURE_APPLY_MODE == APPLY_MODE_SURFACE_LINE
+	if (silhouetteIn.silhouetteStatus[situation.edgeIndex] > 0.5) {
+		o.applyColor = true;
+		o.color = float4(0,0,1,1);
+	}
+#endif
+
+}
+
+void silhouette_FragmentFinFilter( silhouette_FragmentInBuffer silhouetteIn, inout float4 color) {
+
+#if IN_silhouette_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+	if (silhouetteIn.shouldColor ){
+		color = float4(0,0,1,1);
+	}
+#endif
+
+}
+
+void silhouette_FragmentFillingFilter(silhouette_FragmentInBuffer contoursInput, inout float4 color){
+}

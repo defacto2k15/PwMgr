@@ -1,0 +1,56 @@
+﻿// OBJECT ID
+// Required:
+//	_ObjectID
+
+#if IN_obj_FEATURE_DETECTION_MODE != DETECTION_MODE_PIXEL 
+#error "ObjectID can only be detected in pixel"
+#endif
+
+#if IN_obj_FEATURE_APPLY_MODE != APPLY_MODE_FILLING 
+#error "ObjectID can only be applied by filling "
+#endif
+
+// algorithm-native functions
+#include "UnityCG.cginc"
+
+float2 obj_out_ObjectID() {
+	return PackUInt16Bit(_obj_ObjectID);
+}
+
+struct obj_VertexOutBuffer{
+};
+#define	Transfer_obj_VertexOutBuffer 0
+
+obj_VertexOutBuffer obj_VertexFilter(VertexSituation situation, appdata v) {
+	obj_VertexOutBuffer buffer;
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct obj_GeometryOutBuffer {
+};
+#define	Transfer_obj_GeometryOutBuffer 0
+
+
+void obj_GeometryFilter(obj_VertexOutBuffer inBuffer[3], inout obj_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout obj_GeometryOutBuffer finBuffer){
+	//outBuffer[triangleIndex] = inBuffer[triangleIndex];
+	//finBuffer = inBuffer[triangleIndex];
+}
+
+////////////////////// PIXEL SHADER
+
+#if IN_USE_GEOMETRY_SHADER
+	#define obj_FragmentInBuffer obj_GeometryOutBuffer
+#else
+	#define obj_FragmentInBuffer obj_VertexOutBuffer
+#endif
+
+void obj_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, obj_FragmentInBuffer objIn, inout float4 color) {
+}
+
+void obj_FragmentFinFilter(obj_FragmentInBuffer buffer, inout float4 color){
+}
+
+void obj_FragmentFillingFilter(obj_FragmentInBuffer buffer, inout float4 color){
+	color.zw = obj_out_ObjectID();
+}

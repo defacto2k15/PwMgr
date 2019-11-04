@@ -1,0 +1,125 @@
+﻿
+// Required:
+//		_EdgeAngleBuffer
+//		_valleyTreshold
+//		_SurfaceLineWidth
+
+#if IN_valley_FEATURE_DETECTION_MODE == DETECTION_MODE_PIXEL
+#error "valleycannot be detected in pixel"
+#endif
+
+struct  valley_VertexOutBuffer{
+#if IN_valley_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX
+	float valleyStatus[3]; 
+#endif
+};
+
+#if IN_valley_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX
+	#define	Transfer_valley_VertexOutBuffer 1
+#else
+	#define	Transfer_valley_VertexOutBuffer 0
+#endif
+
+valley_VertexOutBuffer valley_VertexFilter(VertexSituation situation, appdata a) {
+	valley_VertexOutBuffer buffer;
+
+#if IN_valley_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX
+	for(int i = 0; i < 3; i++){
+		uint vid = situation.pid*3 + i;
+		float edgeAngle = _EdgeAngleBuffer[vid];
+		buffer.valleyStatus[i] = edgeAngle > _valleyTreshold ? 0 : 1;
+	}
+#endif
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct valley_GeometryOutBuffer {
+#if IN_valley_FEATURE_APPLY_MODE == APPLY_MODE_SURFACE_LINE
+	float valleyStatus[3]; 
+#elif IN_valley_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+	bool shouldColor;
+#endif
+};
+
+#if IN_valley_FEATURE_APPLY_MODE == APPLY_MODE_OFF
+	#define	Transfer_valley_GeometryOutBuffer 0
+#else
+	#define	Transfer_valley_GeometryOutBuffer 1
+#endif
+
+float valleyFeature_geometry_traitGenerator1(geometry_edge_situation s, geometry_camera_situation camera_situation) {
+	return signedAngle(s.t1Norm, s.t2Norm, normalize(s.v1Pos - s.v2Pos));
+}
+
+void valley_GeometryFilter(valley_VertexOutBuffer inBuffer[3], inout valley_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout valley_GeometryOutBuffer finBuffer){
+
+#if IN_valley_FEATURE_DETECTION_MODE == DETECTION_MODE_VERTEX
+	#if IN_valley_FEATURE_APPLY_MODE ==  APPLY_MODE_SURFACE_LINE
+		outBuffer[triangleIndex].valleyStatus = inBuffer[triangleIndex].valleyStatus; // we simply copy
+
+		finBuffer.valleyStatus[0] = 0;
+		finBuffer.valleyStatus[1] = 0;
+		finBuffer.valleyStatus[2] = 0;
+	#elif IN_valley_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+		outBuffer[triangleIndex].shouldColor = false;
+		if( inBuffer[triangleIndex].valleyStatus[s.v1Index] == 1){
+			shouldCreateFins = true;	
+			finBuffer.shouldColor = true;
+		}else{ 
+			finBuffer.shouldColor = false;
+		}
+	#endif
+#endif
+
+#if IN_valley_FEATURE_DETECTION_MODE == DETECTION_MODE_GEOMETRY
+	#if IN_valley_FEATURE_APPLY_MODE ==  APPLY_MODE_SURFACE_LINE
+		outBuffer[0].valleyStatus[triangleIndex] = valleyFeature_geometry_traitGenerator1(s,camera_situation) > _valleyTreshold ? 0 : 1;
+		outBuffer[1].valleyStatus[triangleIndex] = valleyFeature_geometry_traitGenerator1(s,camera_situation) > _valleyTreshold ? 0 : 1; 
+		outBuffer[2].valleyStatus[triangleIndex] = valleyFeature_geometry_traitGenerator1(s,camera_situation) > _valleyTreshold ? 0 : 1; 
+
+		finBuffer.valleyStatus[0] = 0;
+		finBuffer.valleyStatus[1] = 0;
+		finBuffer.valleyStatus[2] = 0;
+	#elif IN_valley_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+		outBuffer[triangleIndex].shouldColor = false;
+		if( valleyFeature_geometry_traitGenerator1(s,camera_situation) > _valleyTreshold ){
+			shouldCreateFins = true;
+			finBuffer.shouldColor = true;
+		}else{
+			finBuffer.shouldColor = false;
+		}
+	#endif
+#endif
+}
+
+////////////////////// PIXEL SHADER
+
+	#if IN_USE_GEOMETRY_SHADER
+		#define valley_FragmentInBuffer valley_GeometryOutBuffer
+	#else
+		#define valley_FragmentInBuffer valley_VertexOutBuffer
+	#endif
+
+void valley_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, valley_FragmentInBuffer valleyIn, inout float4 color) {
+
+#if IN_valley_FEATURE_APPLY_MODE == APPLY_MODE_SURFACE_LINE
+	if (valleyIn.valleyStatus[situation.edgeIndex] > 0.5) {
+		color = float4(0,1,0,1);
+	}
+#endif
+
+}
+
+void valley_FragmentFinFilter( valley_FragmentInBuffer valleyIn, inout float4 color) {
+
+#if IN_valley_FEATURE_APPLY_MODE == APPLY_MODE_FINS
+	if (valleyIn.shouldColor ){
+		color = float4(0,1,0,1);
+	}
+#endif
+
+}
+
+void valley_FragmentFillingFilter(valley_FragmentInBuffer contoursInput, inout float4 color){
+}

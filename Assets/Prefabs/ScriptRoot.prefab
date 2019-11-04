@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5521815812647811848
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5521815812647811855}
+  - component: {fileID: 5521815812647811854}
+  - component: {fileID: 5521815812647811849}
+  - component: {fileID: 3939528851374568591}
+  m_Layer: 0
+  m_Name: ScriptRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5521815812647811855
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5521815812647811848}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5521815812647811854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5521815812647811848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 8d5cc8239ed229545acc105632bf7b0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FontMap: {fileID: 2800000, guid: 096d39c8890b4ae4d8fe566ec8b6cd30, type: 3}
+--- !u!114 &5521815812647811849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5521815812647811848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: c2c09708e5bf65f4a84cb0d5b9002a3b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ThermalErosionShaderField: {fileID: 7200000, guid: 5b00a75f101d3094bb00236c06e9941d,
+    type: 3}
+  HydraulicErosionShaderField: {fileID: 7200000, guid: 6e400658c4357654685a87eead821736,
+    type: 3}
+  HeightTransferShaderField: {fileID: 7200000, guid: 8d995a1ebf7053a40bd66b0c9e8d7528,
+    type: 3}
+  MeiErosionShaderField: {fileID: 7200000, guid: 7b1929141f76d8140822b08256600dea,
+    type: 3}
+  TweakedThermalErosionShaderField: {fileID: 7200000, guid: 7ba4ec9cdec17514a89c25b9464b488f,
+    type: 3}
+  RenderTextureMovingShaderField: {fileID: 7200000, guid: dabc434db2314ce41b1c4a60c8ceb02f,
+    type: 3}
+  HeightTransferShaderPlainField: {fileID: 7200000, guid: 683a2e666ca2b0f4bbce7eead18baf7a,
+    type: 3}
+  SpotResolvingComputeShaderField: {fileID: 7200000, guid: 865e1af050399974eb8ff9542547d83a,
+    type: 3}
+  RoadEngravingComputeShaderField: {fileID: 7200000, guid: 11ac9a364a62ddf4ca91b98a00d7ee76,
+    type: 3}
+  SingleToDuoBillboardShaderField: {fileID: 7200000, guid: 07893322d0cc4b84795bb3ca28942965,
+    type: 3}
+  HabitatToGrassTypeShaderField: {fileID: 7200000, guid: 90cde30e0578e094bb10739f10a86c12,
+    type: 3}
+  FloraDomainShaderField: {fileID: 7200000, guid: ee7a9f8b8a4e7b447a96cc3626be80e5,
+    type: 3}
+  WeldRenderingShaderField: {fileID: 7200000, guid: c917364325c833047bffbfed56c55017,
+    type: 3}
+  NPRBarycentricBufferGeneratorField: {fileID: 7200000, guid: 82c67121253e51749a41041956d547ce,
+    type: 3}
+--- !u!114 &3939528851374568591
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5521815812647811848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: e00d24b8895e7ab4c97a2dc8ba2e9bc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

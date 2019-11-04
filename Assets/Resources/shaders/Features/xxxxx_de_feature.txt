@@ -1,0 +1,56 @@
+﻿// DEPTH 
+// Required:
+
+#if IN_de_FEATURE_DETECTION_MODE != DETECTION_MODE_PIXEL 
+#error "depth can only be detected in vertex"
+#endif
+
+#if IN_de_FEATURE_APPLY_MODE != APPLY_MODE_FILLING 
+#error "depth can only be applied by filling "
+#endif
+
+
+
+// algorithm-native functions
+#include "UnityCG.cginc"
+#include "common.txt"
+
+struct de_VertexOutBuffer{
+	float depth;
+};
+#define	Transfer_de_VertexOutBuffer 1
+
+de_VertexOutBuffer de_VertexFilter(VertexSituation situation, appdata v) {
+	de_VertexOutBuffer buffer;
+	buffer.depth = -(mul( UNITY_MATRIX_MV, v.pos ).z * _ProjectionParams.w);
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct de_GeometryOutBuffer {
+	float depth;
+};
+#define	Transfer_de_GeometryOutBuffer 1
+
+void de_GeometryFilter(de_VertexOutBuffer inBuffer[3], inout de_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout de_GeometryOutBuffer finBuffer){
+	outBuffer[triangleIndex] = inBuffer[triangleIndex];
+	finBuffer = inBuffer[triangleIndex];
+}
+
+////////////////////// PIXEL SHADER
+
+#if IN_USE_GEOMETRY_SHADER
+	#define de_FragmentInBuffer de_GeometryOutBuffer
+#else
+	#define de_FragmentInBuffer de_VertexOutBuffer
+#endif
+
+void de_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, de_FragmentInBuffer dnIn, inout float4 color) {
+}
+
+void de_FragmentFinFilter(de_FragmentInBuffer buffer, inout float4 color){
+}
+
+void de_FragmentFillingFilter(de_FragmentInBuffer buffer, inout float4 color){
+	color.xy = EncodeFloatRG (buffer.depth);
+}

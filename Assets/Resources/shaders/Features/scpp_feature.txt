@@ -1,0 +1,68 @@
+﻿// SUGGESTIVE CONTAOURS POSTPROCESSING 
+// Required:
+//	 _InterpolatedNormalsBuffer
+
+#if IN_scpp_FEATURE_DETECTION_MODE != DETECTION_MODE_PIXEL 
+#error "Suggestive contours pp can only be detected in pixel"
+#endif
+
+#if  (IN_scpp_FEATURE_APPLY_MODE != APPLY_MODE_FILLING )
+#error "Suggestive contours pp can only be applied by filling"
+#endif
+
+
+
+// algorithm-native functions
+
+struct scpp_VertexOutBuffer{
+	float3 worldNrm;
+	float3 vertexWorldPos;
+};
+#define	Transfer_scpp_VertexOutBuffer 1
+
+scpp_VertexOutBuffer scpp_VertexFilter(VertexSituation situation, appdata v) {
+	scpp_VertexOutBuffer buffer;
+
+	buffer.vertexWorldPos = mul(unity_ObjectToWorld , v.pos);
+
+	float3 objectNrm = _InterpolatedNormalsBuffer[situation.vid];
+	float3 worldNrm = normalize(mul((float3x3)unity_ObjectToWorld, normalize(objectNrm))); 
+	buffer.worldNrm = worldNrm;
+
+	return buffer;
+}
+
+//////////// GEOMETRY SHADER
+struct scpp_GeometryOutBuffer {
+	float3 worldNrm;
+	float3 vertexWorldPos;
+};
+#define	Transfer_scpp_GeometryOutBuffer 1
+
+
+void scpp_GeometryFilter(scpp_VertexOutBuffer inBuffer[3], inout scpp_GeometryOutBuffer outBuffer[3], geometry_edge_situation s, geometry_camera_situation camera_situation, uint triangleIndex, inout bool shouldCreateFins, inout scpp_GeometryOutBuffer finBuffer){
+	outBuffer[triangleIndex] = inBuffer[triangleIndex];
+	finBuffer.worldNrm = 0;
+	finBuffer.vertexWorldPos = 0;
+}
+
+////////////////////// PIXEL SHADER
+
+#if IN_USE_GEOMETRY_SHADER
+	#define scpp_FragmentInBuffer scpp_GeometryOutBuffer
+#else
+	#define scpp_FragmentInBuffer scpp_VertexOutBuffer
+#endif
+
+void scpp_FragmentSurfaceLineFilter(FragmentSurfaceLineSituation situation, scpp_FragmentInBuffer scIn, inout float4 color) {
+}
+
+void scpp_FragmentFinFilter( scpp_FragmentInBuffer scIn, inout float4 color) {
+}
+
+void scpp_FragmentFillingFilter(scpp_FragmentInBuffer buffer, inout float4 color){
+	float3 viewDir = normalize(_WorldSpaceCameraPos - buffer.vertexWorldPos); //camera to vertex v(p) z (1)
+	float intensity = dot(viewDir, normalize(buffer.worldNrm));
+
+	color = intensity;
+}
