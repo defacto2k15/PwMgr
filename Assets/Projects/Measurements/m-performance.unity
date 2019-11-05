@@ -247,7 +247,7 @@ MonoBehaviour:
       PerformanceEvaluatorTimesToRepeatAnimation: 1
       UseImageTestingRunnerSupport: 0
       UseMeasurementRunnerSupport: 0
-      UseScreenshotTakingRunnerSupport: 1
+      UseScreenshotTakingRunnerSupport: 0
       UsePerformanceEvaluatorRunnerSupportOC: 1
       TakeScreenshotEveryNthFrame: 1
     MeshesToTest: []

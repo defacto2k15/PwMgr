@@ -65,5 +65,15 @@ namespace Assets.ProgramPitch
         {
             SceneManager.LoadScene("mf-mmGeometric");
         }
+
+        public void ShadowMMGeometric()
+        {
+            SceneManager.LoadScene("hh-mmGeoShadow");
+        }
+
+        public void ShadowTam()
+        {
+            SceneManager.LoadScene("hh-mmTamShadow");
+        }
     }
 }

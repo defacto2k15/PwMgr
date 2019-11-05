@@ -123,7 +123,7 @@ Material:
     - _RotationSliceIndex: 0
     - _RotationSlicesCount: 32
     - _SeedDensityF: 1
-    - _SeedSamplingMultiplier: 0.12
+    - _SeedSamplingMultiplier: 0.1
     - _SelectSgmRetrivalMethod: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1

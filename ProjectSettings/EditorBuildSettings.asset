@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/Scenes/SampleScene.unity
+    path: 
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 0
     path: Assets/Projects/old/p4.unity
@@ -50,4 +50,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Projects/mf/mf-Wolowski.unity
     guid: 9c4b39c1074805b4c947112ce23650df
+  - enabled: 1
+    path: Assets/Projects/hype-hatching/hh-mmGeoShadow.unity
+    guid: 40b01a64a7b63354a8b85defebd554f9
+  - enabled: 1
+    path: Assets/Projects/hype-hatching/hh-mmTamShadow.unity
+    guid: a9a07dd407e59f348a9d956faa1d21d0
   m_configObjects: {}

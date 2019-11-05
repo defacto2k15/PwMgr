@@ -117,7 +117,7 @@ Material:
     - _RotationSliceIndex: 12.1
     - _RotationSlicesCount: 32
     - _SeedDensityF: 5.35
-    - _SeedSamplingMultiplier: 0.12
+    - _SeedSamplingMultiplier: 0.1
     - _SelectSgmRetrivalMethod: 0.177
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1

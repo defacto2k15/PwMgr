@@ -6,7 +6,6 @@ using Assets.Heightmaps.Ring1.Creator;
 using Assets.Random;
 using Assets.Trees.Generation.ETree;
 using Assets.Utils;
-using UnityEditor.VersionControl;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -319,6 +318,7 @@ namespace Assets.Trees.Generation
 #endif
         public void ESaveCompleteTreeClan(ETreeClanTemplate clanTemplate, string clanName)
         {
+#if UNITY_EDITOR
             var so = ScriptableObject.CreateInstance<ETreeClanScriptableObject>();
             so.Pyramids = clanTemplate.TreePyramids.Select(c => new ESerializableTreePyramidTemplate()
             {
@@ -338,17 +338,25 @@ namespace Assets.Trees.Generation
             AssetDatabase.CreateAsset(so, TREE_COMPLETED_GENERATED_PREFABS_DIRECTORY + $"/treeClan-{clanName}.asset");
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+#else
+            Preconditions.Fail("ESaveCompleteTreeClan is not supported outside of editor");
+#endif
         }
 
 
         public ETreeClanTemplate ELoadCompleteTreeClan(string clanName)
         {
+#if UNITY_EDITOR
             var path = TREE_COMPLETED_GENERATED_PREFABS_DIRECTORY + $"/treeClan-{clanName}.asset";
             var so = AssetDatabase.LoadAssetAtPath<ETreeClanScriptableObject>(path);
             Preconditions.Assert(so!=null, "Cannot find ETreeClan SO at path "+path);
             return new ETreeClanTemplate(so.Pyramids.Select(c =>
                 new ETreePyramidTemplate(billboardTextureArray: new EBillboardTextureArray(c.BillboardArray, c.ScaleOffsets), fullTreeMesh: c.FullTreeMesh,
                     simplifiedTreeMesh: c.SimplifiedTreeMesh)).ToList());
+#else
+            Preconditions.Fail("ELoadCompleteTreeClan is not supported outside of editor");
+            return null;
+#endif
         }
 
         public ETreeClanTemplate ELoadTreeClanFromLivePrefab(GameObject prefab)
