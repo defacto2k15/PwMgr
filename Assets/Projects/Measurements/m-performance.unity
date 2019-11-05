@@ -251,7 +251,7 @@ MonoBehaviour:
       UsePerformanceEvaluatorRunnerSupportOC: 1
       TakeScreenshotEveryNthFrame: 1
     MeshesToTest: []
-    ModesToTest: 00000000
+    ModesToTest: 0000000002000000030000000400000005000000060000000700000008000000
     TimelineAssetsToTest: []
     UsePremadeTemplates: 1
     PremadeTemplates:
