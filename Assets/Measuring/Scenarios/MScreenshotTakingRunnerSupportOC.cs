@@ -30,16 +30,23 @@ namespace Assets.Measuring.Scenarios
 
         public void MyLateOnRenderImage(RenderTexture src, RenderTexture dest)
         {
-            if (_requestedScreenshot && (_requestedScreenshotFrame < Time.frameCount))
+            if (_requestedScreenshot && (_requestedScreenshotFrame == Time.frameCount))
             {
                 var artisticRenderTex = _testingRunner.RenderTargets.ArtisticMainTexture;
                 var artisticTex2D = UltraTextureRenderer.RenderTextureToTexture2D(artisticRenderTex);
                 SavingFileManager.SaveTextureToPngFile($"{_measurementsPath}/ArtisticTex.{_testingRunner.RequestedTestFrame}.png", artisticTex2D);
+                GameObject.Destroy(artisticTex2D);
                 _requestedScreenshot = false;
             }
         }
 
         public void MyOnMeasurementsMade(List<IMeasurementResult> measurementResults, MeasurementScreenshotsSet set)
+        {
+            //TODO Once Code from MyOnUpdate was here and Check at line 33 was < not ==. In that setur screenshots could be taken only if there was measurement. 
+            // So no measurements were taken with only performance analisys animation playing
+        }
+
+        public void MyOnUpdate()
         {
             if (_testingRunner.RequestedTestFrame == MeasurementIndexToTakeScreenshotIn)
             {
@@ -55,10 +62,6 @@ namespace Assets.Measuring.Scenarios
                     _requestedScreenshotFrame = Time.frameCount;
                 }
             }
-        }
-
-        public void MyOnUpdate()
-        {
         }
 
         public List<GaugeType> RequiredGauges()

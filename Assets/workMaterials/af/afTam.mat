@@ -79,7 +79,7 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _TamIdTexBias: -2.13
+    - _TamIdTexBias: 0
     - _TamIdTexLayersCount: 1
     - _TamIdTexTonesCount: 5
     - _UVSec: 0
@@ -88,4 +88,4 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DebugCellIndex: {r: 1, g: 0, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _TamIdTexScale: {r: 2, g: 2, b: 0, a: 0}
+    - _TamIdTexScale: {r: 10, g: 10, b: 0, a: 0}

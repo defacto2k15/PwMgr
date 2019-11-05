@@ -66,7 +66,7 @@ Material:
     - _DetailFadeRate: 7.21
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _FSeedDensity: 20
+    - _FSeedDensity: 7
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1

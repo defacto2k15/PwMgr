@@ -122,7 +122,7 @@ Material:
     - _SamplingCellSizeLength: 15
     - _ScreenCellHeightMultiplier: 1
     - _SeedDensityF: 5.35
-    - _SeedSamplingMultiplier: 0.1
+    - _SeedSamplingMultiplier: 0.12
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -134,8 +134,8 @@ Material:
     - _ZWrite: 1
     - _ZoomHatchErasureMode: 4
     m_Colors:
-    - _BlockCount: {r: 161, g: 107, b: 0, a: 0}
+    - _BlockCount: {r: 171, g: 96, b: 0, a: 0}
     - _BlockSize: {r: 8, g: 8, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Stage1RenderingSize: {r: 256, g: 128, b: 0, a: 0}
+    - _Stage1RenderingSize: {r: 256, g: 256, b: 0, a: 0}

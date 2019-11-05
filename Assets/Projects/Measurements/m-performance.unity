@@ -241,17 +241,17 @@ MonoBehaviour:
         type: 2}
       TestResultsDirectoryPath: 
       TestName: 
-      SequenceFramesCount: 240
+      SequenceFramesCount: 500
       FirstTestFrame: 0
-      TestFramesCount: 240
+      TestFramesCount: 500
       PerformanceEvaluatorTimesToRepeatAnimation: 1
       UseImageTestingRunnerSupport: 0
       UseMeasurementRunnerSupport: 0
-      UseScreenshotTakingRunnerSupport: 0
+      UseScreenshotTakingRunnerSupport: 1
       UsePerformanceEvaluatorRunnerSupportOC: 1
       TakeScreenshotEveryNthFrame: 1
     MeshesToTest: []
-    ModesToTest: 000000000200000003000000040000000500000006000000070000000800000009000000
+    ModesToTest: 00000000
     TimelineAssetsToTest: []
     UsePremadeTemplates: 1
     PremadeTemplates:
@@ -1200,6 +1200,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MeasurementKeywordOn: 0
+  LightShadingKeywordOn: 0
+  DirectionPerLight: 0
 --- !u!114 &1531043618
 MonoBehaviour:
   m_ObjectHideFlags: 0

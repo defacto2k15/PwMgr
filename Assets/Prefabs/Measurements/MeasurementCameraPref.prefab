@@ -50,7 +50,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.99215686, g: 0.8666667, b: 0, a: 0}
+  m_BackGroundColor: {r: 1, g: 1, b: 1, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -150,6 +150,7 @@ MonoBehaviour:
     SequenceFramesCount: 0
     FirstTestFrame: 0
     TestFramesCount: 0
+    PerformanceEvaluatorTimesToRepeatAnimation: 0
     UseImageTestingRunnerSupport: 1
     UseMeasurementRunnerSupport: 0
     UseScreenshotTakingRunnerSupport: 1
@@ -244,6 +245,7 @@ MonoBehaviour:
     SequenceFramesCount: 0
     FirstTestFrame: 0
     TestFramesCount: 0
+    PerformanceEvaluatorTimesToRepeatAnimation: 0
     UseImageTestingRunnerSupport: 0
     UseMeasurementRunnerSupport: 0
     UseScreenshotTakingRunnerSupport: 0
