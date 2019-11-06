@@ -394,7 +394,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61f268ac188d7da48a7ccb8ac8d4f1f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DrawDebugAreas: 1
+  DrawDebugAreas: 0
   DrawDebugAngles: 0
   DrawDebugLighting: 0
   DrawDebugBalls: 0
@@ -728,7 +728,7 @@ Material:
   m_Name: fillingMM3DSeedsDebugMat (Instance) (Instance) (Instance) (Instance) (Instance)
     (Instance) (Instance)
   m_Shader: {fileID: 4800000, guid: f148812b50420bd499d60b01af2f56bd, type: 3}
-  m_ShaderKeywords: DEBUG_DRAW_AREAS
+  m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
