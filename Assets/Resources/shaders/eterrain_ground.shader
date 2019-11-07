@@ -132,7 +132,7 @@
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
-				v.vertex.y = terrainOut.finalHeight;
+				v.vertex.y = 0;// terrainOut.finalHeight;
 				o.pos = UnityObjectToClipPos(v.vertex); //niezbedna linijka by dzialal shader
 				//terrainOut.finalHeight = 0;// sampleHeightMap(_Debug, float4(uv, 0, 0));
 				//float4 vertexWorldPos =  mul(unity_ObjectToWorld , v.vertex);
@@ -203,36 +203,7 @@
 					discard;
 				}
 
-				float3 lowColor = seedColorFrom(floor(i.usedMipMapLevel.x));
-				float3 highColor = seedColorFrom(ceil(i.usedMipMapLevel.x));
-
 				float3 finalColor;
-
-				float2 localCircleCenter = (round(float2(i.inSegmentSpaceUv.x, i.inSegmentSpaceUv.y)*300))/300.0;
-				float2 distanceTo = distance(localCircleCenter, i.inSegmentSpaceUv);
-
-				float cutOffValue = distanceTo * 400;
-				if (i.usedMipMapLevel.x < 0.01) {
-					finalColor = lowColor;
-				}else if (cutOffValue < frac(i.usedMipMapLevel.x)) {
-					finalColor = highColor; 
-				}
-				else {
-					finalColor = lowColor;
-				}
-
-				if (min(i.uv.x, i.uv.y) < 0.01) {
-					finalColor = 1;
-				}
-				if (max(i.uv.x, i.uv.y) > 0.99) {
-					finalColor = 1;
-				}
-				if (frac(i.usedMipMapLevel) > 0.0001 && frac(i.usedMipMapLevel) < 0.9999) {
-					finalColor /= 4.0;
-				}
-				if (i.terrainMergingLerpParam.x > 0) {
-					finalColor = float4(1, 0, 1, 1);
-				}
 				ETerrainParameters parameters = init_ETerrainParametersFromUniforms();
 				ELevelAndRingIndexes levelAndRingIndexes = FindLevelAndIndexFromWorldSpacePosition(i.worldSpaceLocation, parameters);
 				int levelIndex = levelAndRingIndexes.levelIndex;
@@ -250,10 +221,7 @@
 					finalColor = float4(1, 1, 1, 1);
 				}
 
-				//if (i.terrainMergingLerpParam.x > 0.00001 && i.terrainMergingLerpParam.x < 0.99999) {
-				//	finalColor = 1;
-				//}
-				//finalColor = (sampleHeightMap(0, float4(frac(0.5 + i.uv), 0, 0)) - 0.23) / 0.07;
+				finalColor = calculateESurfaceColor(i.inSegmentSpaceUv, levelAndRingIndexes, parameters);
 
 				return fixed4(finalColor,1);
 			} 

@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 9021262}
   - component: {fileID: 9021264}
   - component: {fileID: 9021266}
+  - component: {fileID: 9021265}
   m_Layer: 0
   m_Name: EterrainRoot
   m_TagString: Untagged
@@ -224,6 +225,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b502dc79a33b6c548a119cb57e11d2e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &9021265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9021259}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: da2c3c9e611b5b74985265fac87acc8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Traveller: {fileID: 0}
 --- !u!114 &9021266
 MonoBehaviour:
   m_ObjectHideFlags: 0

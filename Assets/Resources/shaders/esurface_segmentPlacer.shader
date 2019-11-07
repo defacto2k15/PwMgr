@@ -36,7 +36,7 @@
 			fixed4 frag(v2f i) : Color{
 				// THIS IS SURFACE SURFACE SURFACE!!!!! NOT TERRAIN
 				float2 uv = i.uv;
-				uv.y = 1 - uv.x; //TODO!!!
+				uv.y = 1 - uv.y; 
 				return tex2D(_SegmentSurfaceTexture, uv);
 			} 
 

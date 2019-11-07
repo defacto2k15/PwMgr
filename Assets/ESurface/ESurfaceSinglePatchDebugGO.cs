@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Assets.FinalExecution;
 using Assets.Heightmaps.GRing;
 using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Heightmaps.Ring1.valTypes;
+using Assets.PreComputation.Configurations;
 using Assets.Random.Fields;
 using Assets.Repositioning;
 using Assets.Ring2;
@@ -19,8 +20,7 @@ using Assets.Ring2.PatchTemplateToPatch;
 using Assets.Ring2.RuntimeManagementOtherThread;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
 using Assets.Ring2.Stamping;
-using Assets.ShaderUtils;
-using Assets.Utils;
+using Assets.Scheduling;
 using Assets.Utils.MT;
 using Assets.Utils.Services;
 using Assets.Utils.TextureRendering;
@@ -38,7 +38,7 @@ namespace Assets.ESurface
         public GameObject DummyPlate2;
         public bool GenerateDebugGrid;
         private ESurfacePatchProvider _provider;
-        private UpdatableContainer _updatableContainer;
+        private UltraUpdatableContainer _updatableContainer;
         private GRing2PatchesCreatorProxy _patchesCreatorProxy;
 
         public void Start()
@@ -46,7 +46,12 @@ namespace Assets.ESurface
             TaskUtils.SetGlobalMultithreading(false);
             var shaderContainerGO = FindObjectOfType<ComputeShaderContainerGameObject>();
 
-            _updatableContainer = new UpdatableContainer();
+            var configuration = new FEConfiguration(new FilePathsConfiguration());
+            GlobalServicesProfileInfo servicesProfileInfo = new GlobalServicesProfileInfo();
+            var ultraUpdatableContainer = new UltraUpdatableContainer(
+                configuration.SchedulerConfiguration,
+                servicesProfileInfo, 
+                configuration.UpdatableContainerConfiguration);
             Dictionary<int, float> intensityPatternPixelsPerUnit = new Dictionary<int, float>()
             {
                 {1,1 }
@@ -142,7 +147,7 @@ namespace Assets.ESurface
         private GRing2PatchesCreator CreateRing2PatchesCreator()
         {
             TextureConcieverUTProxy conciever = new TextureConcieverUTProxy();
-            _updatableContainer.AddUpdatableElement(conciever);
+            _updatableContainer.Add(conciever);
 
             Ring2RandomFieldFigureGenerator figureGenerator = new Ring2RandomFieldFigureGenerator(new TextureRenderer(),
                 new Ring2RandomFieldFigureGeneratorConfiguration()
@@ -150,7 +155,7 @@ namespace Assets.ESurface
                     PixelsPerUnit = new Vector2(1, 1)
                 });
             var utFigureGenerator = new RandomFieldFigureGeneratorUTProxy(figureGenerator);
-            _updatableContainer.AddUpdatableElement(utFigureGenerator);
+            _updatableContainer.Add(utFigureGenerator);
 
             var randomFieldFigureRepository = new Ring2RandomFieldFigureRepository(utFigureGenerator,
                 new Ring2RandomFieldFigureRepositoryConfiguration(2, new Vector2(20, 20)));
@@ -176,144 +181,37 @@ namespace Assets.ESurface
         }
     }
 
-    public class ESurfacePatchProvider
-    {
-        private GRing2PatchesCreatorProxy _patchesCreator;
-        private Ring2PatchStamplingOverseerFinalizer _patchStamper;
-        private MipmapExtractor _mipmapExtractor;
-        private readonly int _mipmapLevelToExtract;
-
-        public ESurfacePatchProvider(GRing2PatchesCreatorProxy patchesCreator, Ring2PatchStamplingOverseerFinalizer patchStamper, MipmapExtractor mipmapExtractor, int mipmapLevelToExtract)
-        {
-            _patchesCreator = patchesCreator;
-            _patchStamper = patchStamper;
-            _mipmapExtractor = mipmapExtractor;
-            _mipmapLevelToExtract = mipmapLevelToExtract;
-        }
-
-        public ESurfaceTexturesPack ProvideSurfaceDetail(MyRectangle inGamePosition, FlatLod flatLod)
-        {
-            var devisedPatches = _patchesCreator.CreatePatchAsync(inGamePosition.ToRectangle(), flatLod.ScalarValue).Result;
-            Preconditions.Assert(devisedPatches.Count <= 1,
-                $"More than one patches created: {devisedPatches.Count}, rect is {inGamePosition}");
-            if (!devisedPatches.Any())
-            {
-                return null;
-            }
-
-            var onlyPatch = devisedPatches.First();
-            var stampedSlice = _patchStamper.FinalizeGPatchCreation(onlyPatch, flatLod.ScalarValue).Result;
-            if (stampedSlice != null)
-            {
-                if (_mipmapLevelToExtract != 0)
-                {
-                    var mipMappedMainTexture = _mipmapExtractor.ExtractMipmap(new TextureWithSize()
-                    {
-                        Size = stampedSlice.Resolution,
-                        Texture = stampedSlice.ColorStamp
-                    }, RenderTextureFormat.ARGB32, _mipmapLevelToExtract);
-                    GameObject.Destroy(stampedSlice.ColorStamp);
-                    GameObject.Destroy(stampedSlice.NormalStamp);
-
-                    return new ESurfaceTexturesPack()
-                    {
-                        MainTexture = mipMappedMainTexture.Texture,
-                        NormalTexture = stampedSlice.NormalStamp
-                    };
-                }
-                else
-                {
-                    return new ESurfaceTexturesPack()
-                    {
-                        MainTexture = stampedSlice.ColorStamp,
-                        NormalTexture = stampedSlice.NormalStamp
-                    };
-                }
-            }
-
-            return null;
-        }
-    }
-
-    public class ESurfaceTexturesPack
-    {
-        public Texture MainTexture;
-        public Texture NormalTexture;
-    }
-
-    public class MipmapExtractor
-    {
-        private UTTextureRendererProxy _textureRenderer;
-
-        public MipmapExtractor(UTTextureRendererProxy textureRenderer)
-        {
-            _textureRenderer = textureRenderer;
-        }
-
-        public TextureWithSize ExtractMipmap(TextureWithSize inputTexture, RenderTextureFormat format, int mipmapLevelToExtract )
-        {
-            var pack = new UniformsPack();
-            pack.SetTexture("_InputTexture", inputTexture.Texture);
-            pack.SetUniform("_MipmapLevelToExtract", mipmapLevelToExtract);
-
-            var outSize = ComputeMipmappedOutSize(inputTexture.Size, mipmapLevelToExtract);
-
-            var newTexture = _textureRenderer.AddOrder(new TextureRenderingTemplate()
-            {
-                CanMultistep = true,
-                Coords = new MyRectangle(0, 0, 1, 1),
-                CreateTexture2D = false,
-                OutTextureInfo = new ConventionalTextureInfo(outSize.X, outSize.Y, TextureFormat.ARGB32, true),
-                RenderTextureFormat = format,
-                RenderTextureMipMaps = true,
-                ShaderName = "Custom/Tool/ExtractMipmap",
-                UniformPack = pack,
-            }).Result;
-            return new TextureWithSize()
-            {
-                Texture = newTexture,
-                Size = outSize
-            };
-        }
-
-        private IntVector2 ComputeMipmappedOutSize(IntVector2 inputTextureSize, int mipmapLevelToExtract)
-        {
-            var divisor = Mathf.Pow(2f, mipmapLevelToExtract);
-            return new IntVector2(Mathf.RoundToInt(inputTextureSize.X/divisor), Mathf.RoundToInt(inputTextureSize.Y/divisor));
-        }
-    }
-
 
     public static class ESurfaceProviderInitializationHelper
     {
-        public static ESurfacePatchProvider ConstructProvider(UpdatableContainer updatableContainer, Dictionary<int, float> intensityPatternPixelsPerUnit,
+        public static ESurfacePatchProvider ConstructProvider(UltraUpdatableContainer updatableContainer, Dictionary<int, float> intensityPatternPixelsPerUnit,
             ComputeShaderContainerGameObject shaderContainerGO, int mipmapLevelToExtract, Dictionary<int, float> plateStampPixelsPerUnit)
         {
             var ring2ShaderRepository = Ring2PlateShaderRepository.Create();
             TextureConcieverUTProxy conciever = new TextureConcieverUTProxy();
-            updatableContainer.AddUpdatableElement(conciever);
+            updatableContainer.Add(conciever);
 
             var ring2PatchesPainterUtProxy = new Ring2PatchesPainterUTProxy(
                 new Ring2PatchesPainter(
                     new Ring2MultishaderMaterialRepository(ring2ShaderRepository, Ring2ShaderNames.ShaderNames)));
-            updatableContainer.AddUpdatableElement(ring2PatchesPainterUtProxy);
+            updatableContainer.Add(ring2PatchesPainterUtProxy);
 
             UTRing2PlateStamperProxy stamperProxy = new UTRing2PlateStamperProxy(
                 new Ring2PlateStamper(new Ring2PlateStamperConfiguration()
                 {
                     PlateStampPixelsPerUnit = plateStampPixelsPerUnit
                 }, shaderContainerGO));
-            updatableContainer.AddUpdatableElement(stamperProxy);
+            updatableContainer.Add(stamperProxy);
 
             UTTextureRendererProxy textureRendererProxy = new UTTextureRendererProxy(new TextureRendererService(
                 new MultistepTextureRenderer(shaderContainerGO), new TextureRendererServiceConfiguration()
                 {
                     StepSize = new Vector2(500, 500)
                 }));
-            updatableContainer.AddUpdatableElement(textureRendererProxy);
+            updatableContainer.Add(textureRendererProxy);
 
             CommonExecutorUTProxy commonExecutorUtProxy = new CommonExecutorUTProxy(); //todo
-            updatableContainer.AddUpdatableElement(commonExecutorUtProxy);
+            updatableContainer.Add(commonExecutorUtProxy);
 
             Ring2PatchStamplingOverseerFinalizer patchStamperOverseerFinalizer =
                 new Ring2PatchStamplingOverseerFinalizer(stamperProxy, textureRendererProxy);
@@ -323,10 +221,10 @@ namespace Assets.ESurface
             return new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
         }
 
-        public static GRing2PatchesCreator CreateRing2PatchesCreator(UpdatableContainer updatableContainer, Dictionary<int, float> intensityPatternPixelsPerUnit )
+        public static GRing2PatchesCreator CreateRing2PatchesCreator(UltraUpdatableContainer updatableContainer, Dictionary<int, float> intensityPatternPixelsPerUnit )
         {
             TextureConcieverUTProxy conciever = new TextureConcieverUTProxy();
-            updatableContainer.AddUpdatableElement(conciever);
+            updatableContainer.Add(conciever);
 
             Ring2RandomFieldFigureGenerator figureGenerator = new Ring2RandomFieldFigureGenerator(new TextureRenderer(),
                 new Ring2RandomFieldFigureGeneratorConfiguration()
@@ -334,7 +232,7 @@ namespace Assets.ESurface
                     PixelsPerUnit = new Vector2(1, 1)
                 });
             var utFigureGenerator = new RandomFieldFigureGeneratorUTProxy(figureGenerator);
-            updatableContainer.AddUpdatableElement(utFigureGenerator);
+            updatableContainer.Add(utFigureGenerator);
 
             var randomFieldFigureRepository = new Ring2RandomFieldFigureRepository(utFigureGenerator,
                 new Ring2RandomFieldFigureRepositoryConfiguration(2, new Vector2(20, 20)));
