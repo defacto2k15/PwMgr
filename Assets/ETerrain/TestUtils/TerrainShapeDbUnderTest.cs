@@ -53,7 +53,6 @@ namespace Assets.ETerrain.TestUtils
             var baseProvider = new FromTerrainDbBaseTerrainDetailProvider(_shapeDb);
             detailProviderFactory.Assign(baseProvider);
             terrainDetailGenerator.SetBaseTerrainDetailProvider(baseProvider);
-
         }
 
         private static RenderTexture CreateGlobalHeightTexture(CommonExecutorUTProxy commonExecutorUtProxy)

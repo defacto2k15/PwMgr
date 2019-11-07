@@ -256,7 +256,7 @@ namespace Assets.FinalExecution
                 new NewListenersCreatorWithLimitation()
                 {
                     Creator = new GVoidNodeTerrainCreator(),
-                    MaximumLod = new FlatLod(8),
+                    MaximumLod = new FlatLod(5),
                     //IsFallthroughCreator = true
                 },
 

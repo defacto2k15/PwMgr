@@ -47,7 +47,17 @@ namespace Assets.Roads.Pathfinding.Fitting
 
         public IGeometry Line => _line;
 
-        public List<Vector2> PathNodes => (_line as ILineString).CoordinateSequence.ToCoordinateArray()
-            .Select(c => MyNetTopologySuiteUtils.ToVector2(c)).ToList();
+        public List<Vector2> PathNodes
+        {
+            get
+            {
+                if (!(_line is ILineString))
+                {
+                    return new List<Vector2>();
+                }
+                return (_line as ILineString).CoordinateSequence.ToCoordinateArray()
+                    .Select(c => MyNetTopologySuiteUtils.ToVector2(c)).ToList();
+            }
+        }
     }
 }

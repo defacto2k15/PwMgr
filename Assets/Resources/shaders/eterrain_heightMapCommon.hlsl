@@ -254,7 +254,6 @@
 				float fromCenterDistance = max(abs(pyramidLevelSpaceUv.x - MainTravellerPositionUv( levelAndRingIndexes, terrainParameters).x), abs(pyramidLevelSpaceUv.y - MainTravellerPositionUv( levelAndRingIndexes, terrainParameters).y));
 				fromCenterDistance *= 2; // to make fromCenterDistance seem like uv is from -1 to 1
 				float lerpParam = invLerp(transitionRange.x, transitionRange.y, fromCenterDistance);
-				lerpParam = 0;
 				float finalHeight =lerp(highQualityHeight, lowQualityHeight, lerpParam);
 
 				bool shouldBeDiscarded = false;

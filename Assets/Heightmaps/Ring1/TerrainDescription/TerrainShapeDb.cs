@@ -46,7 +46,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
                 if (type == TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY)
                 {
                     element = await RetriveHeightArrayAsync(queryArea, elementDetail.Resolution, elementDetail.RequiredMergeStatus);
-            Debug.Log("E651: " + query.QueryArea+ $" and outUV is {element.UvBase}");
+                    //Debug.Log("E651: " + query.QueryArea+ $" and outUV is {element.UvBase}");
                 }
                 else if (type == TerrainDescriptionElementTypeEnum.NORMAL_ARRAY)
                 {

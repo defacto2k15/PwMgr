@@ -72,11 +72,11 @@ void CSRoad_Engrave(uint3 id : SV_DispatchThreadID) {
 		float slopeFactor = (distanceToRoad - jittedStartSlopeProximity) / (jittedEndSlopeProximity - jittedStartSlopeProximity);
 		float jitterFactor = FractalNormalAround(globalPosition, float2(0, 0), 0.9, 1.1);
 
-		OutHeightTexture[id.xy] = 0;// lerp(edgeRoadHeight, thisHeight, slopeFactor * jitterFactor);
+		OutHeightTexture[id.xy] = lerp(edgeRoadHeight, thisHeight, slopeFactor * jitterFactor);
 	}
 	else {
 		float slopeFactor = distanceToRoad / jittedStartSlopeProximity;
-		OutHeightTexture[id.xy] = 0;// lerp(depressedRoadHeight, edgeRoadHeight, slopeFactor);
+		OutHeightTexture[id.xy] =  lerp(depressedRoadHeight, edgeRoadHeight, slopeFactor);
 	}
 }
 

@@ -325,7 +325,7 @@ namespace Assets.FinalExecution
         public TerrainDetailProviderConfiguration TerrainDetailProviderConfiguration =
             new TerrainDetailProviderConfiguration()
             {
-                UseTextureSavingToDisk = false,
+                UseTextureSavingToDisk = true,
                 UseTextureLoadingFromDisk = true
             };
 
