@@ -15,7 +15,6 @@ namespace Assets.FinalExecution
         public FEConfiguration FeConfiguration { get; set; }
 
         public bool WeldingEnabled = false;
-        public int Ring2IntensityPatternEnhancingSizeMultiplier => 12;
         public bool MakeTerrainVisible = true;
 
         public GRingGroundShapeProviderConfiguration GroundShapeProviderConfiguration =>

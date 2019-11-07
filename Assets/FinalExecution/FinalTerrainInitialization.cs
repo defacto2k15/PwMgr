@@ -161,10 +161,7 @@ namespace Assets.FinalExecution
                 _gRingConfiguration.GroundShapeProviderConfiguration,
                 _gRingConfiguration.TerrainMeshProviderConfiguration);
 
-            var gRing2PatchesCreator = CreateRing2PatchesCreator2();
-            var gRing2PatchesCreatorProxy = new GRing2PatchesCreatorProxy(gRing2PatchesCreator);
-            _ultraUpdatableContainer.AddOtherThreadProxy(gRing2PatchesCreatorProxy);
-
+            var gRing2PatchesCreatorProxy = _gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
 
             var gRing2NodeTerrainCreator = new GRing2NodeTerrainCreator(
                 orderGrabber,
@@ -195,15 +192,6 @@ namespace Assets.FinalExecution
                 _gameInitializationFields.Retrive<GRingSpotUpdater>()
             );
 
-            UTRing2PlateStamperProxy stamperProxy = new UTRing2PlateStamperProxy(
-                new Ring2PlateStamper(_configuration.Ring2PlateStamperConfiguration,
-                    _gameInitializationFields.Retrive<ComputeShaderContainerGameObject>()));
-            _ultraUpdatableContainer.Add(stamperProxy);
-
-            Ring2PatchStamplingOverseerFinalizer patchStamper = new Ring2PatchStamplingOverseerFinalizer(
-                stamperProxy,
-                _gameInitializationFields.Retrive<UTTextureRendererProxy>());
-
 
             var gStampedRing2NodeTerrainCreator = new GStampedRing2NodeTerrainCreator(
                 orderGrabber,
@@ -212,7 +200,7 @@ namespace Assets.FinalExecution
                 _gameInitializationFields.Retrive<ITerrainShapeDb>(),
                 unityCoordsCalculator,
                 gRing2PatchesCreatorProxy,
-                patchStamper,
+                _gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer >(),
                 _gameInitializationFields.Retrive<GRingSpotUpdater>(),
                 _gameInitializationFields.Retrive<HeightArrayWeldingPack>(),
                 _gRingConfiguration.GroundShapeProviderConfiguration,
@@ -227,7 +215,7 @@ namespace Assets.FinalExecution
                 gRing2PatchesCreatorProxy,
                 _gameInitializationFields.Retrive<GRingSpotUpdater>(),
                 _gameInitializationFields.Retrive<HeightArrayWeldingPack>(),
-                patchStamper,
+                _gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer >(),
                 _gRingConfiguration.GroundShapeProviderConfiguration,
                 _gRingConfiguration.TerrainMeshProviderConfiguration);
 
@@ -335,30 +323,6 @@ namespace Assets.FinalExecution
                         });
                 }
             });
-        }
-
-        private GRing2PatchesCreator CreateRing2PatchesCreator2()
-        {
-            var ring2ShaderRepository = Ring2PlateShaderRepository.Create();
-
-            var conciever = _gameInitializationFields.Retrive<TextureConcieverUTProxy>();
-            var detailEnhancer =
-                new Ring2IntensityPatternEnhancer(_gameInitializationFields.Retrive<UTTextureRendererProxy>(),
-                    _gRingConfiguration.Ring2IntensityPatternEnhancingSizeMultiplier);
-
-            var ring2PatchesPainterUtProxy = new Ring2PatchesPainterUTProxy(new Ring2PatchesPainter(
-                new Ring2MultishaderMaterialRepository(ring2ShaderRepository, Ring2ShaderNames.ShaderNames)));
-            _ultraUpdatableContainer.Add(ring2PatchesPainterUtProxy);
-
-            return new GRing2PatchesCreator(
-                _gameInitializationFields.Retrive<Ring2RegionsDatabase>(),
-                new GRing2RegionsToPatchTemplateConventer(),
-                new Ring2PatchTemplateCombiner(),
-                new Ring2PatchCreator(),
-                new Ring2IntensityPatternProvider(conciever, detailEnhancer),
-                new GRing2Deviser(),
-                _configuration.Ring2PatchesOverseerConfiguration
-            );
         }
 
         private void InitializeWelding()

@@ -130,11 +130,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9021260}
-  - component: {fileID: 9021261}
-  - component: {fileID: 9021263}
-  - component: {fileID: 9021262}
-  - component: {fileID: 9021264}
-  - component: {fileID: 9021266}
   - component: {fileID: 9021265}
   m_Layer: 0
   m_Name: EterrainRoot
@@ -157,89 +152,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9021261
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9021259}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_GeneratorAsset: {fileID: 0}
-  m_Script: {fileID: 11500000, guid: 0a5a6cc4a9dd78e41bb7a614f3fc41cd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NewSegmentXPosition: 0
-  NewSegmentYPosition: 0
-  NewSegmentHeight: 0.5
---- !u!114 &9021262
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9021259}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_GeneratorAsset: {fileID: 0}
-  m_Script: {fileID: 11500000, guid: 7b8aef38febc83748a6d2ba43987c6f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Traveller: {fileID: 291560940}
-  ObjectsToCreateCount: 10
-  ObjectsToCreateOnOneLine: 40
-  MaxFlatPosition: 40
-  DebugMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
-  DebugMeshMaterial: {fileID: 2100000, guid: cd463d83ebe4a5c41b4e0669292fe0da, type: 2}
-  GenerateObjects: 1
-  DrawObjectsWithInstancing: 1
-  DisplayDummyObjects: 1
-  DisplaySelectorAreas: 0
-  DisplayMergeRings: 0
-  RecalculateSectorsDivision: 1
---- !u!114 &9021263
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9021259}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_GeneratorAsset: {fileID: 0}
-  m_Script: {fileID: 11500000, guid: 256555b75079d7f4b818150a6f22a34a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Traveller: {fileID: 291560940}
---- !u!114 &9021264
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9021259}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_GeneratorAsset: {fileID: 0}
-  m_Script: {fileID: 11500000, guid: b502dc79a33b6c548a119cb57e11d2e5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &9021265
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9021259}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_GeneratorAsset: {fileID: 0}
-  m_Script: {fileID: 11500000, guid: da2c3c9e611b5b74985265fac87acc8a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Traveller: {fileID: 0}
---- !u!114 &9021266
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -249,7 +162,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_GeneratorAsset: {fileID: 0}
-  m_Script: {fileID: 11500000, guid: 27095989194b9ea4bb882508a422ae95, type: 3}
+  m_Script: {fileID: 11500000, guid: da2c3c9e611b5b74985265fac87acc8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Traveller: {fileID: 291560940}

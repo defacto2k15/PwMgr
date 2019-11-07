@@ -79,6 +79,10 @@ namespace Assets.FinalExecution
             initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
             initializingHelper.InitializeRing2RegionsDatabase();
 
+            var finalSurfacePathInitialization =
+                new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, new FeRing2PatchConfiguration(_configuration));
+            finalSurfacePathInitialization.Start();
+
             var finalTerrainInitialization = new FinalTerrainInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, FeGRingConfiguration);
             finalTerrainInitialization.Start();
 
