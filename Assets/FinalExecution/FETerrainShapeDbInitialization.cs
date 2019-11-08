@@ -99,13 +99,15 @@ namespace Assets.FinalExecution
             }
         }
 
-        public static TerrainShapeDb CreateTerrainShapeDb(TerrainDetailProvider terrainDetailProvider, CommonExecutorUTProxy commonExecutorUtProxy, TerrainDetailAlignmentCalculator terrainDetailAlignmentCalculator)
+        public static TerrainShapeDb CreateTerrainShapeDb(TerrainDetailProvider terrainDetailProvider, CommonExecutorUTProxy commonExecutorUtProxy,
+            TerrainDetailAlignmentCalculator terrainDetailAlignmentCalculator)
         {
             var terrainShapeDb = new TerrainShapeDb(
                 new CachedTerrainDetailProvider(
                     terrainDetailProvider,
-                    () => new InMemoryAssetsCache<IntRectangle, TextureWithSize>(new InMemoryAssetsLevel2Cache<IntRectangle, TextureWithSize>(
-                        new InMemoryCacheConfiguration(), new TextureWithSizeActionsPerformer(commonExecutorUtProxy))
+                    () => new InMemoryAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>(
+                        new InMemoryAssetsLevel2Cache<InternalTerrainDetailElementToken, TextureWithSize>(
+                            new InMemoryCacheConfiguration(), new TextureWithSizeActionsPerformer(commonExecutorUtProxy))
                     )),
                 terrainDetailAlignmentCalculator);
             return terrainShapeDb;

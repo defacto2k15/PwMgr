@@ -16,9 +16,9 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
     public class CachedTerrainDetailProvider 
     {
         private TerrainDetailProvider _terrainDetailProvider;
-        private Dictionary<CornersMergeStatus, Dictionary<TerrainDescriptionElementTypeEnum, IAssetsCache<IntRectangle, TextureWithSize>>> _memoryTerrainCaches;
+        private Dictionary<CornersMergeStatus, Dictionary<TerrainDescriptionElementTypeEnum, IAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>>> _memoryTerrainCaches;
 
-        public CachedTerrainDetailProvider(TerrainDetailProvider provider, Func<IAssetsCache<IntRectangle, TextureWithSize>> terrainCacheGenerator)
+        public CachedTerrainDetailProvider(TerrainDetailProvider provider, Func<IAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>> terrainCacheGenerator)
         {
             _memoryTerrainCaches = EnumUtils.GetValues<CornersMergeStatus>().ToDictionary(
                 mergeStatus => mergeStatus,
@@ -30,7 +30,8 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
 
         public Task RemoveTerrainDetailElementAsync(TerrainDetailElementToken token)
         {
-            return _memoryTerrainCaches[token.CornersMergeStatus][token.Type].RemoveAssetAsync(GenerateQuantisizedQueryRectangle(token.QueryArea));
+            return _memoryTerrainCaches[token.CornersMergeStatus][token.Type]
+                .RemoveAssetAsync(GenerateInternalToken(token.QueryArea, token.Resolution,token.Type, token.CornersMergeStatus));
         }
 
         public async Task<TokenizedTerrainDetailElement> GenerateHeightDetailElementAsync(MyRectangle alignedArea,
@@ -49,7 +50,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             CornersMergeStatus statusWeTarget;
             if (requiredMerge == RequiredCornersMergeStatus.NOT_IMPORTANT)
             {
-                if (_memoryTerrainCaches[CornersMergeStatus.MERGED][elementType].IsInCache(GenerateQuantisizedQueryRectangle(alignedArea)))
+                if (_memoryTerrainCaches[CornersMergeStatus.MERGED][elementType].IsInCache(GenerateInternalToken(alignedArea, resolution, elementType, CornersMergeStatus.MERGED)))
                 {
                     statusWeTarget = CornersMergeStatus.MERGED;
                 }
@@ -67,7 +68,8 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 statusWeTarget = CornersMergeStatus.MERGED;
             }
 
-            var queryOutput = await _memoryTerrainCaches[statusWeTarget][elementType].TryRetriveAsync(GenerateQuantisizedQueryRectangle(alignedArea));
+            var internalToken = GenerateInternalToken(alignedArea,resolution,elementType,statusWeTarget);
+            var queryOutput = await _memoryTerrainCaches[statusWeTarget][elementType].TryRetriveAsync(internalToken);
 
             if (queryOutput.Asset != null)
             {
@@ -87,7 +89,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             {
                 var detailElement = await detailElementGenerator(alignedArea, resolution, statusWeTarget);
                 var tokenizedElement = await _memoryTerrainCaches[statusWeTarget][elementType].AddAssetAsync(
-                    queryOutput.CreationObligationToken.Value, GenerateQuantisizedQueryRectangle(alignedArea), detailElement.Texture);
+                    queryOutput.CreationObligationToken.Value, internalToken, detailElement.Texture);
                 return new TokenizedTerrainDetailElement()
                 {
                     DetailElement = new TerrainDetailElement()
@@ -107,6 +109,12 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         {
             return await GenerateElementAsync(alignedArea, resolution, requiredMerge, 
                 TerrainDescriptionElementTypeEnum.NORMAL_ARRAY, _terrainDetailProvider.GenerateNormalDetailElementAsync);
+        }
+
+        private InternalTerrainDetailElementToken GenerateInternalToken(
+            MyRectangle rect, TerrainCardinalResolution resolution, TerrainDescriptionElementTypeEnum type, CornersMergeStatus mergeStatus)
+        {
+            return new InternalTerrainDetailElementToken(GenerateQuantisizedQueryRectangle(rect), resolution, type, mergeStatus);
         }
 
         private IntRectangle GenerateQuantisizedQueryRectangle(MyRectangle rect)
@@ -168,23 +176,29 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         }
     }
 
-    public class InternalTerrainDetailElementToken
+    public class InternalTerrainDetailElementToken : IFromQueryFilenameProvider
     {
-        public InternalTerrainDetailElementToken(MyRectangle queryArea, TerrainCardinalResolution resolution,
-            TerrainDescriptionElementTypeEnum type)
+        private IntRectangle _queryArea;
+        private TerrainCardinalResolution _resolution;
+        private TerrainDescriptionElementTypeEnum _type;
+        private CornersMergeStatus _mergeStatus;
+
+        public InternalTerrainDetailElementToken(IntRectangle queryArea, TerrainCardinalResolution resolution, TerrainDescriptionElementTypeEnum type, CornersMergeStatus mergeStatus)
         {
-            QueryArea = queryArea;
-            Resolution = resolution;
-            Type = type;
+            _queryArea = queryArea;
+            _resolution = resolution;
+            _type = type;
+            _mergeStatus = mergeStatus;
         }
 
-        public MyRectangle QueryArea;
-        public TerrainCardinalResolution Resolution;
-        public TerrainDescriptionElementTypeEnum Type;
+        public string ProvideFilename()
+        {
+            return $"{_type}_{_resolution}_{_mergeStatus}_{_queryArea.X}x{_queryArea.Y}_{_queryArea.Width}x{_queryArea.Height}";
+        }
 
         protected bool Equals(InternalTerrainDetailElementToken other)
         {
-            return Equals(QueryArea, other.QueryArea) && Equals(Resolution, other.Resolution) && Type == other.Type;
+            return Equals(_queryArea, other._queryArea) && Equals(_resolution, other._resolution) && _type == other._type && _mergeStatus == other._mergeStatus;
         }
 
         public override bool Equals(object obj)
@@ -199,16 +213,12 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         {
             unchecked
             {
-                var hashCode = (QueryArea != null ? QueryArea.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Resolution != null ? Resolution.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (int) Type;
+                var hashCode = (_queryArea != null ? _queryArea.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (_resolution != null ? _resolution.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (int) _type;
+                hashCode = (hashCode * 397) ^ (int) _mergeStatus;
                 return hashCode;
             }
-        }
-
-        public override string ToString()
-        {
-            return $"{nameof(QueryArea)}: {QueryArea}, {nameof(Resolution)}: {Resolution}, {nameof(Type)}: {Type}";
         }
     }
 

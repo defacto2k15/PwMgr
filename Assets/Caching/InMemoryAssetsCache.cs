@@ -20,7 +20,7 @@ namespace Assets.Caching
         Task RemoveAssetAsync(TQuery query);
     }
 
-    public class InMemoryAssetsCache<TQuery, TAsset> : IAssetsCache<TQuery, TAsset> where TAsset: class// where TQuery : IFromAssetFilenameProvider
+    public class InMemoryAssetsCache<TQuery, TAsset> : IAssetsCache<TQuery, TAsset> where TAsset: class where TQuery : IFromQueryFilenameProvider
     {
         private InMemoryAssetsLevel2Cache<TQuery,TAsset> _level2Cache;
         private Dictionary<int, DetailElemensUnderCreationSemaphore> _creationObligationDictionary = new Dictionary<int, DetailElemensUnderCreationSemaphore>();
@@ -137,12 +137,12 @@ namespace Assets.Caching
         }
     }
 
-    public interface IFromAssetFilenameProvider
+    public interface IFromQueryFilenameProvider
     {
         string ProvideFilename();
     }
 
-    public class InMemoryAssetsLevel2Cache<TQuery, TAsset > where TAsset : class// where TQuery : IFromAssetFilenameProvider
+    public class InMemoryAssetsLevel2Cache<TQuery, TAsset > where TAsset : class where TQuery : IFromQueryFilenameProvider
     {
         private MemoryCachableAssetsActionsPerformer<TAsset> _entityActionsPerformer;
         private InMemoryCacheConfiguration _configuration;
@@ -242,8 +242,7 @@ namespace Assets.Caching
  
         public async Task RemoveAssetElementAsync(TQuery queryArea)
         {
-            var foundElement =
-                TryRetriveAssetFromTree(queryArea);
+            var foundElement = TryRetriveAssetFromTree(queryArea);
             Preconditions.Assert(foundElement != null, "There is no element of given description");
             foundElement.ReferenceCount--;
             if (foundElement.ReferenceCount <= 0)
