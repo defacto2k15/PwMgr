@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.valTypes;
+using Assets.Ring2;
 using Assets.TerrainMat;
 using Assets.Utils;
 using Assets.Utils.MT;
@@ -15,57 +16,150 @@ using UnityEngine;
 
 namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
 {
-    public class TerrainDetailElementsCache
+    public interface IAssetsCache
     {
-        private CommonExecutorUTProxy _commonExecutor;
-        private TerrainDetailElementCacheConfiguration _configuration;
+        bool IsInCache(MyRectangle queryArea, TerrainCardinalResolution resolution,
+            TerrainDescriptionElementTypeEnum type);
 
-        private Dictionary<TerrainDescriptionElementTypeEnum, Quadtree<ReferenceCountedTerrainDetailElement>>
-            _activeTrees = new Dictionary<TerrainDescriptionElementTypeEnum, Quadtree<ReferenceCountedTerrainDetailElement>>();
+        Task<CacheQueryOutput> TryRetriveAsync(MyRectangle queryArea, TerrainCardinalResolution resolution, TerrainDescriptionElementTypeEnum type);
 
-        private List<InternalTerrainDetailElementToken> _nonReferencedElementsList = new List<InternalTerrainDetailElementToken>();
-        private int _elementsLength = 0;
+        Task<InternalTokenizedTerrainDetailElement> AddTerrainDetailElement(int creationObligationToken,
+            TextureWithSize texture,
+            MyRectangle queryArea, TerrainCardinalResolution resolution,
+            TerrainDescriptionElementTypeEnum type);
 
-        private Dictionary<int, DetailElemensUnderCreationSemaphore> _creationObligationDictionary =
-            new Dictionary<int, DetailElemensUnderCreationSemaphore>();
+        Task RemoveTerrainDetailElementAsync(InternalTerrainDetailElementToken token);
+    }
 
+    public class TerrainDetailElementsCache:IAssetsCache// ObligationProvidingTerrainDetailElementsCache : IAssetsCache
+    {
+        private TerrainDetailElementsLevel2Cache _level2Cache;
+        private Dictionary<int, DetailElemensUnderCreationSemaphore> _creationObligationDictionary = new Dictionary<int, DetailElemensUnderCreationSemaphore>();
         private int _lastObligationId = 0;
 
-        public TerrainDetailElementsCache(CommonExecutorUTProxy commonExecutor,
-            TerrainDetailElementCacheConfiguration configuration)
+        public TerrainDetailElementsCache(CommonExecutorUTProxy commonExecutor, TerrainDetailElementCacheConfiguration configuration)
         {
-            _commonExecutor = commonExecutor;
-            _configuration = configuration;
-            foreach (TerrainDescriptionElementTypeEnum aEnum in Enum.GetValues(
-                typeof(TerrainDescriptionElementTypeEnum)))
-            {
-                _activeTrees[aEnum] = new Quadtree<ReferenceCountedTerrainDetailElement>();
-            }
+            _level2Cache = new TerrainDetailElementsLevel2Cache(commonExecutor,configuration);
         }
 
-        public bool IsInCache(MyRectangle queryArea, TerrainCardinalResolution resolution,
-            TerrainDescriptionElementTypeEnum type)
+        public bool IsInCache(MyRectangle queryArea, TerrainCardinalResolution resolution, TerrainDescriptionElementTypeEnum type)
         {
-            return TryRetriveTerrainDetailElement(queryArea, resolution, type) != null;
+            return _level2Cache.IsInCache(queryArea);
         }
 
         public async Task<CacheQueryOutput> TryRetriveAsync(MyRectangle queryArea, TerrainCardinalResolution resolution, TerrainDescriptionElementTypeEnum type)
         {
-            ReferenceCountedTerrainDetailElement foundElement = null;
-
             var newToken = new InternalTerrainDetailElementToken(queryArea, resolution, type);
-            var elementUnderCreation =
-                _creationObligationDictionary.Values.FirstOrDefault(c => c.Token.Equals(newToken));
+            var elementUnderCreation = _creationObligationDictionary.Values.FirstOrDefault(c => c.Token.Equals(newToken));
             if (elementUnderCreation != null)
             {
                 await elementUnderCreation.Semaphore.Await();
-                foundElement = TryRetriveTerrainDetailElement(queryArea, resolution, type);
-                Preconditions.Assert(foundElement != null, "Cannot be. After waiting still no element!");
+                var detailElementAfterWaiting = _level2Cache.TryRetrive(newToken);
+                Preconditions.Assert(detailElementAfterWaiting!= null, "Impossible. Even after waiting, still no queryOutput");
+
+                return new CacheQueryOutput()
+                {
+                    CreationObligationToken = null,
+                    DetailElement =
+                        new InternalTokenizedTerrainDetailElement()
+                        {
+                            DetailElement = detailElementAfterWaiting,
+                            Token = newToken
+                        }
+                };
             }
-            else
+
+            var  detailElement = _level2Cache.TryRetrive(newToken);
+            if ( detailElement != null)
             {
-                foundElement = TryRetriveTerrainDetailElement(queryArea, resolution, type);
+                return new CacheQueryOutput()
+                {
+                    CreationObligationToken = null,
+                    DetailElement =
+                        new InternalTokenizedTerrainDetailElement()
+                        {
+                            DetailElement = detailElement,
+                            Token = newToken
+                        }
+                };
             }
+
+            //Debug.Log("T88 Adding creation obligation!");
+            var obligationToken = _lastObligationId++;
+            var semaphore = new DetailElemensUnderCreationSemaphore()
+            {
+                Semaphore = new TcsSemaphore(),
+                Token = newToken
+            };
+            _creationObligationDictionary[obligationToken] = semaphore;
+
+            return new CacheQueryOutput()
+            {
+                CreationObligationToken = obligationToken,
+                DetailElement = null
+            };
+        }
+
+        public async Task<InternalTokenizedTerrainDetailElement> AddTerrainDetailElement(int creationObligationToken, TextureWithSize texture, MyRectangle queryArea, TerrainCardinalResolution resolution,
+            TerrainDescriptionElementTypeEnum type)
+        {
+            await _level2Cache.AddTerrainDetailElement(creationObligationToken, texture, queryArea, resolution);
+
+            var semaphore = _creationObligationDictionary[creationObligationToken];
+            _creationObligationDictionary.Remove(creationObligationToken);
+            semaphore.Semaphore.Set();
+
+            return new InternalTokenizedTerrainDetailElement()
+            {
+                DetailElement = new TerrainDetailElement()
+                {
+                    Texture = texture,
+                    Resolution = resolution,
+                    DetailArea = queryArea,
+                },
+                Token = new InternalTerrainDetailElementToken(queryArea,resolution,type)
+            };
+        }
+
+        public Task RemoveTerrainDetailElementAsync(InternalTerrainDetailElementToken token)
+        {
+            return _level2Cache.RemoveTerrainDetailElementAsync(token);
+        }
+
+        private class DetailElemensUnderCreationSemaphore
+        {
+            public InternalTerrainDetailElementToken Token;
+            public TcsSemaphore Semaphore;
+        }
+    }
+
+    public class TerrainDetailElementsLevel2Cache 
+    {
+        private CommonExecutorUTProxy _commonExecutor;
+        private TerrainDetailElementCacheConfiguration _configuration;
+
+        private Dictionary<IntRectangle, ReferenceCountedTerrainDetailElement> _activeTree = new Dictionary<IntRectangle, ReferenceCountedTerrainDetailElement>();
+
+        private List<InternalTerrainDetailElementToken> _nonReferencedElementsList = new List<InternalTerrainDetailElementToken>();
+        private int _elementsLength = 0;
+
+        public TerrainDetailElementsLevel2Cache(CommonExecutorUTProxy commonExecutor, TerrainDetailElementCacheConfiguration configuration)
+        {
+            _commonExecutor = commonExecutor;
+            _configuration = configuration;
+            _activeTree = new Dictionary<IntRectangle, ReferenceCountedTerrainDetailElement>();
+        }
+
+        public bool IsInCache(MyRectangle queryArea)
+        {
+            return TryRetriveTerrainDetailElement(queryArea) != null;
+        }
+
+        public TerrainDetailElement TryRetrive(InternalTerrainDetailElementToken newToken)
+        {
+            ReferenceCountedTerrainDetailElement foundElement = null;
+
+            foundElement = TryRetriveTerrainDetailElement(newToken.QueryArea);
 
             if (foundElement != null)
             {
@@ -94,67 +188,45 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 }
 
                 foundElement.ReferenceCount++;
-                return new CacheQueryOutput()
-                {
-                    CreationObligationToken = null,
-                    DetailElement =
-                        new InternalTokenizedTerrainDetailElement()
-                        {
-                            DetailElement = foundElement.Element,
-                            Token = newToken
-                        }
-                };
+                return foundElement.Element;
             }
             else
             {
-                //Debug.Log("T88 Adding creation obligation!");
-                var obligationToken = _lastObligationId++;
-                var semaphore = new DetailElemensUnderCreationSemaphore()
-                {
-                    Semaphore = new TcsSemaphore(),
-                    Token = newToken
-                };
-                _creationObligationDictionary[obligationToken] = semaphore;
-
-                return new CacheQueryOutput()
-                {
-                    CreationObligationToken = obligationToken,
-                    DetailElement = null
-                };
+                return null;
             }
         }
 
-        private ReferenceCountedTerrainDetailElement TryRetriveTerrainDetailElement(
-            MyRectangle queryArea, TerrainCardinalResolution resolution,
-            TerrainDescriptionElementTypeEnum type)
+        private ReferenceCountedTerrainDetailElement TryRetriveTerrainDetailElement(MyRectangle queryArea)
         {
-            var env = queryArea.ToEnvelope();
-            var firstFound = _activeTrees[type].Query(env);
-            var geoEnvelope = MyNetTopologySuiteUtils.ToGeometryEnvelope(env);
-            var intersecting = firstFound.Where(c => MyNetTopologySuiteUtils
-                .ToGeometryEnvelope(c.Element.DetailArea.ToEnvelope()).Intersects(geoEnvelope)).ToList();
-            //AssertNoPartialIntersection(geoEnvelope, intersecting.Select(c => c.Element).ToList());
-
-            var ofGoodResolution = intersecting
-                .Where(c => IsMeaningfulIntersection(geoEnvelope, c.Element) && c.Element.Resolution == resolution)
-                .ToList();
-
-            //var bestResolution = ofGoodResolution.OrderByDescending(c => c.Resolution.PixelsPerMeter);
-            var foundElement = ofGoodResolution.FirstOrDefault();
-
-            return foundElement;
+            var quantisizedQueryRect = GenerateQuantisizedQueryRectangle(queryArea);
+            if (_activeTree.ContainsKey(quantisizedQueryRect))
+            {
+                return _activeTree[quantisizedQueryRect];
+            }
+            else
+            {
+                return null;
+            }
         }
 
-        public async Task<InternalTokenizedTerrainDetailElement> AddTerrainDetailElement(int creationObligationToken,
-            TextureWithSize texture,
-            MyRectangle queryArea, TerrainCardinalResolution resolution,
-            TerrainDescriptionElementTypeEnum type)
+        private IntRectangle GenerateQuantisizedQueryRectangle(MyRectangle rect)
         {
-            var activeTreeElement = TryRetriveTerrainDetailElement(queryArea, resolution, type);
-            Preconditions.Assert(activeTreeElement == null,
-                "There arleady is one detailElement of given description:  res: " + resolution + " type: " + type +
-                " qa: " + queryArea);
+            return new IntRectangle(
+                Mathf.RoundToInt(rect.X / _configuration.QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Y / _configuration.QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Width / _configuration.QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Height / _configuration.QueryRectangleQuantLength)
+            );
+        }
 
+        public Task AddTerrainDetailElement(int creationObligationToken,
+            TextureWithSize texture,
+            MyRectangle queryArea, TerrainCardinalResolution resolution)
+        {
+            var activeTreeElement = TryRetriveTerrainDetailElement(queryArea);
+            Preconditions.Assert(activeTreeElement == null,
+                "There arleady is one detailElement of given description:  res: " + resolution+
+                " qa: " + queryArea);
 
             var newElement = new ReferenceCountedTerrainDetailElement()
             {
@@ -166,33 +238,13 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 },
                 ReferenceCount = 1
             };
-            AddElementToActiveTree(queryArea, type, newElement);
-            await ClearNonReferencedElements();
-
-            DetailElemensUnderCreationSemaphore semaphore = null;
-            semaphore = _creationObligationDictionary[creationObligationToken];
-            _creationObligationDictionary.Remove(creationObligationToken);
-            semaphore.Semaphore.Set();
-
-            var token = new InternalTerrainDetailElementToken(queryArea, resolution, type);
-
-            //Debug.Log("T96 adding detailElement: succeded: res: "+resolution + " type: " + type + " qa: " + queryArea);
-            return new InternalTokenizedTerrainDetailElement()
-            {
-                DetailElement = new TerrainDetailElement()
-                {
-                    DetailArea = queryArea,
-                    Resolution = resolution,
-                    Texture = texture
-                },
-                Token = token
-            };
+            AddElementToActiveTree(queryArea, newElement);
+            return ClearNonReferencedElements();
         }
 
-        private void AddElementToActiveTree(MyRectangle queryArea, TerrainDescriptionElementTypeEnum type,
-            ReferenceCountedTerrainDetailElement newElement)
+        private void AddElementToActiveTree(MyRectangle queryArea, ReferenceCountedTerrainDetailElement newElement)
         {
-            _activeTrees[type].Insert(queryArea.ToEnvelope(), newElement);
+            _activeTree[GenerateQuantisizedQueryRectangle(queryArea)] = newElement;
             var tex = newElement.Element.Texture;
             _elementsLength += ComputeSizeOfTexture(tex);
         }
@@ -205,7 +257,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         public async Task RemoveTerrainDetailElementAsync(InternalTerrainDetailElementToken token)
         {
             var foundElement =
-                TryRetriveTerrainDetailElement(token.QueryArea, token.Resolution, token.Type);
+                TryRetriveTerrainDetailElement(token.QueryArea);
             Preconditions.Assert(foundElement != null, "There is no element of given description");
             foundElement.ReferenceCount--;
             //Debug.Log("T97 removing detailElement: res: "+token.Resolution+" type: "+token.Type+" qa: "+token.QueryArea+" succeded: ");
@@ -238,7 +290,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 var tex0 = foundElement.Element.Texture;
                 GameObject.Destroy(tex0.Texture);
             });
-            var removalResult = _activeTrees[token.Type].Remove(token.QueryArea.ToEnvelope(), foundElement);
+            var removalResult = _activeTree.Remove(GenerateQuantisizedQueryRectangle(token.QueryArea));
             Preconditions.Assert(removalResult, "Removing failed");
             var tex = foundElement.Element.Texture;
             _elementsLength -= ComputeSizeOfTexture(tex);
@@ -252,44 +304,10 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 var tokenOfElementToRemove = _nonReferencedElementsList[0];
                 _nonReferencedElementsList.RemoveAt(0);
 
-                var elementToRemove = TryRetriveTerrainDetailElement(tokenOfElementToRemove.QueryArea,
-                    tokenOfElementToRemove.Resolution, tokenOfElementToRemove.Type);
+                var elementToRemove = TryRetriveTerrainDetailElement(tokenOfElementToRemove.QueryArea);
                 Preconditions.Assert(elementToRemove != null, "Element we wish to delete is not in activeTree");
                 Debug.Log("T77 Removing element from non-referenced!");
                 await DeleteElement(tokenOfElementToRemove, elementToRemove);
-            }
-        }
-
-
-        private bool IsMeaningfulIntersection(IGeometry queryArea, TerrainDetailElement element)
-        {
-            var elementEnv = MyNetTopologySuiteUtils.ToGeometryEnvelope(element.DetailArea.ToEnvelope());
-            var intersectionArea = elementEnv.Intersection(queryArea).Area;
-            var queryAreasArea = queryArea.Area;
-            var elementAreasArea = elementEnv.Area;
-
-            double TOLERANCE = 0.001;
-            Preconditions.Assert(
-                intersectionArea < TOLERANCE ||
-                Math.Abs(intersectionArea - queryAreasArea) < TOLERANCE ||
-                Math.Abs(intersectionArea - elementAreasArea) < TOLERANCE, "There is partial intersection");
-            return intersectionArea > TOLERANCE;
-        }
-
-        private void AssertNoPartialIntersection(IGeometry queryArea, List<TerrainDetailElement> intersecting)
-        {
-            foreach (var element in intersecting)
-            {
-                var elementEnv = MyNetTopologySuiteUtils.ToGeometryEnvelope(element.DetailArea.ToEnvelope());
-                var intersectionArea = elementEnv.Intersection(queryArea).Area;
-                var queryAreasArea = queryArea.Area;
-                var elementAreasArea = elementEnv.Area;
-
-                double TOLERANCE = 0.001;
-                Preconditions.Assert(
-                    intersectionArea < TOLERANCE ||
-                    Math.Abs(intersectionArea - queryAreasArea) < TOLERANCE ||
-                    Math.Abs(intersectionArea - elementAreasArea) < TOLERANCE, "There is partial intersection");
             }
         }
 
@@ -298,17 +316,12 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             public TerrainDetailElement Element;
             public int ReferenceCount;
         }
-
-        private class DetailElemensUnderCreationSemaphore
-        {
-            public InternalTerrainDetailElementToken Token;
-            public TcsSemaphore Semaphore;
-        }
     }
 
     public class TerrainDetailElementCacheConfiguration
     {
         public long MaxTextureMemoryUsed = 1024 * 1024 * 512 * 2;
+        public int QueryRectangleQuantLength = 3;
     }
 
     public class InternalTokenizedTerrainDetailElement

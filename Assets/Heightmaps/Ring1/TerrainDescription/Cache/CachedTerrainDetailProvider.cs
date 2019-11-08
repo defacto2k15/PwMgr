@@ -5,27 +5,28 @@ using System.Text;
 using System.Threading.Tasks;
 using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.valTypes;
+using Assets.Utils;
 
 namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
 {
     public class CachedTerrainDetailProvider 
     {
         private TerrainDetailProvider _terrainDetailProvider;
-        private Dictionary<CornersMergeStatus, TerrainDetailElementsCache> _terrainCaches;
+        private Dictionary<CornersMergeStatus, Dictionary<TerrainDescriptionElementTypeEnum, IAssetsCache>> _terrainCaches;
 
-        public CachedTerrainDetailProvider(TerrainDetailProvider provider, Func<TerrainDetailElementsCache> terrainCacheGenerator)
+        public CachedTerrainDetailProvider(TerrainDetailProvider provider, Func<IAssetsCache> terrainCacheGenerator)
         {
-            _terrainCaches = new Dictionary<CornersMergeStatus, TerrainDetailElementsCache>()
-            {
-                {CornersMergeStatus.MERGED, terrainCacheGenerator()},
-                {CornersMergeStatus.NOT_MERGED, terrainCacheGenerator()},
-            };
+            _terrainCaches = EnumUtils.GetValues<CornersMergeStatus>().ToDictionary(
+                mergeStatus => mergeStatus,
+                mergeStatus => EnumUtils.GetValues<TerrainDescriptionElementTypeEnum>().ToDictionary(type => type, type => terrainCacheGenerator())
+            );
+
             _terrainDetailProvider = provider;
         }
 
         public Task RemoveTerrainDetailElementAsync(TerrainDetailElementToken token)
         {
-            return _terrainCaches[token.CornersMergeStatus].RemoveTerrainDetailElementAsync(token.InternalToken);
+            return _terrainCaches[token.CornersMergeStatus][token.Type].RemoveTerrainDetailElementAsync(token.InternalToken);
         }
 
         public async Task<TokenizedTerrainDetailElement> GenerateHeightDetailElementAsync(MyRectangle alignedArea,
@@ -44,7 +45,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             CornersMergeStatus statusWeTarget;
             if (requiredMerge == RequiredCornersMergeStatus.NOT_IMPORTANT)
             {
-                if (_terrainCaches[CornersMergeStatus.MERGED].IsInCache(alignedArea, resolution, elementType))
+                if (_terrainCaches[CornersMergeStatus.MERGED][elementType].IsInCache(alignedArea, resolution, elementType))
                 {
                     statusWeTarget = CornersMergeStatus.MERGED;
                 }
@@ -58,7 +59,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 statusWeTarget = CornersMergeStatus.MERGED;
             }
 
-            var queryOutput = await _terrainCaches[statusWeTarget].TryRetriveAsync(alignedArea, resolution, elementType);
+            var queryOutput = await _terrainCaches[statusWeTarget][elementType].TryRetriveAsync(alignedArea, resolution, elementType);
 
             if (queryOutput.DetailElement != null)
             {
@@ -71,7 +72,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             else
             {
                 var detailElement = await detailElementGenerator(alignedArea, resolution, requiredMerge);
-                var tokenizedElement = await _terrainCaches[detailElement.CornersMergeStatus].AddTerrainDetailElement(
+                var tokenizedElement = await _terrainCaches[detailElement.CornersMergeStatus][elementType].AddTerrainDetailElement(
                     queryOutput.CreationObligationToken.Value, detailElement.Texture, detailElement.DetailArea, resolution, elementType);
                 return new TokenizedTerrainDetailElement()
                 {
