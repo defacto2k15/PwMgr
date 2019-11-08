@@ -71,5 +71,10 @@ namespace Assets.Utils
         {
             return CalculateTextureSize(area, new Vector2(pixelPerUnit, pixelPerUnit));
         }
+
+        public static MyRectangle MoveBy(MyRectangle rect, Vector2 delta)
+        {
+            return new MyRectangle(rect.X+delta.x, rect.Y+delta.y, rect.Width, rect.Height);
+        }
     }
 }

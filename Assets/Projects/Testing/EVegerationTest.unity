@@ -352,7 +352,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   FeGRingConfiguration:
-    WeldingEnabled: 0
+    WeldingEnabled: 1
     MakeTerrainVisible: 1
     Ring1GlobalSideLength: 92160
   VegetationConfiguration:
