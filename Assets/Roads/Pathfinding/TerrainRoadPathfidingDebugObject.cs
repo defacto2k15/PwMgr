@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Assets.Caching;
 using Assets.ComputeShaders;
+using Assets.FinalExecution;
 using Assets.Heightmaps.Ring1;
 using Assets.Heightmaps.Ring1.Creator;
 using Assets.Heightmaps.Ring1.MeshGeneration;
@@ -10,6 +12,7 @@ using Assets.Heightmaps.Ring1.TerrainDescription.Cache;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.MeshGeneration;
+using Assets.Ring2;
 using Assets.Roads.Pathfinding.AStar;
 using Assets.Roads.Pathfinding.TerrainPath;
 using Assets.TerrainMat.Stain;
@@ -424,12 +427,7 @@ namespace Assets.Roads.Pathfinding
             TerrainDetailProvider terrainDetailProvider = Ring1DebugObjectV2.CreateTerrainDetailProvider(
                 terrainDetailGenerator, commonExecutorUtProxy, useTextureSavingToDisk);
 
-            var terrainShapeDb = new TerrainShapeDb(
-                new CachedTerrainDetailProvider(
-                    terrainDetailProvider,
-                    () => new TerrainDetailElementsCache(commonExecutorUtProxy,
-                        new TerrainDetailElementCacheConfiguration())),
-                new TerrainDetailAlignmentCalculator(240));
+            var terrainShapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy, new TerrainDetailAlignmentCalculator(240));
             _terrainShapeDbProxy = new TerrainShapeDbProxy(terrainShapeDb);
             terrainDetailGenerator.SetBaseTerrainDetailProvider(BaseTerrainDetailProvider.CreateFrom(terrainShapeDb));
 

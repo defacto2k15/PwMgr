@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Assets.Caching;
 using Assets.Habitat;
 using Assets.Heightmaps;
 using Assets.Heightmaps.Ring1.RenderingTex;
@@ -284,8 +285,8 @@ namespace Assets.FinalExecution
         public string StainTerrainServicePath => _filePathsConfiguration.StainTerrainServicePath;
 
         ///////////////////// Terrain Shape Db
-        public TerrainDetailElementCacheConfiguration TerrainDetailElementCacheConfiguration =
-            new TerrainDetailElementCacheConfiguration()
+        public InMemoryCacheConfiguration InMemoryCacheConfiguration =
+            new InMemoryCacheConfiguration()
             {
                 MaxTextureMemoryUsed = 1024 * 1024 * 512 * 2
             };

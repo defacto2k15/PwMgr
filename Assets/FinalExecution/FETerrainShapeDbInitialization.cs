@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.Caching;
 using Assets.ComputeShaders;
 using Assets.Heightmaps.Ring1;
 using Assets.Heightmaps.Ring1.Creator;
@@ -16,6 +17,7 @@ using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Heightmaps.Ring1.VisibilityTexture;
 using Assets.PreComputation;
 using Assets.PreComputation.Configurations;
+using Assets.Ring2;
 using Assets.Roads;
 using Assets.Roads.Engraving;
 using Assets.Roads.TerrainFeature;
@@ -74,12 +76,8 @@ namespace Assets.FinalExecution
                     CreateTerrainDetailProvider(terrainDetailGenerator,
                         _gameInitializationFields.Retrive<CommonExecutorUTProxy>());
 
-                var terrainShapeDb = new TerrainShapeDb(
-                    new CachedTerrainDetailProvider(
-                        terrainDetailProvider,
-                        () => new TerrainDetailElementsCache(_gameInitializationFields.Retrive<CommonExecutorUTProxy>(),
-                            _configuration.TerrainDetailElementCacheConfiguration)),
-                    _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
+                var commonExecutorUtProxy = _gameInitializationFields.Retrive<CommonExecutorUTProxy>();
+                var terrainShapeDb = CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy, _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
 
                 TerrainShapeDbProxy terrainShapeDbProxy = new TerrainShapeDbProxy(terrainShapeDb);
                 var baseTerrainDetailProvider = BaseTerrainDetailProvider.CreateFrom(terrainShapeDb);
@@ -99,6 +97,18 @@ namespace Assets.FinalExecution
                 terrainShapeDbProxy = new RecordingTerrainShapeDb(terrainShapeDbProxy);
                 _gameInitializationFields.SetField((RecordingTerrainShapeDb) terrainShapeDbProxy);
             }
+        }
+
+        public static TerrainShapeDb CreateTerrainShapeDb(TerrainDetailProvider terrainDetailProvider, CommonExecutorUTProxy commonExecutorUtProxy, TerrainDetailAlignmentCalculator terrainDetailAlignmentCalculator)
+        {
+            var terrainShapeDb = new TerrainShapeDb(
+                new CachedTerrainDetailProvider(
+                    terrainDetailProvider,
+                    () => new InMemoryAssetsCache<IntRectangle, TextureWithSize>(new InMemoryAssetsLevel2Cache<IntRectangle, TextureWithSize>(
+                        new InMemoryCacheConfiguration(), new TextureWithSizeActionsPerformer(commonExecutorUtProxy))
+                    )),
+                terrainDetailAlignmentCalculator);
+            return terrainShapeDb;
         }
 
         private TerrainDetailGenerator CreateTerrainDetailGenerator(

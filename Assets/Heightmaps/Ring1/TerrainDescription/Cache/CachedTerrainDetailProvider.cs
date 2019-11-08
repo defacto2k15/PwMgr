@@ -3,20 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Assets.Caching;
 using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.valTypes;
+using Assets.Ring2;
 using Assets.Utils;
+using Assets.Utils.Textures;
+using UnityEngine;
 
 namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
 {
     public class CachedTerrainDetailProvider 
     {
         private TerrainDetailProvider _terrainDetailProvider;
-        private Dictionary<CornersMergeStatus, Dictionary<TerrainDescriptionElementTypeEnum, IAssetsCache>> _terrainCaches;
+        private Dictionary<CornersMergeStatus, Dictionary<TerrainDescriptionElementTypeEnum, IAssetsCache<IntRectangle, TextureWithSize>>> _memoryTerrainCaches;
 
-        public CachedTerrainDetailProvider(TerrainDetailProvider provider, Func<IAssetsCache> terrainCacheGenerator)
+        public CachedTerrainDetailProvider(TerrainDetailProvider provider, Func<IAssetsCache<IntRectangle, TextureWithSize>> terrainCacheGenerator)
         {
-            _terrainCaches = EnumUtils.GetValues<CornersMergeStatus>().ToDictionary(
+            _memoryTerrainCaches = EnumUtils.GetValues<CornersMergeStatus>().ToDictionary(
                 mergeStatus => mergeStatus,
                 mergeStatus => EnumUtils.GetValues<TerrainDescriptionElementTypeEnum>().ToDictionary(type => type, type => terrainCacheGenerator())
             );
@@ -26,7 +30,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
 
         public Task RemoveTerrainDetailElementAsync(TerrainDetailElementToken token)
         {
-            return _terrainCaches[token.CornersMergeStatus][token.Type].RemoveTerrainDetailElementAsync(token.InternalToken);
+            return _memoryTerrainCaches[token.CornersMergeStatus][token.Type].RemoveAssetAsync(GenerateQuantisizedQueryRectangle(token.QueryArea));
         }
 
         public async Task<TokenizedTerrainDetailElement> GenerateHeightDetailElementAsync(MyRectangle alignedArea,
@@ -45,7 +49,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             CornersMergeStatus statusWeTarget;
             if (requiredMerge == RequiredCornersMergeStatus.NOT_IMPORTANT)
             {
-                if (_terrainCaches[CornersMergeStatus.MERGED][elementType].IsInCache(alignedArea, resolution, elementType))
+                if (_memoryTerrainCaches[CornersMergeStatus.MERGED][elementType].IsInCache(GenerateQuantisizedQueryRectangle(alignedArea)))
                 {
                     statusWeTarget = CornersMergeStatus.MERGED;
                 }
@@ -59,25 +63,37 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 statusWeTarget = CornersMergeStatus.MERGED;
             }
 
-            var queryOutput = await _terrainCaches[statusWeTarget][elementType].TryRetriveAsync(alignedArea, resolution, elementType);
+            var queryOutput = await _memoryTerrainCaches[statusWeTarget][elementType].TryRetriveAsync(GenerateQuantisizedQueryRectangle(alignedArea));
 
-            if (queryOutput.DetailElement != null)
+            if (queryOutput.Asset != null)
             {
                 return new TokenizedTerrainDetailElement()
                 {
-                    DetailElement = queryOutput.DetailElement.DetailElement,
-                    Token = new TerrainDetailElementToken(queryOutput.DetailElement.Token, statusWeTarget)
+                    DetailElement = new TerrainDetailElement()
+                    {
+                        Texture = queryOutput.Asset,
+                        Resolution = resolution,
+                        DetailArea = alignedArea,
+                        CornersMergeStatus = statusWeTarget
+                    },
+                    Token = new TerrainDetailElementToken(new InternalTerrainDetailElementToken(alignedArea,resolution,elementType), statusWeTarget)
                 };
             }
             else
             {
                 var detailElement = await detailElementGenerator(alignedArea, resolution, requiredMerge);
-                var tokenizedElement = await _terrainCaches[detailElement.CornersMergeStatus][elementType].AddTerrainDetailElement(
-                    queryOutput.CreationObligationToken.Value, detailElement.Texture, detailElement.DetailArea, resolution, elementType);
+                var tokenizedElement = await _memoryTerrainCaches[detailElement.CornersMergeStatus][elementType].AddAssetAsync(
+                    queryOutput.CreationObligationToken.Value, GenerateQuantisizedQueryRectangle(alignedArea), detailElement.Texture);
                 return new TokenizedTerrainDetailElement()
                 {
-                    DetailElement = tokenizedElement.DetailElement,
-                    Token = new TerrainDetailElementToken(tokenizedElement.Token, detailElement.CornersMergeStatus)
+                    DetailElement = new TerrainDetailElement()
+                    {
+                        Texture = tokenizedElement.Asset,
+                        Resolution = resolution,
+                        DetailArea = alignedArea,
+                        CornersMergeStatus =  statusWeTarget
+                    },
+                    Token = new TerrainDetailElementToken(new InternalTerrainDetailElementToken(alignedArea,resolution,elementType), detailElement.CornersMergeStatus)
                 };
             }
         }
@@ -87,6 +103,17 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         {
             return await GenerateElementAsync(alignedArea, resolution, requiredMerge, 
                 TerrainDescriptionElementTypeEnum.NORMAL_ARRAY, _terrainDetailProvider.GenerateNormalDetailElementAsync);
+        }
+
+        private IntRectangle GenerateQuantisizedQueryRectangle(MyRectangle rect)
+        {
+            var QueryRectangleQuantLength = 5; //TODO to configuration
+            return new IntRectangle(
+                Mathf.RoundToInt(rect.X /QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Y /QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Width /QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Height /QueryRectangleQuantLength)
+            );
         }
     }
 
@@ -130,4 +157,55 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             }
         }
     }
+
+    public class InternalTerrainDetailElementToken
+    {
+        public InternalTerrainDetailElementToken(MyRectangle queryArea, TerrainCardinalResolution resolution,
+            TerrainDescriptionElementTypeEnum type)
+        {
+            QueryArea = queryArea;
+            Resolution = resolution;
+            Type = type;
+        }
+
+        public MyRectangle QueryArea;
+        public TerrainCardinalResolution Resolution;
+        public TerrainDescriptionElementTypeEnum Type;
+
+        protected bool Equals(InternalTerrainDetailElementToken other)
+        {
+            return Equals(QueryArea, other.QueryArea) && Equals(Resolution, other.Resolution) && Type == other.Type;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((InternalTerrainDetailElementToken) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = (QueryArea != null ? QueryArea.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Resolution != null ? Resolution.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (int) Type;
+                return hashCode;
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(QueryArea)}: {QueryArea}, {nameof(Resolution)}: {Resolution}, {nameof(Type)}: {Type}";
+        }
+    }
+
+    public class TokenizedTerrainDetailElement
+    {
+        public TerrainDetailElement DetailElement;
+        public TerrainDetailElementToken Token;
+    }
+
 }

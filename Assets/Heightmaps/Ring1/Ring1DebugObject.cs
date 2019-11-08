@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Assets.Caching;
+using Assets.FinalExecution;
 using Assets.Heightmaps.Preparment;
 using Assets.Heightmaps.Ring1.Creator;
 using Assets.Heightmaps.Ring1.MeshGeneration;
@@ -13,9 +15,11 @@ using Assets.Heightmaps.Ring1.treeNodeListener;
 using Assets.Heightmaps.Ring1.TerrainDescription;
 using Assets.Heightmaps.Ring1.TerrainDescription.Cache;
 using Assets.Heightmaps.Ring1.VisibilityTexture;
+using Assets.Ring2;
 using Assets.Utils;
 using Assets.Utils.MT;
 using Assets.Utils.Services;
+using Assets.Utils.Textures;
 using Assets.Utils.UTUpdating;
 using UnityEngine;
 
@@ -97,12 +101,7 @@ namespace Assets.Heightmaps.Ring1
             _updatableContainer.AddUpdatableElement(commonExecutor);
 
             TerrainShapeDbProxy terrainShapeDbProxy = new TerrainShapeDbProxy(
-                new TerrainShapeDb(
-                new CachedTerrainDetailProvider(
-                    null, //todo here
-                    () => new TerrainDetailElementsCache(commonExecutor,
-                        new TerrainDetailElementCacheConfiguration())),
-                new TerrainDetailAlignmentCalculator(240)));
+                FETerrainShapeDbInitialization.CreateTerrainShapeDb(null /*todo here*/, commonExecutor, new TerrainDetailAlignmentCalculator(240)));
 
             _otherThreadActionPairs.Add(new OtherThreadProxyAndActionPair()
             {

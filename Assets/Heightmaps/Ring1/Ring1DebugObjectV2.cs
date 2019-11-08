@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.Caching;
 using Assets.ComputeShaders;
+using Assets.FinalExecution;
 using Assets.Heightmaps.GRing;
 using Assets.Heightmaps.GRing.DynamicLod;
 using Assets.Heightmaps.Ring1.Creator;
@@ -146,12 +148,7 @@ namespace Assets.Heightmaps.Ring1
             TerrainDetailProvider terrainDetailProvider =
                 CreateTerrainDetailProvider(terrainDetailGenerator, commonExecutorUtProxy);
 
-            var terrainShapeDb = new TerrainShapeDb(
-                new CachedTerrainDetailProvider(
-                    terrainDetailProvider,
-                    () => new TerrainDetailElementsCache(commonExecutorUtProxy,
-                        new TerrainDetailElementCacheConfiguration())),
-                new TerrainDetailAlignmentCalculator(240));
+            var terrainShapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy, new TerrainDetailAlignmentCalculator(240));
             TerrainShapeDbProxy terrainShapeDbProxy = new TerrainShapeDbProxy(terrainShapeDb);
             terrainDetailGenerator.SetBaseTerrainDetailProvider(BaseTerrainDetailProvider.CreateFrom(terrainShapeDb));
 

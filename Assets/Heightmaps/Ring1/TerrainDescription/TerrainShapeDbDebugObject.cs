@@ -4,13 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Assets.Caching;
 using Assets.ComputeShaders;
+using Assets.FinalExecution;
 using Assets.Heightmaps.Ring1.Creator;
 using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.TerrainDescription.Cache;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.MeshGeneration;
+using Assets.Ring2;
 using Assets.Utils;
 using Assets.Utils.MT;
 using Assets.Utils.Services;
@@ -64,11 +67,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
                     Texture = mainTexture
                 });
                 TerrainDetailProvider terrainDetailProvider = CreateTerrainDetailProvider(generator);
-                var db = new TerrainShapeDb(
-                    new CachedTerrainDetailProvider(
-                        terrainDetailProvider,
-                        () => new TerrainDetailElementsCache(_commonExecutorUtProxy,
-                            new TerrainDetailElementCacheConfiguration())),
+                var db = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, _commonExecutorUtProxy,
                     new TerrainDetailAlignmentCalculator(240));
 
 

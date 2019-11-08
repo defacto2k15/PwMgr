@@ -1,4 +1,6 @@
-﻿using Assets.ComputeShaders;
+﻿using Assets.Caching;
+using Assets.ComputeShaders;
+using Assets.FinalExecution;
 using Assets.Heightmaps.Ring1;
 using Assets.Heightmaps.Ring1.Creator;
 using Assets.Heightmaps.Ring1.RenderingTex;
@@ -6,6 +8,7 @@ using Assets.Heightmaps.Ring1.TerrainDescription;
 using Assets.Heightmaps.Ring1.TerrainDescription.Cache;
 using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
+using Assets.Ring2;
 using Assets.Utils;
 using Assets.Utils.Services;
 using Assets.Utils.TextureRendering;
@@ -45,10 +48,7 @@ namespace Assets.ETerrain.TestUtils
             }
 
             var terrainDetailProvider = Ring1DebugObjectV2.CreateTerrainDetailProvider(terrainDetailGenerator, commonExecutorUtProxy, useTextureSavingToDisk, terrainDetailFilePath, merger, useTextureLoadingFromDisk);
-            _shapeDb = new TerrainShapeDb(
-                new CachedTerrainDetailProvider(terrainDetailProvider,
-                    () => new TerrainDetailElementsCache(commonExecutorUtProxy, new TerrainDetailElementCacheConfiguration())),
-                new TerrainDetailAlignmentCalculator(240));
+            _shapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy, new TerrainDetailAlignmentCalculator(240));
 
             var baseProvider = new FromTerrainDbBaseTerrainDetailProvider(_shapeDb);
             detailProviderFactory.Assign(baseProvider);
