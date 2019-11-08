@@ -20,7 +20,7 @@ namespace Assets.Caching
         Task RemoveAssetAsync(TQuery query);
     }
 
-    public class InMemoryAssetsCache<TQuery, TAsset> : IAssetsCache<TQuery, TAsset> where TAsset: class
+    public class InMemoryAssetsCache<TQuery, TAsset> : IAssetsCache<TQuery, TAsset> where TAsset: class// where TQuery : IFromAssetFilenameProvider
     {
         private InMemoryAssetsLevel2Cache<TQuery,TAsset> _level2Cache;
         private Dictionary<int, DetailElemensUnderCreationSemaphore> _creationObligationDictionary = new Dictionary<int, DetailElemensUnderCreationSemaphore>();
@@ -137,8 +137,12 @@ namespace Assets.Caching
         }
     }
 
+    public interface IFromAssetFilenameProvider
+    {
+        string ProvideFilename();
+    }
 
-    public class InMemoryAssetsLevel2Cache<TQuery, TAsset > where TAsset : class
+    public class InMemoryAssetsLevel2Cache<TQuery, TAsset > where TAsset : class// where TQuery : IFromAssetFilenameProvider
     {
         private MemoryCachableAssetsActionsPerformer<TAsset> _entityActionsPerformer;
         private InMemoryCacheConfiguration _configuration;
@@ -160,7 +164,7 @@ namespace Assets.Caching
             return TryRetriveAssetFromTree(queryRect) != null;
         }
 
-        public  TAsset TryRetrive(TQuery queryArea)
+        public TAsset TryRetrive(TQuery queryArea)
         {
             ReferenceCountedAsset foundElement = null;
 
@@ -310,5 +314,4 @@ namespace Assets.Caching
         public TAsset Asset;
         public int? CreationObligationToken;
     }
-
 }

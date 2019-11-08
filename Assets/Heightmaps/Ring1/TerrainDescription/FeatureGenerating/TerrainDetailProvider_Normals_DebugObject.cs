@@ -106,8 +106,8 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
                     new MyRectangle(5 * 0.375f * 240, 5 * 0.375f * 240, 0.375f * 240, 0.375f * 240);
             }
 
-            var outTex = provider.GenerateHeightDetailElementAsync(queryArea, _terrainResolution, RequiredCornersMergeStatus.NOT_IMPORTANT).Result.Texture;
-            var outNormal = provider.GenerateNormalDetailElementAsync(queryArea, _terrainResolution, RequiredCornersMergeStatus.NOT_IMPORTANT).Result.Texture;
+            var outTex = provider.GenerateHeightDetailElementAsync(queryArea, _terrainResolution,CornersMergeStatus.NOT_MERGED).Result.Texture;
+            var outNormal = provider.GenerateNormalDetailElementAsync(queryArea, _terrainResolution, CornersMergeStatus.NOT_MERGED).Result.Texture;
             return new TerrainAndNormalTexture()
             {
                 HeightTexture = outTex.Texture,
@@ -141,7 +141,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
                     featureAppliers, new CommonExecutorUTProxy());
 
             TerrainDetailProvider provider =
-                new TerrainDetailProvider(terrainDetailProviderConfiguration, terrainDetailFileManager, generator, null, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider(terrainDetailProviderConfiguration, generator, null, new TerrainDetailAlignmentCalculator(240));
             generator.SetBaseTerrainDetailProvider(BaseTerrainDetailProvider.CreateFrom(provider));
             return provider;
         }

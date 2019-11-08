@@ -545,7 +545,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
                     featureAppliers, new CommonExecutorUTProxy());
 
             TerrainDetailProvider provider =
-                new TerrainDetailProvider(_terrainDetailProviderConfiguration, _terrainDetailFileManager, generator, null, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider(_terrainDetailProviderConfiguration, generator, null, new TerrainDetailAlignmentCalculator(240));
             generator.SetBaseTerrainDetailProvider(BaseTerrainDetailProvider.CreateFrom(provider));
             return provider;
         }
@@ -564,7 +564,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
                 64 * 0.375f * 240, 64 * 0.375f * 240);
             var resolution = TerrainCardinalResolution.MIN_RESOLUTION;
 
-            var outTex = provider.GenerateHeightDetailElementAsync(queryArea, resolution, RequiredCornersMergeStatus.NOT_IMPORTANT).Result.Texture;
+            var outTex = provider.GenerateHeightDetailElementAsync(queryArea, resolution, CornersMergeStatus.NOT_MERGED).Result.Texture;
             return outTex.Texture;
         }
 

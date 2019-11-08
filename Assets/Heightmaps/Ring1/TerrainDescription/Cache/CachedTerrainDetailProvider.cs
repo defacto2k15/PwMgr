@@ -43,7 +43,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             MyRectangle alignedArea, TerrainCardinalResolution resolution,
             RequiredCornersMergeStatus requiredMerge,
             TerrainDescriptionElementTypeEnum elementType,
-            Func<MyRectangle, TerrainCardinalResolution, RequiredCornersMergeStatus, Task<TerrainDetailElement>> detailElementGenerator 
+            Func<MyRectangle, TerrainCardinalResolution, CornersMergeStatus, Task<TerrainDetailElement>> detailElementGenerator 
             )
         {
             CornersMergeStatus statusWeTarget;
@@ -57,6 +57,10 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 {
                     statusWeTarget = CornersMergeStatus.NOT_MERGED;
                 }
+            }
+            else if (requiredMerge == RequiredCornersMergeStatus.NOT_MERGED)
+            {
+                statusWeTarget = CornersMergeStatus.NOT_MERGED;
             }
             else
             {
@@ -76,13 +80,13 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                         DetailArea = alignedArea,
                         CornersMergeStatus = statusWeTarget
                     },
-                    Token = new TerrainDetailElementToken(new InternalTerrainDetailElementToken(alignedArea,resolution,elementType), statusWeTarget)
+                    Token = new TerrainDetailElementToken(alignedArea,resolution,elementType, statusWeTarget)
                 };
             }
             else
             {
-                var detailElement = await detailElementGenerator(alignedArea, resolution, requiredMerge);
-                var tokenizedElement = await _memoryTerrainCaches[detailElement.CornersMergeStatus][elementType].AddAssetAsync(
+                var detailElement = await detailElementGenerator(alignedArea, resolution, statusWeTarget);
+                var tokenizedElement = await _memoryTerrainCaches[statusWeTarget][elementType].AddAssetAsync(
                     queryOutput.CreationObligationToken.Value, GenerateQuantisizedQueryRectangle(alignedArea), detailElement.Texture);
                 return new TokenizedTerrainDetailElement()
                 {
@@ -93,7 +97,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                         DetailArea = alignedArea,
                         CornersMergeStatus =  statusWeTarget
                     },
-                    Token = new TerrainDetailElementToken(new InternalTerrainDetailElementToken(alignedArea,resolution,elementType), detailElement.CornersMergeStatus)
+                    Token = new TerrainDetailElementToken(alignedArea,resolution,elementType, detailElement.CornersMergeStatus)
                 };
             }
         }
@@ -117,28 +121,30 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         }
     }
 
+
     public class TerrainDetailElementToken
     {
-        private InternalTerrainDetailElementToken _token;
+        private MyRectangle _queryArea;
+        private TerrainCardinalResolution _resolution;
+        private TerrainDescriptionElementTypeEnum _type;
         private CornersMergeStatus _mergeStatus;
 
-        public TerrainDetailElementToken(InternalTerrainDetailElementToken token, CornersMergeStatus mergeStatus)
+        public TerrainDetailElementToken(MyRectangle queryArea, TerrainCardinalResolution resolution, TerrainDescriptionElementTypeEnum type, CornersMergeStatus mergeStatus)
         {
-            _token = token;
+            _queryArea = queryArea;
+            _resolution = resolution;
+            _type = type;
             _mergeStatus = mergeStatus;
         }
 
-        public MyRectangle QueryArea => _token.QueryArea;
-        public TerrainCardinalResolution Resolution => _token.Resolution;
-        public TerrainDescriptionElementTypeEnum Type => _token.Type;
+        public MyRectangle QueryArea => _queryArea;
+        public TerrainCardinalResolution Resolution => _resolution;
+        public TerrainDescriptionElementTypeEnum Type =>_type;
         public CornersMergeStatus CornersMergeStatus => _mergeStatus;
-        public CornersMergeStatus MergeStatus => _mergeStatus;
-
-        public InternalTerrainDetailElementToken InternalToken => _token;
 
         protected bool Equals(TerrainDetailElementToken other)
         {
-            return Equals(_token, other._token) && _mergeStatus == other._mergeStatus;
+            return Equals(_queryArea, other._queryArea) && Equals(_resolution, other._resolution) && _type == other._type && _mergeStatus == other._mergeStatus;
         }
 
         public override bool Equals(object obj)
@@ -146,14 +152,18 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((InternalTerrainDetailElementToken) obj);
+            return Equals((TerrainDetailElementToken) obj);
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                return ((_token != null ? _token.GetHashCode() : 0) * 397) ^ (int) _mergeStatus;
+                var hashCode = (_queryArea != null ? _queryArea.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (_resolution != null ? _resolution.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (int) _type;
+                hashCode = (hashCode * 397) ^ (int) _mergeStatus;
+                return hashCode;
             }
         }
     }

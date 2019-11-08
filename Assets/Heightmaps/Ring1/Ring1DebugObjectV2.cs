@@ -414,7 +414,7 @@ namespace Assets.Heightmaps.Ring1
             var terrainDetailFileManager = new TerrainDetailFileManager(terrainDetailFilePath, commonExecutorUtProxy);
 
             var provider =
-                new TerrainDetailProvider(terrainDetailProviderConfiguration, terrainDetailFileManager, generator, cornerMerger, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider(terrainDetailProviderConfiguration, generator, cornerMerger, new TerrainDetailAlignmentCalculator(240));
             return provider;
         }
     }

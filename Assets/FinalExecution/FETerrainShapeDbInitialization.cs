@@ -160,7 +160,7 @@ namespace Assets.FinalExecution
                 _gameInitializationFields.Retrive<TextureConcieverUTProxy>());
 
             var provider = new TerrainDetailProvider(
-                terrainDetailProviderConfiguration, terrainDetailFileManager, generator, cornerMerger, _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
+                terrainDetailProviderConfiguration, generator, cornerMerger, _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
 
             return provider;
         }

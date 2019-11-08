@@ -253,13 +253,18 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
             TerrainCardinalResolution resolution, RequiredCornersMergeStatus cornersMergeStatus)
         {
             TerrainDetailElement detailElement = null;
+            CornersMergeStatus status = CornersMergeStatus.MERGED;
+            if (cornersMergeStatus == RequiredCornersMergeStatus.NOT_MERGED)
+            {
+                status = CornersMergeStatus.NOT_MERGED;
+            }
             if (type == TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY)
             {
-                detailElement = await _provider.GenerateHeightDetailElementAsync(queryArea, resolution, cornersMergeStatus);
+                detailElement = await _provider.GenerateHeightDetailElementAsync(queryArea, resolution, status);
             }
             else if (type == TerrainDescriptionElementTypeEnum.NORMAL_ARRAY)
             {
-                detailElement = await _provider.GenerateNormalDetailElementAsync(queryArea, resolution, cornersMergeStatus);
+                detailElement = await _provider.GenerateNormalDetailElementAsync(queryArea, resolution, status);
             }
             else
             {

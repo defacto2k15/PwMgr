@@ -8,6 +8,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
 {
     public enum RequiredCornersMergeStatus
     {
-        MERGED, NOT_IMPORTANT
+        MERGED, NOT_IMPORTANT,
+        NOT_MERGED
     }
 }

@@ -152,7 +152,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
             var terrainDetailFileManager = new TerrainDetailFileManager("C:\\unityCache\\", _commonExecutorUtProxy);
 
             var provider =
-                new TerrainDetailProvider(terrainDetailProviderConfiguration, terrainDetailFileManager, generator, null, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider(terrainDetailProviderConfiguration, generator, null, new TerrainDetailAlignmentCalculator(240));
             return provider;
         }
 

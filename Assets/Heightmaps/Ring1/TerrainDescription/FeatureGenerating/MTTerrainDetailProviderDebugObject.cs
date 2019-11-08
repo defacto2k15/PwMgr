@@ -263,7 +263,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
                     featureAppliers, _commonExecutor);
 
             TerrainDetailProvider provider =
-                new TerrainDetailProvider(_terrainDetailProviderConfiguration, _terrainDetailFileManager, generator, null, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider(_terrainDetailProviderConfiguration, generator, null, new TerrainDetailAlignmentCalculator(240));
             return provider;
         }
 
@@ -275,7 +275,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
             MyRectangle queryArea = new MyRectangle(0, 0, 24 * 240, 24 * 240);
             var resolution = TerrainCardinalResolution.MIN_RESOLUTION;
 
-            var outTex = (await provider.GenerateHeightDetailElementAsync(queryArea, resolution, RequiredCornersMergeStatus.NOT_IMPORTANT)).Texture;
+            var outTex = (await provider.GenerateHeightDetailElementAsync(queryArea, resolution, CornersMergeStatus.NOT_MERGED)).Texture;
             return outTex.Texture;
         }
     }

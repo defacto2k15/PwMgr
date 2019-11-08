@@ -296,7 +296,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
                         Resolution = resolution,
                         Texture = simpleFunc(queryArea)
                     },
-                    Token = new TerrainDetailElementToken(null, CornersMergeStatus.NOT_MERGED)
+                    Token = new TerrainDetailElementToken(queryArea,resolution,type, CornersMergeStatus.NOT_MERGED)
                 },
                 UvBase = new MyRectangle(0,0,1,1)
             };
@@ -347,7 +347,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
                             Resolution = resolution,
                             Texture = outTextureWithMergeStatus.Texture
                         },
-                        Token = new TerrainDetailElementToken(null, CornersMergeStatus.NOT_MERGED)
+                        Token = new TerrainDetailElementToken(queryArea, resolution, type, CornersMergeStatus.NOT_MERGED)
                     },
                     UvBase = new MyRectangle(0, 0, 1, 1)
                 };

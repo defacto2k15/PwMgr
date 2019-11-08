@@ -119,7 +119,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
                                 Resolution = requestedDetail.Resolution,
                                 Texture = _heightTexture
                             },
-                            Token = new TerrainDetailElementToken( new InternalTerrainDetailElementToken(null, null, requestedType), CornersMergeStatus.NOT_MERGED)
+                            Token = new TerrainDetailElementToken( alignedArea,requestedDetail.Resolution, requestedType , CornersMergeStatus.NOT_MERGED)
                         },
                         UvBase = uv.ToRectangle()
                     });
@@ -136,7 +136,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
                                 Resolution = requestedDetail.Resolution,
                                 Texture = _normalTexture
                             },
-                            Token = new TerrainDetailElementToken( new InternalTerrainDetailElementToken(null, null, requestedType), CornersMergeStatus.NOT_MERGED)
+                            Token = new TerrainDetailElementToken(  alignedArea,requestedDetail.Resolution, requestedType  , CornersMergeStatus.NOT_MERGED)
                         },
                         UvBase = uv.ToRectangle()
                     });
