@@ -34,27 +34,32 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
     public class TerrainDetailElementsCache:IAssetsCache// ObligationProvidingTerrainDetailElementsCache : IAssetsCache
     {
         private TerrainDetailElementsLevel2Cache _level2Cache;
+        private TerrainDetailElementCacheConfiguration _configuration;
         private Dictionary<int, DetailElemensUnderCreationSemaphore> _creationObligationDictionary = new Dictionary<int, DetailElemensUnderCreationSemaphore>();
         private int _lastObligationId = 0;
 
         public TerrainDetailElementsCache(CommonExecutorUTProxy commonExecutor, TerrainDetailElementCacheConfiguration configuration)
         {
+            _configuration = configuration;
             _level2Cache = new TerrainDetailElementsLevel2Cache(commonExecutor,configuration);
         }
 
         public bool IsInCache(MyRectangle queryArea, TerrainCardinalResolution resolution, TerrainDescriptionElementTypeEnum type)
         {
-            return _level2Cache.IsInCache(queryArea);
+            return _level2Cache.IsInCache(GenerateQuantisizedQueryRectangle(queryArea));
         }
 
         public async Task<CacheQueryOutput> TryRetriveAsync(MyRectangle queryArea, TerrainCardinalResolution resolution, TerrainDescriptionElementTypeEnum type)
         {
             var newToken = new InternalTerrainDetailElementToken(queryArea, resolution, type);
+
+            var quantisizedQueryRect = GenerateQuantisizedQueryRectangle(queryArea);
             var elementUnderCreation = _creationObligationDictionary.Values.FirstOrDefault(c => c.Token.Equals(newToken));
+
             if (elementUnderCreation != null)
             {
                 await elementUnderCreation.Semaphore.Await();
-                var detailElementAfterWaiting = _level2Cache.TryRetrive(newToken);
+                var detailElementAfterWaiting = _level2Cache.TryRetrive(quantisizedQueryRect);
                 Preconditions.Assert(detailElementAfterWaiting!= null, "Impossible. Even after waiting, still no queryOutput");
 
                 return new CacheQueryOutput()
@@ -69,7 +74,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 };
             }
 
-            var  detailElement = _level2Cache.TryRetrive(newToken);
+            var  detailElement = _level2Cache.TryRetrive(quantisizedQueryRect);
             if ( detailElement != null)
             {
                 return new CacheQueryOutput()
@@ -103,7 +108,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         public async Task<InternalTokenizedTerrainDetailElement> AddTerrainDetailElement(int creationObligationToken, TextureWithSize texture, MyRectangle queryArea, TerrainCardinalResolution resolution,
             TerrainDescriptionElementTypeEnum type)
         {
-            await _level2Cache.AddTerrainDetailElement(creationObligationToken, texture, queryArea, resolution);
+            await _level2Cache.AddTerrainDetailElement(creationObligationToken, texture, queryArea, resolution, GenerateQuantisizedQueryRectangle(queryArea));
 
             var semaphore = _creationObligationDictionary[creationObligationToken];
             _creationObligationDictionary.Remove(creationObligationToken);
@@ -123,7 +128,17 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
 
         public Task RemoveTerrainDetailElementAsync(InternalTerrainDetailElementToken token)
         {
-            return _level2Cache.RemoveTerrainDetailElementAsync(token);
+            return _level2Cache.RemoveTerrainDetailElementAsync(GenerateQuantisizedQueryRectangle(token.QueryArea),token);
+        }
+
+        private IntRectangle GenerateQuantisizedQueryRectangle(MyRectangle rect)
+        {
+            return new IntRectangle(
+                Mathf.RoundToInt(rect.X / _configuration.QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Y / _configuration.QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Width / _configuration.QueryRectangleQuantLength),
+                Mathf.RoundToInt(rect.Height / _configuration.QueryRectangleQuantLength)
+            );
         }
 
         private class DetailElemensUnderCreationSemaphore
@@ -138,9 +153,9 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         private CommonExecutorUTProxy _commonExecutor;
         private TerrainDetailElementCacheConfiguration _configuration;
 
-        private Dictionary<IntRectangle, ReferenceCountedTerrainDetailElement> _activeTree = new Dictionary<IntRectangle, ReferenceCountedTerrainDetailElement>();
+        private Dictionary<IntRectangle, ReferenceCountedTerrainDetailElement> _activeTree;
 
-        private List<InternalTerrainDetailElementToken> _nonReferencedElementsList = new List<InternalTerrainDetailElementToken>();
+        private List<AssetWithQueryArea> _nonReferencedElementsList = new List<AssetWithQueryArea>();
         private int _elementsLength = 0;
 
         public TerrainDetailElementsLevel2Cache(CommonExecutorUTProxy commonExecutor, TerrainDetailElementCacheConfiguration configuration)
@@ -150,16 +165,16 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             _activeTree = new Dictionary<IntRectangle, ReferenceCountedTerrainDetailElement>();
         }
 
-        public bool IsInCache(MyRectangle queryArea)
+        public bool IsInCache(IntRectangle queryRect)
         {
-            return TryRetriveTerrainDetailElement(queryArea) != null;
+            return TryRetriveTerrainDetailElement(queryRect) != null;
         }
 
-        public TerrainDetailElement TryRetrive(InternalTerrainDetailElementToken newToken)
+        public TerrainDetailElement TryRetrive(IntRectangle queryArea)
         {
             ReferenceCountedTerrainDetailElement foundElement = null;
 
-            foundElement = TryRetriveTerrainDetailElement(newToken.QueryArea);
+            foundElement = TryRetriveTerrainDetailElement(queryArea);
 
             if (foundElement != null)
             {
@@ -169,8 +184,8 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                         .Select((c, i) => new
                         {
                             Index = i,
-                            Token = c
-                        }).FirstOrDefault(c => c.Token.Equals(newToken));
+                            AssetWithQueryArea = c
+                        }).FirstOrDefault(c => c.AssetWithQueryArea.QueryArea.Equals(queryArea));
                     if (indexInNonReferenced == null)
                     {
                         Debug.Log("In Queue");
@@ -178,7 +193,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                         {
                             Debug.Log("Elem: " + elem);
                         }
-                        Debug.Log("We were looking for: " + newToken);
+                        Debug.Log("We were looking for: " +queryArea);
                     }
                     Preconditions.Assert(indexInNonReferenced != null,
                         " There is no non referenced element's token in queue. ");
@@ -196,12 +211,11 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             }
         }
 
-        private ReferenceCountedTerrainDetailElement TryRetriveTerrainDetailElement(MyRectangle queryArea)
+        private ReferenceCountedTerrainDetailElement TryRetriveTerrainDetailElement(IntRectangle queryRect)
         {
-            var quantisizedQueryRect = GenerateQuantisizedQueryRectangle(queryArea);
-            if (_activeTree.ContainsKey(quantisizedQueryRect))
+            if (_activeTree.ContainsKey(queryRect))
             {
-                return _activeTree[quantisizedQueryRect];
+                return _activeTree[queryRect];
             }
             else
             {
@@ -209,21 +223,12 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             }
         }
 
-        private IntRectangle GenerateQuantisizedQueryRectangle(MyRectangle rect)
-        {
-            return new IntRectangle(
-                Mathf.RoundToInt(rect.X / _configuration.QueryRectangleQuantLength),
-                Mathf.RoundToInt(rect.Y / _configuration.QueryRectangleQuantLength),
-                Mathf.RoundToInt(rect.Width / _configuration.QueryRectangleQuantLength),
-                Mathf.RoundToInt(rect.Height / _configuration.QueryRectangleQuantLength)
-            );
-        }
 
         public Task AddTerrainDetailElement(int creationObligationToken,
             TextureWithSize texture,
-            MyRectangle queryArea, TerrainCardinalResolution resolution)
+            MyRectangle queryArea, TerrainCardinalResolution resolution, IntRectangle quantisizedQueryArea)
         {
-            var activeTreeElement = TryRetriveTerrainDetailElement(queryArea);
+            var activeTreeElement = TryRetriveTerrainDetailElement(quantisizedQueryArea);
             Preconditions.Assert(activeTreeElement == null,
                 "There arleady is one detailElement of given description:  res: " + resolution+
                 " qa: " + queryArea);
@@ -238,13 +243,13 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 },
                 ReferenceCount = 1
             };
-            AddElementToActiveTree(queryArea, newElement);
+            AddElementToActiveTree(quantisizedQueryArea, newElement);
             return ClearNonReferencedElements();
         }
 
-        private void AddElementToActiveTree(MyRectangle queryArea, ReferenceCountedTerrainDetailElement newElement)
+        private void AddElementToActiveTree(IntRectangle queryArea, ReferenceCountedTerrainDetailElement newElement)
         {
-            _activeTree[GenerateQuantisizedQueryRectangle(queryArea)] = newElement;
+            _activeTree[queryArea] = newElement;
             var tex = newElement.Element.Texture;
             _elementsLength += ComputeSizeOfTexture(tex);
         }
@@ -254,10 +259,10 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             return tex.Size.X * tex.Size.Y * 4;
         }
 
-        public async Task RemoveTerrainDetailElementAsync(InternalTerrainDetailElementToken token)
+        public async Task RemoveTerrainDetailElementAsync(IntRectangle queryArea, InternalTerrainDetailElementToken token)
         {
             var foundElement =
-                TryRetriveTerrainDetailElement(token.QueryArea);
+                TryRetriveTerrainDetailElement(queryArea);
             Preconditions.Assert(foundElement != null, "There is no element of given description");
             foundElement.ReferenceCount--;
             //Debug.Log("T97 removing detailElement: res: "+token.Resolution+" type: "+token.Type+" qa: "+token.QueryArea+" succeded: ");
@@ -265,13 +270,17 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             {
                 if (ThereIsPlaceForTexture(foundElement.Element.Texture))
                 {
-                    _nonReferencedElementsList.Add(token);
+                    _nonReferencedElementsList.Add( new AssetWithQueryArea()
+                    {
+                        Texture = foundElement.Element.Texture,
+                        QueryArea = queryArea
+                    });
                     //Debug.Log("T97 min ref count. Adding to non-ref list");
                 }
                 else
                 {
                     Debug.Log("T97 min ref count. Removing");
-                    await DeleteElement(token, foundElement);
+                    await DeleteElement(queryArea, foundElement);
                 }
             }
         }
@@ -282,7 +291,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             return _elementsLength + textureSize <= _configuration.MaxTextureMemoryUsed;
         }
 
-        private async Task DeleteElement(InternalTerrainDetailElementToken token,
+        private async Task DeleteElement(IntRectangle queryArea,
             ReferenceCountedTerrainDetailElement foundElement)
         {
             await _commonExecutor.AddAction(() =>
@@ -290,7 +299,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 var tex0 = foundElement.Element.Texture;
                 GameObject.Destroy(tex0.Texture);
             });
-            var removalResult = _activeTree.Remove(GenerateQuantisizedQueryRectangle(token.QueryArea));
+            var removalResult = _activeTree.Remove(queryArea);
             Preconditions.Assert(removalResult, "Removing failed");
             var tex = foundElement.Element.Texture;
             _elementsLength -= ComputeSizeOfTexture(tex);
@@ -307,7 +316,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
                 var elementToRemove = TryRetriveTerrainDetailElement(tokenOfElementToRemove.QueryArea);
                 Preconditions.Assert(elementToRemove != null, "Element we wish to delete is not in activeTree");
                 Debug.Log("T77 Removing element from non-referenced!");
-                await DeleteElement(tokenOfElementToRemove, elementToRemove);
+                await DeleteElement(tokenOfElementToRemove.QueryArea, elementToRemove);
             }
         }
 
@@ -315,6 +324,12 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
         {
             public TerrainDetailElement Element;
             public int ReferenceCount;
+        }
+
+        private class AssetWithQueryArea
+        {
+            public TextureWithSize Texture;
+            public IntRectangle QueryArea;
         }
     }
 
