@@ -70,11 +70,9 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
 
             // todo: sprawdzanie czy w danym sayerze slicu sa jakies dane, a jak nie to taki slice wywalic
 
-            float patternPixelsPerUnit = 1 / 3f;
-            if (_configuration.IntensityPatternPixelsPerUnit.ContainsKey(lodValue))
-            {
-                patternPixelsPerUnit = _configuration.IntensityPatternPixelsPerUnit[lodValue];
-            }
+            Preconditions.Assert(_configuration.IntensityPatternPixelsPerUnit.ContainsKey(lodValue),
+                "There is not IntensityPatternPixelsPerUnit for lod " + lodValue);
+            float patternPixelsPerUnit = _configuration.IntensityPatternPixelsPerUnit[lodValue];
 
             MyProfiler.BeginSample("GRing2PatchesCreation IntensityProviding");
             var patches = await TaskUtils.WhenAll(

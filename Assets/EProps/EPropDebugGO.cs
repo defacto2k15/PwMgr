@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Assets.ComputeShaders;
 using Assets.ETerrain.ETerrainIntegration;
+using Assets.ETerrain.ETerrainIntegration.deos;
 using Assets.ETerrain.GroundTexture;
 using Assets.ETerrain.Pyramid;
 using Assets.ETerrain.Pyramid.Map;
@@ -96,7 +97,7 @@ namespace Assets.EProps
                                         segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
                                     },
                                     (c) => { },
-                                    (c) => { }),
+                                    (c) => { }),  
                             CeilTextureGenerator = () => EGroundTextureGenerator.GenerateEmptyGroundTexture(
                                 startConfiguration.CommonConfiguration.CeilTextureSize, startConfiguration.CommonConfiguration.HeightTextureFormat),
                             SegmentPlacerGenerator = (ceilTexture) =>

@@ -377,6 +377,10 @@ MonoBehaviour:
   ActiveCamera: {fileID: 253636893}
   GraphicsOverlay: {fileID: 0}
   UseMultithreading: 0
+  TerrainShapeDbConfiguration:
+    UseTextureSavingToDisk: 0
+    UseTextureLoadingFromDisk: 1
+    MergeTerrainDetail: 0
 --- !u!4 &641582741
 Transform:
   m_ObjectHideFlags: 0

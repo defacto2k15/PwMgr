@@ -1,39 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Assets.ComputeShaders;
 using Assets.ESurface;
 using Assets.ETerrain.GroundTexture;
 using Assets.ETerrain.Pyramid.Map;
 using Assets.ETerrain.SectorFilling;
-using Assets.ETerrain.TestUtils;
-using Assets.ETerrain.Tools.HeightPyramidExplorer;
 using Assets.FinalExecution;
 using Assets.Heightmaps;
 using Assets.Heightmaps.GRing;
 using Assets.Heightmaps.Ring1.MeshGeneration;
 using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.TerrainDescription;
-using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
-using Assets.Heightmaps.Ring1.valTypes;
 using Assets.PreComputation.Configurations;
 using Assets.Repositioning;
 using Assets.Ring2.GRuntimeManagementOtherThread;
+using Assets.Ring2.RuntimeManagementOtherThread;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
+using Assets.Ring2.Stamping;
 using Assets.Utils;
-using Assets.Utils.MT;
-using Assets.Utils.Services;
-using Assets.Utils.TextureRendering;
-using Assets.Utils.Textures;
 using Assets.Utils.UTUpdating;
-using UnityEditor;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
-namespace Assets.ETerrain.ETerrainIntegration
+namespace Assets.ETerrain.ETerrainIntegration.deos
 {
     public class ETerrainIntegrationWithShapeDbAndSurfaceDbDEO: MonoBehaviour
     {
@@ -47,6 +35,8 @@ namespace Assets.ETerrain.ETerrainIntegration
 
         public void Start()
         {
+            var msw = new MyStopWatch();
+            msw.StartSegment("Start");
             _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = false};
             _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
             _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
@@ -60,7 +50,7 @@ namespace Assets.ETerrain.ETerrainIntegration
             startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/6.0f;
             startConfiguration.InitialTravellerPosition = new Vector2(490, -21) + new Vector2(90f*8, 90f*4);
             //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
-            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top};//, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
+            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top, HeightPyramidLevel.Mid};//, HeightPyramidLevel.Bottom};
 
             ETerrainHeightBuffersManager buffersManager = new ETerrainHeightBuffersManager();
             _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,
@@ -85,19 +75,23 @@ namespace Assets.ETerrain.ETerrainIntegration
             var dbProxy = _gameInitializationFields.Retrive<TerrainShapeDbProxy>();
 
             var surfaceTextureFormat = RenderTextureFormat.ARGB32;
-            var intensityPatternPixelsPerUnit = new Dictionary<int, float>()
-            {
-                {1, 1}
-            };
-            int mipmapLevelToExtract = 2;
-            var plateStampPixelsPerUnit = new Dictionary<int, float>()
-            {
-                {1, 3}
-            };
-            //var surfacePatchProvider = ESurfaceProviderInitializationHelper.ConstructProvider(
-            //    _ultraUpdatableContainer, intensityPatternPixelsPerUnit, containerGameObject, mipmapLevelToExtract, plateStampPixelsPerUnit);
+            int mipmapLevelToExtract = 0;
 
-            var patchInitializer = new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, new FeRing2PatchConfiguration(_configuration));
+            var feRing2PatchConfiguration = new FeRing2PatchConfiguration(_configuration);
+            feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
+            {
+                [1] = 3f,
+                [2] = 3 /8f,
+                [3] = 3 / 64f
+            };
+            feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit= new Dictionary<int, float>()
+            {
+                [1] = 3f,
+                [2] = 3 /8f,
+                [3] = 3 / 64f
+            }; 
+
+            var patchInitializer = new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, feRing2PatchConfiguration);
             patchInitializer.Start();
 
             MipmapExtractor mipmapExtractor = new MipmapExtractor(_gameInitializationFields.Retrive<UTTextureRendererProxy>());
@@ -106,6 +100,7 @@ namespace Assets.ETerrain.ETerrainIntegration
             var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
 
             UTTextureRendererProxy textureRendererProxy = _gameInitializationFields.Retrive<UTTextureRendererProxy>();
+            ESurfaceTexturesPack onlyPack = null;
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                 {
@@ -117,17 +112,44 @@ namespace Assets.ETerrain.ETerrainIntegration
                             (level, segmentModificationManager) => new LambdaSegmentFillingListener(
                                 (c) =>
                                 {
-
                                     var surfaceWorldSpaceRectangle = ETerrainUtils.SegmentAlignedPositionToWorldSpaceArea(level,
                                         startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
-                                    var pack = surfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                        new FlatLod(1, 1));
-
-                                    if (pack != null)
+                                    if (level == HeightPyramidLevel.Top)
                                     {
-                                        var mainTexture = pack.MainTexture;
-                                        segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
-                                        GameObject.Destroy(mainTexture);
+                                        //var pack = surfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
+                                        //    new FlatLod(1, 1));
+
+                                        //if (pack != null)
+                                        //{
+                                        //    var mainTexture = pack.MainTexture;
+                                        //    //Debug.Log("Resolution is "+mainTexture.width+"x"+mainTexture.height+" query size is "+surfaceWorldSpaceRectangle.Width+"x"+surfaceWorldSpaceRectangle.Height);
+                                        //    segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
+                                        //    GameObject.Destroy(mainTexture);
+                                        //}
+                                    }
+                                    else
+                                    {
+
+                                        ESurfaceTexturesPack pack = null;
+                                        if (onlyPack != null)
+                                        {
+                                            pack = onlyPack;
+                                        }
+                                        else
+                                        {
+                                            pack = surfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
+                                                new FlatLod(2, 1));
+                                            onlyPack = pack;
+                                        }
+
+                                        if (pack != null)
+                                        {
+                                            var mainTexture = pack.MainTexture;
+                                            Debug.Log("Resolution is " + mainTexture.width + "x" + mainTexture.height + " query size is " +
+                                                      surfaceWorldSpaceRectangle.Width + "x" + surfaceWorldSpaceRectangle.Height);
+                                            segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
+                                            GameObject.Destroy(mainTexture);
+                                        }
                                     }
                                 },
                                 (c) => { },
@@ -142,9 +164,7 @@ namespace Assets.ETerrain.ETerrainIntegration
             );
 
             Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
-            //_eTerrainHeightPyramidFacade.DisableLevelShapes(HeightPyramidLevel.Top);
-            //_eTerrainHeightPyramidFacade.DisableLevelShapes(HeightPyramidLevel.Mid);
-            //_eTerrainHeightPyramidFacade.SetShapeRootTransform(new MyTransformTriplet(new Vector3(0, -240, 0), Quaternion.identity, new Vector3(1, 20, 1)));
+            Debug.Log("Init time "+msw.CollectResults());
         }
 
         public void Update()

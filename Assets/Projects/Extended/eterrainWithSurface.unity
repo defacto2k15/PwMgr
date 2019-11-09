@@ -130,7 +130,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9021260}
-  - component: {fileID: 9021265}
+  - component: {fileID: 9021261}
   m_Layer: 0
   m_Name: EterrainRoot
   m_TagString: Untagged
@@ -152,7 +152,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9021265
+--- !u!114 &9021261
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -162,7 +162,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_GeneratorAsset: {fileID: 0}
-  m_Script: {fileID: 11500000, guid: da2c3c9e611b5b74985265fac87acc8a, type: 3}
+  m_Script: {fileID: 11500000, guid: b53285f59fcbc0445ab5f5b89bb7a0db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Traveller: {fileID: 291560940}

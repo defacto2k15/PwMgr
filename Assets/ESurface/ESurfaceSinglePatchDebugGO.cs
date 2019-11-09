@@ -143,42 +143,6 @@ namespace Assets.ESurface
             return renderMaterial;
         }
 
-
-        private GRing2PatchesCreator CreateRing2PatchesCreator()
-        {
-            TextureConcieverUTProxy conciever = new TextureConcieverUTProxy();
-            _updatableContainer.Add(conciever);
-
-            Ring2RandomFieldFigureGenerator figureGenerator = new Ring2RandomFieldFigureGenerator(new TextureRenderer(),
-                new Ring2RandomFieldFigureGeneratorConfiguration()
-                {
-                    PixelsPerUnit = new Vector2(1, 1)
-                });
-            var utFigureGenerator = new RandomFieldFigureGeneratorUTProxy(figureGenerator);
-            _updatableContainer.Add(utFigureGenerator);
-
-            var randomFieldFigureRepository = new Ring2RandomFieldFigureRepository(utFigureGenerator,
-                new Ring2RandomFieldFigureRepositoryConfiguration(2, new Vector2(20, 20)));
-
-            Quadtree<Ring2Region> regionsTree = Ring2TestUtils.CreateRegionsTreeWithPath3(randomFieldFigureRepository);
-
-            return new GRing2PatchesCreator(
-                new Ring2RegionsDatabase(regionsTree),
-                new GRing2RegionsToPatchTemplateConventer(),
-                new Ring2PatchTemplateCombiner(),
-                new Ring2PatchCreator(),
-                new Ring2IntensityPatternProvider(conciever),
-                new GRing2Deviser(),
-                new Ring2PatchesOverseerConfiguration()
-                {
-                    IntensityPatternPixelsPerUnit = new Dictionary<int, float>()
-                    {
-                        {1, 1f}
-                    }
-                    //PatchSize = new Vector2(90, 90)
-                }
-            );
-        }
     }
 
 

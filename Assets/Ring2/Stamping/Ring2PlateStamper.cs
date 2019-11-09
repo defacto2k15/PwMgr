@@ -36,8 +36,7 @@ namespace Assets.Ring2.Stamping
             get { return _input != null; }
         }
 
-        public void StartGeneratingPlateStamp(Ring2PlateStampTemplate template,
-            Action<Ring2PlateStamp> completionCallback)
+        public void StartGeneratingPlateStamp(Ring2PlateStampTemplate template, Action<Ring2PlateStamp> completionCallback)
         {
             _completeCallback = completionCallback;
             var plateCoords = template.PlateCoords;

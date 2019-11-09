@@ -27,6 +27,7 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
         public async Task<Ring2Patch> ProvidePatchWithIntensityPattern(Ring2Patch patch,
             Ring2PatchTemplate patchTemplate, float patternPixelsPerUnit)
         {
+            MyProfiler.BeginSample("Ring2IntensityPatternProvider : ProvidePatchWithIntensityPattern");
             var intensityPatterns = await TaskUtils.WhenAll(Enumerable.Range(0, patchTemplate.SliceTemplates.Count)
                 .Select(
                     (i) =>
@@ -41,6 +42,7 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
             {
                 patch.Slices[i].IntensityPattern = intensityPatterns[i];
             }
+            MyProfiler.EndSample();
 
             return patch;
         }
@@ -48,10 +50,12 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
         private async Task<Ring2PatchSliceIntensityPattern> CreateIntenstiyPatternAsync(Envelope sliceArea,
             Ring2SliceTemplate sliceTemplate, float patternPixelsPerUnit)
         {
+            MyProfiler.BeginSample("Ring2IntensityPatternProvider :  CreateIntenstiyPatternAsync : Start");
             var layerFabrics = sliceTemplate.Substance.GetProperLayerFabrics.OrderBy(c => c.Fiber.Index).ToList();
             var sizeInPixels = new Vector2(Mathf.Ceil((float) (patternPixelsPerUnit * sliceArea.CalculatedWidth())),
                 Mathf.Ceil((float) (patternPixelsPerUnit * sliceArea.CalculatedHeight())));
             var sizeOfOnePixel = new Vector2(1f / patternPixelsPerUnit, 1f / patternPixelsPerUnit);
+            Debug.Log("XXXXXXXXXX "+sizeInPixels);
 
             MyTextureTemplate texture = new MyTextureTemplate((int) sizeInPixels.x, (int) sizeInPixels.y,
                 TextureFormat.RGBA32, false, FilterMode.Bilinear);
@@ -67,6 +71,8 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
                     queryPositions.Add(globalSamplePosition);
                 }
             }
+            MyProfiler.EndSample();
+            MyProfiler.BeginSample("Ring2IntensityPatternProvider :  CreateIntenstiyPatternAsync : Intensity creation");
             List<List<float>> intensities = await TaskUtils.WhenAll(layerFabrics.Select(async (layer) =>
             {
                 var toReturn = await layer.IntensityProvider.RetriveIntensityAsync(queryPositions);
@@ -85,13 +91,17 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
                     texture.SetPixel(x, y, color);
                 }
             }
-            ;
+            MyProfiler.EndSample();
+            MyProfiler.BeginSample("Ring2IntensityPatternProvider :  CreateIntenstiyPatternAsync : Concieve texture");
             Texture realTexture = await _conciever.ConcieveTextureAsync(texture);
+            MyProfiler.EndSample();
+            MyProfiler.BeginSample("Ring2IntensityPatternProvider :  CreateIntenstiyPatternAsync : Enhance intensity");
             if (_intensityPatternEnhancer != null)
             {
                 realTexture = await _intensityPatternEnhancer.EnhanceIntensityPatternAsync(realTexture,
                     sizeInPixels.ToIntVector(), sliceArea.ToUnityCoordPositions2D());
             }
+            MyProfiler.EndSample();
 
             return new Ring2PatchSliceIntensityPattern(realTexture);
         }

@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Assets.ComputeShaders;
 using Assets.ETerrain.GroundTexture;
 using Assets.ETerrain.Pyramid.Map;
 using Assets.ETerrain.SectorFilling;
-using Assets.ETerrain.TestUtils;
-using Assets.ETerrain.Tools.HeightPyramidExplorer;
 using Assets.FinalExecution;
 using Assets.Heightmaps;
 using Assets.Heightmaps.Ring1.MeshGeneration;
@@ -16,20 +10,13 @@ using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.TerrainDescription;
 using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
-using Assets.Heightmaps.Ring1.valTypes;
 using Assets.PreComputation.Configurations;
 using Assets.Repositioning;
 using Assets.Utils;
-using Assets.Utils.MT;
-using Assets.Utils.Services;
-using Assets.Utils.TextureRendering;
-using Assets.Utils.Textures;
 using Assets.Utils.UTUpdating;
-using UnityEditor;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
-namespace Assets.ETerrain.ETerrainIntegration
+namespace Assets.ETerrain.ETerrainIntegration.deos
 {
     public class ETerrainIntegrationUsingTerrainDatabaseDEO : MonoBehaviour
     {

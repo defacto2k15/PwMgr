@@ -27,17 +27,19 @@ namespace Assets.FinalExecution
             }
         };
 
+        public Dictionary<int, float> Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit = new Dictionary<int, float>() //TODO it is ugly
+        {
+            {10, 1 / 9f},
+            {11, 1 / 3f},
+            {12, 1f},
+            {13, 3f},
+            {14, 3f},
+        };
+
         public Ring2PatchesOverseerConfiguration Ring2PatchesOverseerConfiguration =>
             new Ring2PatchesOverseerConfiguration()
             {
-                IntensityPatternPixelsPerUnit = new Dictionary<int, float>()
-                {
-                    {10, 1 / 9f},
-                    {11, 1 / 3f},
-                    {12, 1f},
-                    {13, 3f},
-                    {14, 3f},
-                },
+                IntensityPatternPixelsPerUnit = Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit,
                 PatchSize = _feConfiguration.Ring2PatchSize
             };
 

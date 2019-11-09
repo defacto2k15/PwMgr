@@ -14,8 +14,10 @@ namespace Assets.Ring2.PatchTemplateToPatch
     {
         public Ring2Patch CreatePatch(Ring2PatchTemplate patchTemplate)
         {
+            MyProfiler.BeginSample("Ring2PatchCreator : CreatePatch");
             var slices = patchTemplate.SliceTemplates
                 .Select(template => CreateRing2Slice(template)).ToList();
+            MyProfiler.EndSample();
             return new Ring2Patch(patchTemplate.SliceArea, slices);
         }
 
