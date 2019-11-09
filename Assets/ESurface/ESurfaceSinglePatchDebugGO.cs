@@ -204,7 +204,7 @@ namespace Assets.ESurface
             Quadtree<Ring2Region> regionsTree = Ring2TestUtils.CreateRegionsTreeWithPath3(randomFieldFigureRepository);
 
             return new GRing2PatchesCreator(
-                new Ring2RegionsDatabase(regionsTree),
+                new MonoliticRing2RegionsDatabase(regionsTree),
                 new GRing2RegionsToPatchTemplateConventer(),
                 new Ring2PatchTemplateCombiner(),
                 new Ring2PatchCreator(),

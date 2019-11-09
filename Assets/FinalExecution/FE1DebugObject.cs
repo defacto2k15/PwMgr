@@ -78,7 +78,7 @@ namespace Assets.FinalExecution
             initializingHelper.InitializeDesignBodySpotUpdater();
             initializingHelper.InitializeUTRendererProxy();
             initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
-            initializingHelper.InitializeRing2RegionsDatabase();
+            initializingHelper.InitializeMonoliticRing2RegionsDatabase();
 
             var finalSurfacePathInitialization =
                 new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, new FeRing2PatchConfiguration(_configuration));

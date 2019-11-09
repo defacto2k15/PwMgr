@@ -58,7 +58,7 @@ namespace Assets.Ring2
 
             Quadtree<Ring2Region> regionsTree = Ring2TestUtils.CreateRegionsTreeWithPath(randomFieldFigureRepository);
             Ring2PatchesOverseer patchesOverseer = new Ring2PatchesOverseer(
-                new Ring2RegionsDatabase(regionsTree),
+                new MonoliticRing2RegionsDatabase(regionsTree),
                 new Ring2RegionsToPatchTemplateConventer(),
                 new Ring2PatchTemplateCombiner(),
                 new Ring2PatchCreator(),

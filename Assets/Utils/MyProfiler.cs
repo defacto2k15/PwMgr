@@ -12,7 +12,7 @@ namespace Assets.Utils
     public static class MyProfiler
     {
         private static Stack<MyStopWatch> _mswDict = new Stack<MyStopWatch>();
-        private static bool _logProfilerSampling = true;
+        private static bool _logProfilerSampling = false;
 
         public static void BeginSample(string name)
         {

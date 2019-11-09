@@ -24,7 +24,7 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
 {
     public class GRing2PatchesCreator
     {
-        private Ring2RegionsDatabase _database;
+        private IRing2RegionsDatabase _database;
         private GRing2RegionsToPatchTemplateConventer _toPatchConventer;
         private Ring2PatchTemplateCombiner _templateCombiner;
         private Ring2PatchCreator _patchCreator;
@@ -32,7 +32,7 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
         private GRing2Deviser _ring2Deviser;
         private Ring2PatchesOverseerConfiguration _configuration;
 
-        public GRing2PatchesCreator(Ring2RegionsDatabase database,
+        public GRing2PatchesCreator(IRing2RegionsDatabase database,
             GRing2RegionsToPatchTemplateConventer toPatchConventer,
             Ring2PatchTemplateCombiner templateCombiner, Ring2PatchCreator patchCreator,
             Ring2IntensityPatternProvider intensityPatternProvider,
@@ -51,7 +51,7 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
         public async Task<List<GRing2PatchDevised>> CreatePatchAsync(MyRectangle queryArea, int lodValue)
         {
             MyProfiler.BeginSample("GRing2PatchesCreation QueryRegions");
-            var regions = _database.QueryRegions(queryArea);
+            var regions = _database.QueryRegions(lodValue, queryArea);
             MyProfiler.EndSample();
             // regiony które !mo¿e! s¹ w queryArea
             //Debug.Log($"R123333333333333333333 qaa:{queryArea} sIntresting ttrs: "+regions.Count(c => c.Space is FatLineString)+"  "+StringUtils.ToString(regions.Select(c => c.Space.GetType())));

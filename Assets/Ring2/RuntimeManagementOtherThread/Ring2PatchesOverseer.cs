@@ -21,7 +21,7 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
 {
     public class Ring2PatchesOverseer
     {
-        private Ring2RegionsDatabase _database;
+        private IRing2RegionsDatabase _database;
         private Ring2RegionsToPatchTemplateConventer _toPatchConventer;
         private Ring2PatchTemplateCombiner _templateCombiner;
         private Ring2PatchCreator _patchCreator;
@@ -32,7 +32,7 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
         private IRing2PatchesOverseerFinalizer _finalizer;
 
 
-        public Ring2PatchesOverseer(Ring2RegionsDatabase database,
+        public Ring2PatchesOverseer(IRing2RegionsDatabase database,
             Ring2RegionsToPatchTemplateConventer toPatchConventer,
             Ring2PatchTemplateCombiner templateCombiner, Ring2PatchCreator patchCreator,
             Ring2IntensityPatternProvider intensityPatternProvider,
@@ -55,7 +55,7 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
         {
             AssertPatchSquareness(order.Rectangle);
             var queryArea = order.Rectangle;
-            var regions = _database.QueryRegions(queryArea);
+            var regions = _database.QueryRegions(0, queryArea);
             // regiony które !mo¿e! s¹ w queryArea
 
             var patchTemplates = _toPatchConventer.Convert(regions, queryArea, _configuration.PatchSize);

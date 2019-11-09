@@ -12,11 +12,16 @@ using UnityEngine;
 
 namespace Assets.Ring2.Db
 {
-    public class Ring2RegionsDatabase
+    public interface IRing2RegionsDatabase
+    {
+        List<Ring2Region> QueryRegions(int lodValue, MyRectangle queryArea);
+    }
+
+    public class MonoliticRing2RegionsDatabase : IRing2RegionsDatabase
     {
         private Quadtree<Ring2Region> _regionsTree = new Quadtree<Ring2Region>();
 
-        public Ring2RegionsDatabase(Quadtree<Ring2Region> regionsTree = null)
+        public MonoliticRing2RegionsDatabase(Quadtree<Ring2Region> regionsTree = null)
         {
             if (regionsTree == null)
             {
@@ -25,7 +30,7 @@ namespace Assets.Ring2.Db
             _regionsTree = regionsTree;
         }
 
-        public List<Ring2Region> QueryRegions(MyRectangle queryArea)
+        public List<Ring2Region> QueryRegions(int lodValue, MyRectangle queryArea)
         {
             var foundRegions = _regionsTree.Query(MyNetTopologySuiteUtils.ToEnvelope(queryArea)).ToList();
 
@@ -34,6 +39,21 @@ namespace Assets.Ring2.Db
                 .OrderByDescending(c => c.Magnitude)
                 .ToList();
             return intersectingRegions;
+        }
+    }
+
+    public class ComplexRing2RegionsDatabase : IRing2RegionsDatabase
+    {
+        private Dictionary<int, MonoliticRing2RegionsDatabase> _dbsDict;
+
+        public ComplexRing2RegionsDatabase(Dictionary<int, MonoliticRing2RegionsDatabase> dbsDict)
+        {
+            _dbsDict = dbsDict;
+        }
+
+        public List<Ring2Region> QueryRegions(int lodValue, MyRectangle queryArea)
+        {
+            return _dbsDict[lodValue].QueryRegions(lodValue, queryArea);
         }
     }
 }

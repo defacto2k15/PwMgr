@@ -82,7 +82,7 @@ namespace Assets.ETerrain.ETerrainIntegration
             initializingHelper.InitializeDesignBodySpotUpdater();
             initializingHelper.InitializeUTRendererProxy();
             initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
-            initializingHelper.InitializeRing2RegionsDatabase();
+            initializingHelper.InitializeMonoliticRing2RegionsDatabase();
 
             //var finalTerrainInitialization = new FinalTerrainInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, FeGRingConfiguration);
             //finalTerrainInitialization.Start();

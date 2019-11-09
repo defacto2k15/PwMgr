@@ -66,7 +66,7 @@ namespace Assets.Ring2
 
 
             Ring2PatchesOverseer patchesOverseer = new Ring2PatchesOverseer(
-                new Ring2RegionsDatabase(regionsTree),
+                new MonoliticRing2RegionsDatabase(regionsTree),
                 new Ring2RegionsToPatchTemplateConventer(),
                 new Ring2PatchTemplateCombiner(),
                 new Ring2PatchCreator(),

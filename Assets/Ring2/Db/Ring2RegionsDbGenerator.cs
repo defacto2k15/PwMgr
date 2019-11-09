@@ -36,7 +36,7 @@ namespace Assets.Ring2.Db
             _roadDatabase = roadDatabase;
         }
 
-        public async Task<Ring2RegionsDatabase> GenerateDatabaseAsync(MyRectangle generationArea)
+        public async Task<MonoliticRing2RegionsDatabase> GenerateDatabaseAsync(MyRectangle generationArea)
         {
             var habitatFields = await _habitatMap.Query(generationArea);
             var outTree = new Quadtree<Ring2Region>();
@@ -44,6 +44,11 @@ namespace Assets.Ring2.Db
             var fromHabitatTemplates = _configuration.FromHabitatTemplates;
             foreach (var field in habitatFields.QueryAll().Select(c => c.Field))
             {
+                //if (field.Geometry.Area < _configuration.MinimalRegionArea)
+                //{
+                //    continue;
+                //}
+
                 Preconditions.Assert(fromHabitatTemplates.ContainsKey(field.Type), "no for type: " + field.Type);
                 var template = fromHabitatTemplates[field.Type];
                 var newGeometry = AddBuffer(field.Geometry, template.BufferLength);
@@ -75,7 +80,7 @@ namespace Assets.Ring2.Db
                 }
             }
 
-            return new Ring2RegionsDatabase(outTree);
+            return new MonoliticRing2RegionsDatabase(outTree);
         }
 
         private IGeometry AddBuffer(IGeometry inputGeo, float bufferLength)
@@ -99,5 +104,6 @@ namespace Assets.Ring2.Db
         public MyRectangle Ring2RoadsQueryArea;
         public float PathWidth = 1.5f;
         public bool GenerateRoadHabitats = true;
+        public float MinimalRegionArea = float.MaxValue;
     }
 }

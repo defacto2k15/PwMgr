@@ -77,6 +77,7 @@ namespace Assets.FinalExecution
                 RootSerializationPath = HabitatDbFilePath
             };
 
+        //TODO this is ugly. Configuration should not have functions
         public Ring2RegionsDbGeneratorConfiguration Ring2RegionsDbGeneratorConfiguration(
             Ring2AreaDistanceDatabase distanceDatabase)
         {

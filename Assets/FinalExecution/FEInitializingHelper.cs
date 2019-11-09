@@ -50,7 +50,7 @@ namespace Assets.FinalExecution
             _updatableContainer.Add(updatable);
         }
 
-        public void InitializeRing2RegionsDatabase()
+        public void InitializeMonoliticRing2RegionsDatabase()
         {
             var habitatMap = new HabitatMapDbProxy(new HabitatMapDb(_configuration.HabitatDbInitializationInfo));
             _updatableContainer.AddOtherThreadProxy(habitatMap);
@@ -63,6 +63,25 @@ namespace Assets.FinalExecution
             var regionsDatabase = regionsDbGenerator.GenerateDatabaseAsync(_configuration.Ring2GenerationArea).Result;
             _gameInitializationFields.SetField(regionsDatabase);
         }
+
+        public void InitializeComplexRing2RegionsDatabase(Dictionary<int,  Ring2RegionsDbGeneratorConfiguration> configurations)
+        {
+            var habitatMap = new HabitatMapDbProxy(new HabitatMapDb(_configuration.HabitatDbInitializationInfo));
+            _updatableContainer.AddOtherThreadProxy(habitatMap);
+
+            _gameInitializationFields.SetField(habitatMap);
+
+            var monoliticDbs = configurations.ToDictionary(pair => pair.Key, pair =>
+            {
+                var regionsDbGenerator = new Ring2RegionsDbGenerator(habitatMap,
+                    pair.Value,
+                    _gameInitializationFields.Retrive<RoadDatabaseProxy>());
+                return regionsDbGenerator.GenerateDatabaseAsync(_configuration.Ring2GenerationArea).Result;
+            });
+            var regionsDatabase = new ComplexRing2RegionsDatabase(monoliticDbs);
+            _gameInitializationFields.SetField(regionsDatabase);
+        }
+
 
         public void InitializeUTRendererProxy()
         {
