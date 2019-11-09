@@ -134,4 +134,12 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
             return _output.ContainsKey(type);
         }
     }
+
+    [Serializable]
+    public class TerrainShapeDbConfiguration
+    {
+        public bool UseTextureSavingToDisk;
+        public bool UseTextureLoadingFromDisk;
+        public bool MergeTerrainDetail = false;
+    }
 }

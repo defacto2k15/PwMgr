@@ -77,7 +77,15 @@ namespace Assets.FinalExecution
                         _gameInitializationFields.Retrive<CommonExecutorUTProxy>());
 
                 var commonExecutorUtProxy = _gameInitializationFields.Retrive<CommonExecutorUTProxy>();
-                var terrainShapeDb = CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy, _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
+
+                var terrainDetailFileManager =
+                    new TerrainDetailFileManager(_configuration.TerrainDetailCachePath, commonExecutorUtProxy);
+                var terrainShapeDb = CreateTerrainShapeDb(terrainDetailProvider
+                    , commonExecutorUtProxy
+                    , _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>()
+                    , _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail
+                    , _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk
+                    , _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk, terrainDetailFileManager);
 
                 TerrainShapeDbProxy terrainShapeDbProxy = new TerrainShapeDbProxy(terrainShapeDb);
                 var baseTerrainDetailProvider = BaseTerrainDetailProvider.CreateFrom(terrainShapeDb);
@@ -100,16 +108,29 @@ namespace Assets.FinalExecution
         }
 
         public static TerrainShapeDb CreateTerrainShapeDb(TerrainDetailProvider terrainDetailProvider, CommonExecutorUTProxy commonExecutorUtProxy,
-            TerrainDetailAlignmentCalculator terrainDetailAlignmentCalculator)
+            TerrainDetailAlignmentCalculator terrainDetailAlignmentCalculator, bool mergingEnabled, bool saveTexturesToFile, bool loadTexturesFromFile,
+            TerrainDetailFileManager fileManager)
         {
-            var terrainShapeDb = new TerrainShapeDb(
-                new CachedTerrainDetailProvider(
-                    terrainDetailProvider,
-                    () => new InMemoryAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>(
-                        new InMemoryAssetsLevel2Cache<InternalTerrainDetailElementToken, TextureWithSize>(
-                            new InMemoryCacheConfiguration(), new TextureWithSizeActionsPerformer(commonExecutorUtProxy))
-                    )),
-                terrainDetailAlignmentCalculator);
+            Func<IAssetsCache<InternalTerrainDetailElementToken,TextureWithSize>> terrainCacheGenerator = 
+                () => new InMemoryAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>(
+                    new InMemoryAssetsLevel2Cache<InternalTerrainDetailElementToken, TextureWithSize>(
+                        new InMemoryCacheConfiguration(), new TextureWithSizeActionsPerformer(commonExecutorUtProxy)) );
+
+            if (loadTexturesFromFile)
+            {
+                terrainCacheGenerator = () => new InMemoryAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>(
+                    new TwoStorageOverseeingLevel2Cache(
+                        new InFilesAssetsCache(fileManager),
+                        new InMemoryAssetsLevel2Cache<InternalTerrainDetailElementToken, TextureWithSize>(new InMemoryCacheConfiguration(),
+                            new TextureWithSizeActionsPerformer(commonExecutorUtProxy)), saveTexturesToFile)
+                );
+            }
+
+            var cachedTerrainDetailProvider = new CachedTerrainDetailProvider(
+                terrainDetailProvider,
+                terrainCacheGenerator, mergingEnabled);
+            cachedTerrainDetailProvider.Initialize().Wait();
+            var terrainShapeDb = new TerrainShapeDb( cachedTerrainDetailProvider, terrainDetailAlignmentCalculator);
             return terrainShapeDb;
         }
 
@@ -150,10 +171,7 @@ namespace Assets.FinalExecution
             TerrainDetailGenerator generator,
             CommonExecutorUTProxy commonExecutorUtProxy)
         {
-            var terrainDetailProviderConfiguration = _configuration.TerrainDetailProviderConfiguration;
 
-            var terrainDetailFileManager =
-                new TerrainDetailFileManager(_configuration.TerrainDetailCachePath, commonExecutorUtProxy);
 
             var cornerMerger = new TerrainDetailCornerMerger(
                 new LateAssignFactory<BaseTerrainDetailProvider>(() => _gameInitializationFields.Retrive<BaseTerrainDetailProvider>()), 
@@ -161,8 +179,7 @@ namespace Assets.FinalExecution
                 _gameInitializationFields.Retrive<UTTextureRendererProxy>(),
                 _gameInitializationFields.Retrive<TextureConcieverUTProxy>());
 
-            var provider = new TerrainDetailProvider(
-                terrainDetailProviderConfiguration, generator, cornerMerger, _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
+            var provider = new TerrainDetailProvider( generator, cornerMerger, _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
 
             return provider;
         }

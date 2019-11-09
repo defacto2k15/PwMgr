@@ -47,8 +47,10 @@ namespace Assets.ETerrain.TestUtils
                 merger = new TerrainDetailCornerMerger(detailProviderFactory, new TerrainDetailAlignmentCalculator(240),textureRendererProxy,new TextureConcieverUTProxy() );
             }
 
-            var terrainDetailProvider = Ring1DebugObjectV2.CreateTerrainDetailProvider(terrainDetailGenerator, commonExecutorUtProxy, useTextureSavingToDisk, terrainDetailFilePath, merger, useTextureLoadingFromDisk);
-            _shapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy, new TerrainDetailAlignmentCalculator(240));
+            var terrainDetailProvider = Ring1DebugObjectV2.CreateTerrainDetailProvider(terrainDetailGenerator, merger);
+            _shapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy
+                , new TerrainDetailAlignmentCalculator(240), useCornerMerging, useTextureSavingToDisk, useTextureLoadingFromDisk
+                , new TerrainDetailFileManager(terrainDetailFilePath, commonExecutorUtProxy));
 
             var baseProvider = new FromTerrainDbBaseTerrainDetailProvider(_shapeDb);
             detailProviderFactory.Assign(baseProvider);

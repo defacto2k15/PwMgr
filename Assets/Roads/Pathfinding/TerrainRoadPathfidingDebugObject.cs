@@ -425,9 +425,10 @@ namespace Assets.Roads.Pathfinding
                 globalHeightTexture, textureRendererProxy, commonExecutorUtProxy, computeShaderExecutorObject,
                 _containerGameObject);
             TerrainDetailProvider terrainDetailProvider = Ring1DebugObjectV2.CreateTerrainDetailProvider(
-                terrainDetailGenerator, commonExecutorUtProxy, useTextureSavingToDisk);
+                terrainDetailGenerator);
 
-            var terrainShapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy, new TerrainDetailAlignmentCalculator(240));
+            var terrainShapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy
+                , new TerrainDetailAlignmentCalculator(240), false, false, false, null);
             _terrainShapeDbProxy = new TerrainShapeDbProxy(terrainShapeDb);
             terrainDetailGenerator.SetBaseTerrainDetailProvider(BaseTerrainDetailProvider.CreateFrom(terrainShapeDb));
 

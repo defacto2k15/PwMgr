@@ -93,8 +93,8 @@ namespace Assets.PreComputation
             var feGRingConfiguration = new FeGRingConfiguration();
             feGRingConfiguration.FeConfiguration = feConfiguration;
 
-            feConfiguration.TerrainDetailProviderConfiguration.UseTextureSavingToDisk = useTerrainDetailFileCache;
-            feConfiguration.TerrainDetailProviderConfiguration.UseTextureLoadingFromDisk= useTerrainDetailFileCache;
+            feConfiguration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = useTerrainDetailFileCache;
+            feConfiguration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk= useTerrainDetailFileCache;
             feConfiguration.EngraveRoadsInTerrain = false;
 
             TaskUtils.SetGlobalMultithreading(feConfiguration.Multithreading);

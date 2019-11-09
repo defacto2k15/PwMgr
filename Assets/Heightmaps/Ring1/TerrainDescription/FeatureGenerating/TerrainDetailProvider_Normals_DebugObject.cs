@@ -118,14 +118,6 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
         private TerrainDetailProvider CreateTerrainDetailProvider(List<RankedTerrainFeatureApplier> featureAppliers,
             Texture mainTexture)
         {
-            var terrainDetailProviderConfiguration = new TerrainDetailProviderConfiguration()
-            {
-                UseTextureSavingToDisk = false
-            };
-            var terrainDetailFileManager =
-                new TerrainDetailFileManager("C:\\unityCache\\", new CommonExecutorUTProxy());
-
-
             TerrainDetailGeneratorConfiguration generatorConfiguration = new TerrainDetailGeneratorConfiguration()
             {
                 TerrainDetailImageSideDisjointResolution = 240
@@ -141,7 +133,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
                     featureAppliers, new CommonExecutorUTProxy());
 
             TerrainDetailProvider provider =
-                new TerrainDetailProvider(terrainDetailProviderConfiguration, generator, null, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider( generator, null, new TerrainDetailAlignmentCalculator(240));
             generator.SetBaseTerrainDetailProvider(BaseTerrainDetailProvider.CreateFrom(provider));
             return provider;
         }

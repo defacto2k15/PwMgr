@@ -68,7 +68,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
                 });
                 TerrainDetailProvider terrainDetailProvider = CreateTerrainDetailProvider(generator);
                 var db = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, _commonExecutorUtProxy,
-                    new TerrainDetailAlignmentCalculator(240));
+                    new TerrainDetailAlignmentCalculator(240), false, false,false, null);
 
 
                 MyRectangle queryArea = null;
@@ -145,14 +145,8 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
 
         public TerrainDetailProvider CreateTerrainDetailProvider(TerrainDetailGenerator generator)
         {
-            var terrainDetailProviderConfiguration = new TerrainDetailProviderConfiguration()
-            {
-                UseTextureSavingToDisk = false
-            };
-            var terrainDetailFileManager = new TerrainDetailFileManager("C:\\unityCache\\", _commonExecutorUtProxy);
-
             var provider =
-                new TerrainDetailProvider(terrainDetailProviderConfiguration, generator, null, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider( generator, null, new TerrainDetailAlignmentCalculator(240));
             return provider;
         }
 

@@ -101,7 +101,8 @@ namespace Assets.Heightmaps.Ring1
             _updatableContainer.AddUpdatableElement(commonExecutor);
 
             TerrainShapeDbProxy terrainShapeDbProxy = new TerrainShapeDbProxy(
-                FETerrainShapeDbInitialization.CreateTerrainShapeDb(null /*todo here*/, commonExecutor, new TerrainDetailAlignmentCalculator(240)));
+                FETerrainShapeDbInitialization.CreateTerrainShapeDb(null /*todo here*/, commonExecutor, new TerrainDetailAlignmentCalculator(240),
+                    false, false, false, null));
 
             _otherThreadActionPairs.Add(new OtherThreadProxyAndActionPair()
             {

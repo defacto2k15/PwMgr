@@ -66,7 +66,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                 servicesProfileInfo, 
                 configuration.UpdatableContainerConfiguration);
 
-            configuration.TerrainDetailProviderConfiguration.UseTextureSavingToDisk = true;
+            configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
 
             gameInitializationFields.SetField(containerGameObject);
             gameInitializationFields.SetField(configuration.Repositioner);

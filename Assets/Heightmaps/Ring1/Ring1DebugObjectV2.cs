@@ -146,9 +146,10 @@ namespace Assets.Heightmaps.Ring1
                     globalHeightTexture, textureRendererProxy, commonExecutorUtProxy, computeShaderExecutorObject,
                     ContainerGameObject);
             TerrainDetailProvider terrainDetailProvider =
-                CreateTerrainDetailProvider(terrainDetailGenerator, commonExecutorUtProxy);
+                CreateTerrainDetailProvider(terrainDetailGenerator);
 
-            var terrainShapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy, new TerrainDetailAlignmentCalculator(240));
+            var terrainShapeDb = FETerrainShapeDbInitialization.CreateTerrainShapeDb(terrainDetailProvider, commonExecutorUtProxy
+                , new TerrainDetailAlignmentCalculator(240), false, false,false, null);
             TerrainShapeDbProxy terrainShapeDbProxy = new TerrainShapeDbProxy(terrainShapeDb);
             terrainDetailGenerator.SetBaseTerrainDetailProvider(BaseTerrainDetailProvider.CreateFrom(terrainShapeDb));
 
@@ -401,20 +402,10 @@ namespace Assets.Heightmaps.Ring1
             return generator;
         }
 
-        public static TerrainDetailProvider CreateTerrainDetailProvider(
-            TerrainDetailGenerator generator, CommonExecutorUTProxy commonExecutorUtProxy, bool useTextureSavingToDisk = false, 
-            string terrainDetailFilePath = "C\\unityCache\\", TerrainDetailCornerMerger cornerMerger = null, bool useTextureLoadingFromDisk = false)
+        public static TerrainDetailProvider CreateTerrainDetailProvider(TerrainDetailGenerator generator, TerrainDetailCornerMerger cornerMerger = null)
         {
-            var terrainDetailProviderConfiguration = new TerrainDetailProviderConfiguration()
-            {
-                UseTextureSavingToDisk = useTextureSavingToDisk,
-                UseTextureLoadingFromDisk = useTextureLoadingFromDisk,
-                MergeTerrainDetail = cornerMerger != null
-            };
-            var terrainDetailFileManager = new TerrainDetailFileManager(terrainDetailFilePath, commonExecutorUtProxy);
-
             var provider =
-                new TerrainDetailProvider(terrainDetailProviderConfiguration, generator, cornerMerger, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider( generator, cornerMerger, new TerrainDetailAlignmentCalculator(240));
             return provider;
         }
     }

@@ -48,9 +48,9 @@ namespace Assets.ETerrain.ETerrainIntegration
         public void Start()
         {
             _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = false};
-            _configuration.TerrainDetailProviderConfiguration.UseTextureLoadingFromDisk = true;
-            _configuration.TerrainDetailProviderConfiguration.UseTextureSavingToDisk = true;
-            _configuration.TerrainDetailProviderConfiguration.MergeTerrainDetail = true;
+            _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
+            _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
+            _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
             ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
             _gameInitializationFields = new GameInitializationFields();
             _ultraUpdatableContainer = ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields);

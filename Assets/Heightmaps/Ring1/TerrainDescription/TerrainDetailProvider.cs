@@ -15,16 +15,13 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
 {
     public class TerrainDetailProvider
     {
-        private TerrainDetailProviderConfiguration _configuration;
-        //private TerrainDetailFileManager _fileManager;
         private TerrainDetailGenerator _generator;
         private TerrainDetailCornerMerger _cornerMerger;
         private TerrainDetailAlignmentCalculator _alignmentCalculator;
 
-        public TerrainDetailProvider(TerrainDetailProviderConfiguration configuration,
+        public TerrainDetailProvider(
              TerrainDetailGenerator generator, TerrainDetailCornerMerger cornerMerger, TerrainDetailAlignmentCalculator alignmentCalculator)
         {
-            _configuration = configuration;
             _generator = generator;
             _cornerMerger = cornerMerger;
             _alignmentCalculator = alignmentCalculator;
@@ -90,10 +87,4 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
         }
     }
 
-    public class TerrainDetailProviderConfiguration
-    {
-        public bool UseTextureSavingToDisk;
-        public bool UseTextureLoadingFromDisk;
-        public bool MergeTerrainDetail = false;
-    }
 }

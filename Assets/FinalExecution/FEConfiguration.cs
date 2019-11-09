@@ -298,12 +298,12 @@ namespace Assets.FinalExecution
                 TerrainDetailImageSideDisjointResolution = 240
             };
 
-        public TerrainDetailProviderConfiguration TerrainDetailProviderConfiguration =
-            new TerrainDetailProviderConfiguration()
-            {
-                UseTextureSavingToDisk = true,
-                UseTextureLoadingFromDisk = true
-            };
+        public TerrainShapeDbConfiguration  TerrainShapeDbConfiguration = new TerrainShapeDbConfiguration()
+        {
+            UseTextureLoadingFromDisk = true,
+            UseTextureSavingToDisk = true,
+            MergeTerrainDetail = false
+        };
 
         public string TerrainDetailCachePath => _filePathsConfiguration.TerrainDetailCachePath;
 

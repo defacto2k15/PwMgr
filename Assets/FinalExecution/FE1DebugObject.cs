@@ -30,6 +30,7 @@ namespace Assets.FinalExecution
         public Camera ActiveCamera;
         public GraphicsOverlay GraphicsOverlay;
         public bool UseMultithreading;
+        public TerrainShapeDbConfiguration TerrainShapeDbConfiguration;
 
         private UltraUpdatableContainer _ultraUpdatableContainer;
         private GameInitializationFields _gameInitializationFields = new GameInitializationFields();
@@ -40,7 +41,7 @@ namespace Assets.FinalExecution
         void Start()
         {
             _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = UseMultithreading};
-            VegetationConfiguration.FeConfiguration = _configuration;
+            _configuration.TerrainShapeDbConfiguration = TerrainShapeDbConfiguration;
             FeGRingConfiguration.FeConfiguration = _configuration;
 
             TaskUtils.SetGlobalMultithreading(_configuration.Multithreading);
@@ -59,7 +60,7 @@ namespace Assets.FinalExecution
                 servicesProfileInfo, 
                 _configuration.UpdatableContainerConfiguration);
 
-            _configuration.TerrainDetailProviderConfiguration.UseTextureSavingToDisk = true;
+            _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
 
             _gameInitializationFields.SetField(ContainerGameObject);
             _gameInitializationFields.SetField(_configuration.Repositioner);

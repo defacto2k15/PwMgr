@@ -15,6 +15,7 @@ namespace Assets.Utils
             {
                 sb.Append(elem + " , ");
             }
+
             sb.Append(" }");
             return sb.ToString();
         }
@@ -22,6 +23,14 @@ namespace Assets.Utils
         public static string MyToString<T>(this IEnumerable<T> input)
         {
             return ToString(input);
+        }
+
+        public static string TrimEnd(this string source, string value)
+        {
+            if (!source.EndsWith(value))
+                return source;
+
+            return source.Remove(source.LastIndexOf(value));
         }
     }
 }

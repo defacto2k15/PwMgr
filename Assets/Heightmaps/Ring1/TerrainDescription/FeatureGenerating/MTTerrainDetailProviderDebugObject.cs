@@ -24,8 +24,6 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
     {
         public ComputeShaderContainerGameObject ContainerGameObject;
 
-        private TerrainDetailFileManager _terrainDetailFileManager;
-        private TerrainDetailProviderConfiguration _terrainDetailProviderConfiguration;
         private UTTextureRendererProxy _utTextureRendererProxy;
 
         private GenericAsyncExecutionThreadProxy _executionThreadProxy;
@@ -233,12 +231,6 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
 
         private void InitializeFields()
         {
-            _terrainDetailProviderConfiguration = new TerrainDetailProviderConfiguration()
-            {
-                UseTextureSavingToDisk = false
-            };
-            _terrainDetailFileManager = new TerrainDetailFileManager("C:\\unityCache\\", new CommonExecutorUTProxy());
-
             TextureRendererServiceConfiguration rendererServiceConfiguration = new TextureRendererServiceConfiguration()
             {
                 StepSize = new Vector2(500, 500)
@@ -263,7 +255,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
                     featureAppliers, _commonExecutor);
 
             TerrainDetailProvider provider =
-                new TerrainDetailProvider(_terrainDetailProviderConfiguration, generator, null, new TerrainDetailAlignmentCalculator(240));
+                new TerrainDetailProvider(generator, null, new TerrainDetailAlignmentCalculator(240));
             return provider;
         }
 
