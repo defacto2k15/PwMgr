@@ -110,20 +110,19 @@ namespace Assets.FinalExecution
             TerrainDetailAlignmentCalculator terrainDetailAlignmentCalculator, bool mergingEnabled, bool saveTexturesToFile, bool loadTexturesFromFile,
             TerrainDetailFileManager fileManager)
         {
-            Func<IAssetsCache<InternalTerrainDetailElementToken,TextureWithSize>> terrainCacheGenerator = 
-                () => new InMemoryAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>(
-                    new InMemoryAssetsLevel2Cache<InternalTerrainDetailElementToken, TextureWithSize>(
-                        new InMemoryCacheConfiguration(), new TextureWithSizeActionsPerformer(commonExecutorUtProxy)) );
-
-            if (loadTexturesFromFile)
+            var cachingConfiguration = new CachingConfiguration()
             {
-                terrainCacheGenerator = () => new InMemoryAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>(
-                    new TwoStorageOverseeingLevel2Cache(
-                        new InFilesAssetsCache(fileManager),
-                        new InMemoryAssetsLevel2Cache<InternalTerrainDetailElementToken, TextureWithSize>(new InMemoryCacheConfiguration(),
-                            new TextureWithSizeActionsPerformer(commonExecutorUtProxy)), saveTexturesToFile)
-                );
-            }
+                SaveAssetsToFile = saveTexturesToFile,
+                LoadAssetsFromFiles = loadTexturesFromFile
+            };
+
+            Func<IAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>> terrainCacheGenerator =
+                () => new InMemoryAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>(
+                    CreateLevel2AssetsCache<InternalTerrainDetailElementToken, TextureWithSize>(
+                        cachingConfiguration,
+                        new InMemoryCacheConfiguration(),
+                        new TextureWithSizeActionsPerformer(commonExecutorUtProxy),
+                        new CachingTerrainDetailFileManager(fileManager)));
 
             var cachedTerrainDetailProvider = new CachedTerrainDetailProvider(
                 terrainDetailProvider,
@@ -131,6 +130,21 @@ namespace Assets.FinalExecution
             cachedTerrainDetailProvider.Initialize().Wait();
             var terrainShapeDb = new TerrainShapeDb( cachedTerrainDetailProvider, terrainDetailAlignmentCalculator);
             return terrainShapeDb;
+        }
+
+        public static ILevel2AssetsCache<TQuery, TAsset> CreateLevel2AssetsCache<TQuery, TAsset>(CachingConfiguration cachingConfiguration,
+            InMemoryCacheConfiguration inMemoryCacheConfiguration, MemoryCachableAssetsActionsPerformer<TAsset> entityActionsPerformer,
+            IAssetCachingFileManager<TQuery, TAsset> fileManager) where TQuery : IFromQueryFilenameProvider where TAsset : class
+        {
+            var inMemoryAssetsLevel2Cache = new InMemoryAssetsLevel2Cache<TQuery, TAsset>(inMemoryCacheConfiguration, entityActionsPerformer);
+            if (!cachingConfiguration.LoadAssetsFromFiles)
+            {
+                return inMemoryAssetsLevel2Cache;
+            }
+            else
+            {
+                return new TwoStorageOverseeingLevel2Cache<TQuery, TAsset>(new InFilesAssetsCache<TQuery, TAsset>(fileManager), inMemoryAssetsLevel2Cache, cachingConfiguration.SaveAssetsToFile );
+            }
         }
 
         private TerrainDetailGenerator CreateTerrainDetailGenerator(
@@ -196,5 +210,11 @@ namespace Assets.FinalExecution
             return new RoadEngravingTerrainFeatureApplier(pathProximityDb, roadEngraver,
                 roadEngravingTerrainFetureApplierConfiguration);
         }
+    }
+
+    public class CachingConfiguration
+    {
+        public bool LoadAssetsFromFiles;
+        public bool SaveAssetsToFile;
     }
 }

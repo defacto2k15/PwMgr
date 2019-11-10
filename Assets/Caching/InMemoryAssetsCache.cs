@@ -160,19 +160,19 @@ namespace Assets.Caching
     public interface ILevel2AssetsCache<TQuery, TAsset> where TQuery : IFromQueryFilenameProvider where TAsset : class
     {
         Task InitializeAsync();
-        bool IsInCache(TQuery queryRect);
+        bool IsInCache(TQuery query);
         Task<TAsset> TryRetrive(TQuery queryArea);
-        Task AddAsset( TQuery queryArea, TAsset asset);
+        Task AddAsset( TQuery query, TAsset asset);
         Task RemoveAssetElementAsync(TQuery queryArea);
     }
 
-    public class TwoStorageOverseeingLevel2Cache : ILevel2AssetsCache<InternalTerrainDetailElementToken, TextureWithSize> 
+    public class TwoStorageOverseeingLevel2Cache<TQuery, TAsset> : ILevel2AssetsCache<TQuery, TAsset> where TQuery : IFromQueryFilenameProvider where TAsset : class
     {
-        private InFilesAssetsCache _inFilesCache;
-        private InMemoryAssetsLevel2Cache<InternalTerrainDetailElementToken, TextureWithSize> _inMemoryCache;
+        private InFilesAssetsCache<TQuery, TAsset> _inFilesCache;
+        private InMemoryAssetsLevel2Cache<TQuery,TAsset> _inMemoryCache;
         private bool _saveToFiles;
 
-        public TwoStorageOverseeingLevel2Cache(InFilesAssetsCache inFilesCache, InMemoryAssetsLevel2Cache<InternalTerrainDetailElementToken, TextureWithSize> inMemoryCache, bool saveToFiles)
+        public TwoStorageOverseeingLevel2Cache(InFilesAssetsCache<TQuery, TAsset> inFilesCache, InMemoryAssetsLevel2Cache<TQuery, TAsset> inMemoryCache, bool saveToFiles)
         {
             _inFilesCache = inFilesCache;
             _inMemoryCache = inMemoryCache;
@@ -185,12 +185,12 @@ namespace Assets.Caching
             await _inMemoryCache.InitializeAsync();
         }
 
-        public bool IsInCache(InternalTerrainDetailElementToken queryRect)
+        public bool IsInCache(TQuery query)
         {
-            return _inFilesCache.IsInCache(queryRect) || _inMemoryCache.IsInCache(queryRect);
+            return _inFilesCache.IsInCache(query) || _inMemoryCache.IsInCache(query);
         }
 
-        public async Task<TextureWithSize> TryRetrive(InternalTerrainDetailElementToken queryArea)
+        public async Task<TAsset> TryRetrive(TQuery queryArea)
         {
             if (_inMemoryCache.IsInCache(queryArea))
             {
@@ -209,16 +209,16 @@ namespace Assets.Caching
             return null;
         }
 
-        public async Task AddAsset( InternalTerrainDetailElementToken queryArea,  TextureWithSize asset)
+        public async Task AddAsset( TQuery query,  TAsset asset)
         {
-            await _inMemoryCache.AddAsset(queryArea, asset);
-            if (!_inFilesCache.IsInCache(queryArea) && _saveToFiles)
+            await _inMemoryCache.AddAsset(query, asset);
+            if (!_inFilesCache.IsInCache(query) && _saveToFiles)
             {
-                await _inFilesCache.AddAsset(queryArea, asset);
+                await _inFilesCache.AddAsset(query, asset);
             }
         }
 
-        public Task RemoveAssetElementAsync(InternalTerrainDetailElementToken queryArea)
+        public Task RemoveAssetElementAsync(TQuery queryArea)
         {
             return _inMemoryCache.RemoveAssetElementAsync(queryArea);
         }
@@ -246,9 +246,9 @@ namespace Assets.Caching
             return TaskUtils.EmptyCompleted();
         }
 
-        public bool IsInCache(TQuery queryRect)
+        public bool IsInCache(TQuery query)
         {
-            return TryRetriveAssetFromTree(queryRect) != null;
+            return TryRetriveAssetFromTree(query) != null;
         }
 
         public Task<TAsset> TryRetrive(TQuery queryArea)
@@ -305,18 +305,18 @@ namespace Assets.Caching
         }
 
 
-        public Task AddAsset(TQuery queryArea, TAsset asset)
+        public Task AddAsset(TQuery query, TAsset asset)
         {
-            var activeTreeElement = TryRetriveAssetFromTree(queryArea);
+            var activeTreeElement = TryRetriveAssetFromTree(query);
             Preconditions.Assert(activeTreeElement == null,
-                "There arleady is one detailElement of given description: qa: " + queryArea);
+                "There arleady is one detailElement of given description: qa: " + query);
 
             var newElement = new ReferenceCountedAsset()
             {
                 Element = asset,
                 ReferenceCount = 1
             };
-            AddElementToActiveTree(queryArea, newElement);
+            AddElementToActiveTree(query, newElement);
             return ClearNonReferencedElements();
         }
 

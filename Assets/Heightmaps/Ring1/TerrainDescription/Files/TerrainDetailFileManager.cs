@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Assets.Caching;
 using Assets.Heightmaps.Ring1.Creator;
+using Assets.Heightmaps.Ring1.TerrainDescription.Cache;
 using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Utils;
@@ -75,7 +77,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
         public Task<List<string>> RetriveAllTerrainDetailFilesListAsync()
         {
             return _commonExecutor.AddAction(() =>
-                Directory.GetFiles(_mainDictionaryPath).Select(c => c.TrimEnd(_extension).Replace(_mainDictionaryPath, "")).ToList());
+                Directory.GetFiles(_mainDictionaryPath).Select(c => c.TrimEndString(_extension).Replace(_mainDictionaryPath, "")).ToList());
         }
 
         public async Task<TextureWithSize> RetriveHeightDetailElementAsync(string filename)
@@ -121,6 +123,54 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
                 Size = textureSize,
                 Texture = texture
             };
+        }
+    }
+
+    public class CachingTerrainDetailFileManager : IAssetCachingFileManager<InternalTerrainDetailElementToken, TextureWithSize>
+    {
+        private TerrainDetailFileManager _fileManager;
+
+        public CachingTerrainDetailFileManager(TerrainDetailFileManager fileManager)
+        {
+            _fileManager = fileManager;
+        }
+
+        public Task<TextureWithSize> RetriveAssetAsync(string filename, InternalTerrainDetailElementToken query)
+        {
+            if (query.Type == TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY)
+            {
+                return (_fileManager.RetriveHeightDetailElementAsync(filename));
+            }
+            else if (query.Type == TerrainDescriptionElementTypeEnum.NORMAL_ARRAY)
+            {
+                return (_fileManager.RetriveNormalDetailElementAsync(filename));
+            }
+            else
+            {
+                Preconditions.Fail("Not supported detailelement type " + query.Type);
+                return (null);
+            }
+        }
+
+        public Task SaveAssetAsync(string filename, InternalTerrainDetailElementToken query, TextureWithSize asset)
+        {
+            if (query.Type == TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY)
+            {
+                return (_fileManager.SaveHeightDetailElementAsync(filename, asset));
+            }else if (query.Type == TerrainDescriptionElementTypeEnum.NORMAL_ARRAY)
+            {
+                return (_fileManager.SaveNormalDetailElementAsync(filename, asset));
+            }
+            else
+            {
+                Preconditions.Fail("Not supported detailelement type "+query.Type);
+                return (null);
+            }
+        }
+
+        public Task<List<string>> RetriveAllAssetFilenamesAsync()
+        {
+            return _fileManager.RetriveAllTerrainDetailFilesListAsync();
         }
     }
 }

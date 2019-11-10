@@ -25,7 +25,7 @@ namespace Assets.Utils
             return ToString(input);
         }
 
-        public static string TrimEnd(this string source, string value)
+        public static string TrimEndString(this string source, string value)
         {
             if (!source.EndsWith(value))
                 return source;

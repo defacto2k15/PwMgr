@@ -11,69 +11,55 @@ using Assets.Utils.Textures;
 
 namespace Assets.Caching
 {
-    public class InFilesAssetsCache : ILevel2AssetsCache<InternalTerrainDetailElementToken, TextureWithSize>  
+    public class InFilesAssetsCache<TQuery, TAsset> : ILevel2AssetsCache<TQuery,TAsset> where TQuery : IFromQueryFilenameProvider where TAsset : class
     {
-        private TerrainDetailFileManager _fileManager;
+        private IAssetCachingFileManager<TQuery, TAsset> _fileManager;
         private List<string> _filesOnDisk;
 
-        public InFilesAssetsCache(TerrainDetailFileManager fileManager)
+        public InFilesAssetsCache(IAssetCachingFileManager<TQuery, TAsset> fileManager)
         {
             _fileManager = fileManager;
         }
 
         public async Task InitializeAsync()
         {
-            _filesOnDisk = await _fileManager.RetriveAllTerrainDetailFilesListAsync();
+            _filesOnDisk = await _fileManager.RetriveAllAssetFilenamesAsync();
         }
 
-        public bool IsInCache(InternalTerrainDetailElementToken queryRect)
+        public bool IsInCache(TQuery query)
         {
-            return _filesOnDisk.Contains(queryRect.ProvideFilename());
+            return _filesOnDisk.Contains(query.ProvideFilename());
         }
 
-        public async Task<TextureWithSize> TryRetrive(InternalTerrainDetailElementToken queryArea)
+        public Task<TAsset> TryRetrive(TQuery query)
         {
-            var filename = queryArea.ProvideFilename();
+            var filename = query.ProvideFilename();
             if (!_filesOnDisk.Contains(filename))
             {
                 return null;
             }
-            if (queryArea.Type == TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY)
-            {
-                return (await _fileManager.RetriveHeightDetailElementAsync(filename));
-            }else if (queryArea.Type == TerrainDescriptionElementTypeEnum.NORMAL_ARRAY)
-            {
-                return (await _fileManager.RetriveNormalDetailElementAsync(filename));
-            }
-            else
-            {
-                Preconditions.Fail("Not supported detailelement type "+queryArea.Type);
-                return (null);
-            }
+
+            return _fileManager.RetriveAssetAsync(filename, query);
         }
 
-        public Task AddAsset( InternalTerrainDetailElementToken queryArea, TextureWithSize asset)
+        public Task AddAsset( TQuery query, TAsset asset)
         {
-            var filename = queryArea.ProvideFilename();
+            var filename = query.ProvideFilename();
             Preconditions.Assert(!_filesOnDisk.Contains(filename), "There is arleady file "+filename+" listed in cache");
             _filesOnDisk.Add(filename);
-            if (queryArea.Type == TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY)
-            {
-                return (_fileManager.SaveHeightDetailElementAsync(filename, asset));
-            }else if (queryArea.Type == TerrainDescriptionElementTypeEnum.NORMAL_ARRAY)
-            {
-                return (_fileManager.SaveNormalDetailElementAsync(filename, asset));
-            }
-            else
-            {
-                Preconditions.Fail("Not supported detailelement type "+queryArea.Type);
-                return (null);
-            }
+            return _fileManager.SaveAssetAsync(filename, query, asset);
         }
 
-        public Task RemoveAssetElementAsync(InternalTerrainDetailElementToken queryArea)
+        public Task RemoveAssetElementAsync(TQuery queryArea)
         {
             return TaskUtils.EmptyCompleted();
         }
+    }
+
+    public interface IAssetCachingFileManager<TQuery, TAsset>
+    {
+        Task<TAsset> RetriveAssetAsync(string filename, TQuery query);
+        Task SaveAssetAsync(string filename, TQuery query, TAsset asset);
+        Task<List<string>> RetriveAllAssetFilenamesAsync();
     }
 }

@@ -25,6 +25,7 @@ namespace Assets.PreComputation.Configurations
         public string HeightmapFilePath => PathBase + @"allTerrainF1.png";
 
         public string TerrainDetailCachePath => PathBase + @"unityCache\";
+        public string SurfacePatchCachePath => PathBase + @"surfaceCache\";
         public string ManualRing1TexturePath => PathBase + @"colorPlay\geoHand2.png";
         public string ColorPaletteFilePath => PathBase + @"colorPlay\cPal3.png";
         public string TreeCompletedClanDirectiory = "Assets/treePrefabs/completedGenerated2";
