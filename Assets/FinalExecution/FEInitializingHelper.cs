@@ -117,8 +117,6 @@ namespace Assets.FinalExecution
             _gameInitializationFields.SetField(designBodySpotUpdaterProxy);
 
             _updatableContainer.AddOtherThreadProxy(designBodySpotUpdaterProxy);
-            var gRingSpotUpdater = new GRingSpotUpdater(designBodySpotUpdaterProxy);
-            _gameInitializationFields.SetField(gRingSpotUpdater);
 
             var rootMediator = new RootMediatorSpotPositionsUpdater();
             spotUpdater.SetChangesListener(rootMediator);

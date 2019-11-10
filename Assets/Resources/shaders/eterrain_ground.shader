@@ -132,7 +132,7 @@
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
-				v.vertex.y =  terrainOut.finalHeight;
+				v.vertex.y = 0;// terrainOut.finalHeight;
 				o.pos = UnityObjectToClipPos(v.vertex); //niezbedna linijka by dzialal shader
 				//terrainOut.finalHeight = 0;// sampleHeightMap(_Debug, float4(uv, 0, 0));
 				//float4 vertexWorldPos =  mul(unity_ObjectToWorld , v.vertex);
@@ -221,7 +221,7 @@
 					finalColor = float4(1, 1, 1, 1);
 				}
 
-				finalColor = calculateESurfaceColor(i.inSegmentSpaceUv, levelAndRingIndexes, parameters);
+				//finalColor = calculateESurfaceColor(i.inSegmentSpaceUv, levelAndRingIndexes, parameters);
 
 				return finalColor;
 			} 

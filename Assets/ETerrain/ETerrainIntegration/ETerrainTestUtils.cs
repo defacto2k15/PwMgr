@@ -58,7 +58,8 @@ namespace Assets.ETerrain.ETerrainIntegration
 
 
         public static UltraUpdatableContainer InitializeFinalElements(FEConfiguration configuration, ComputeShaderContainerGameObject containerGameObject,
-            GameInitializationFields gameInitializationFields, Dictionary<int, Ring2RegionsDbGeneratorConfiguration> ring2RegionsDatabasesConfiguration = null)
+            GameInitializationFields gameInitializationFields, Dictionary<int, Ring2RegionsDbGeneratorConfiguration> ring2RegionsDatabasesConfiguration = null
+            , bool initializeLegacyDesignBodySpotUpdater = false)
         {
             TaskUtils.SetGlobalMultithreading(configuration.Multithreading);
             TaskUtils.SetMultithreadingOverride(true);
@@ -82,7 +83,11 @@ namespace Assets.ETerrain.ETerrainIntegration
             initializingHelper.InitializeUTService(new CommonExecutorUTProxy());
             initializingHelper.CreatePathProximityTextureDb();
 
-            initializingHelper.InitializeDesignBodySpotUpdater();
+            if (initializeLegacyDesignBodySpotUpdater)
+            {
+                initializingHelper.InitializeDesignBodySpotUpdater();
+            }
+
             initializingHelper.InitializeUTRendererProxy();
             initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
             if (ring2RegionsDatabasesConfiguration != null)

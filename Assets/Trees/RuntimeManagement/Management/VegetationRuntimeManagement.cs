@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Utils;
 using UnityEngine;
@@ -41,9 +42,12 @@ namespace Assets.Trees.RuntimeManagement.Management
                 var gainedArea = managementArea.GainedArea;
                 var level = managementArea.Level;
                 var gainedEntities = _positionsProvider.GetEntiesFrom(gainedArea, level);
-                _vegetationSubjectsChangesListener.AddInstancingOrder(level, (gainedEntities),
-                    new List<VegetationSubjectEntity>());
-                _visibleEntitiesContainer.AddEntitiesFrom(gainedEntities, level);
+                if (gainedEntities.Any())
+                {
+                    _vegetationSubjectsChangesListener.AddInstancingOrder(level, (gainedEntities),
+                        new List<VegetationSubjectEntity>());
+                    _visibleEntitiesContainer.AddEntitiesFrom(gainedEntities, level);
+                }
             }
             MyProfiler.EndSample();
         }

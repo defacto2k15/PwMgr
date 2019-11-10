@@ -16,6 +16,7 @@ namespace Assets.Heightmaps.GRing
 {
     public class GRingSpotUpdater
     {
+        //TODO2: Why it is even here? Who uses it? 
         // todo change it in future, more well -thought solutions 
 
         private Quadtree<GroundShapeInfoInTree> _groundTree = new Quadtree<GroundShapeInfoInTree>();

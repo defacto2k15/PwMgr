@@ -119,15 +119,12 @@ namespace Assets.EProps
 
             Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
 
-            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.PyramidLevelWorldSize.Size);
             Dictionary<HeightPyramidLevel, Vector2> levelCentersWorldSpace = new Dictionary<HeightPyramidLevel, Vector2>()
             {
                 {HeightPyramidLevel.Bottom, Vector2.zero },
                 {HeightPyramidLevel.Mid, Vector2.zero },
                 {HeightPyramidLevel.Top, Vector2.zero },
             };
-            var ringMergeRanges = perLevelTemplates.ToDictionary(c => c.Key,
-                c => c.Value.LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
 
             var ePropLocationConfiguration = new EPropElevationConfiguration();
             EPropConstantPyramidParameters ePropConstantPyramidParameters = new EPropConstantPyramidParameters()
@@ -153,6 +150,9 @@ namespace Assets.EProps
 
             _mergeRingsDisplayer = new EPropDebugMergeRingsDisplayer();
             _mergeRingsDisplayer.Start();
+            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.PyramidLevelWorldSize.Size);
+            var ringMergeRanges = perLevelTemplates.ToDictionary(c => c.Key,
+                c => c.Value.LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
             _ePropHotAreaSelector = new EPropHotAreaSelector(levelWorldSizes, ringMergeRanges);
 
             _elevationManager.DebugInitializeSectors(new MyRectangle(-200, -200, 400, 400));

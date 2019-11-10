@@ -131,6 +131,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9021260}
   - component: {fileID: 9021261}
+  - component: {fileID: 9021262}
   m_Layer: 0
   m_Name: EterrainRoot
   m_TagString: Untagged
@@ -159,13 +160,44 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9021259}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_GeneratorAsset: {fileID: 0}
   m_Script: {fileID: 11500000, guid: b53285f59fcbc0445ab5f5b89bb7a0db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Traveller: {fileID: 291560940}
+--- !u!114 &9021262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9021259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 6d389fbc3ac1bd8438684d0a4b46bfd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Traveller: {fileID: 291560940}
+  VegetationConfiguration:
+    ReferencedAssets:
+      EVegetationMainTexture: {fileID: 0}
+      GrassMaterial: {fileID: 0}
+      Prefabs:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+    Mode: 1
+    GenerateTrees: 1
+    GenerateBigBushes: 0
+    GenerateGrass: 0
+    GenerateSmallBushes: 0
+    SupportedLeadingBushSpecies: 1500000016000000
+    BushSingleGenerationArea: {x: 11.25, y: 11.25}
 --- !u!1 &23777371
 GameObject:
   m_ObjectHideFlags: 0
