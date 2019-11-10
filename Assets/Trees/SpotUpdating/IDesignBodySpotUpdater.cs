@@ -12,7 +12,7 @@ namespace Assets.Trees.SpotUpdating
         Task RegisterDesignBodiesAsync(List<FlatPositionWithSpotId> bodiesWithIds);
         Task RegisterDesignBodiesGroupAsync(SpotId id, List<Vector2> bodiesPositions);
         void ForgetDesignBodies(List<SpotId> bodiesToRemove);
-        Task UpdateBodiesSpotsAsync(UpdatedTerrainTextures newHeightTexture);
+        Task UpdateBodiesSpotsAsync(UpdatedTerrainTextures newHeightTexture); //TODO SPLIT OR REMOVE THESE TWO METHODS. They are only form gring
         void RemoveTerrainTextures(SpotUpdaterTerrainTextureId id);
     }
 }

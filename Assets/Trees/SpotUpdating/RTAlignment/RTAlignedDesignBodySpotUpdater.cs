@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Assets.Heightmaps.Ring1.valTypes;
+using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Utils;
 using Assets.Utils.MT;
 using UnityEngine;
@@ -80,7 +81,7 @@ namespace Assets.Trees.SpotUpdating.RTAlignment
                 }
             }
 
-            _changesListener.SpotsWereChanged(changedSpots);
+            _changesListener.SpotsWereChanged(changedSpots.ToDictionary(c=>c.Key, c => new DesignBodySpotModification(){SpotData = c.Value}));
 
         }
 
@@ -113,9 +114,9 @@ namespace Assets.Trees.SpotUpdating.RTAlignment
 
             var spotDatas = await _spotChangeCalculator.CalculateChangeAsync(terrainInTree.TerrainTexture, bodiesPositions);
 
-            _changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<SpotData>>()
+            _changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List< DesignBodySpotModification>>()
             {
-                {id, spotDatas }
+                [id] = spotDatas.Select(c => new DesignBodySpotModification(){SpotData = c}).ToList()
             });
         }
 
@@ -148,7 +149,7 @@ namespace Assets.Trees.SpotUpdating.RTAlignment
                 {
                     singleSpotsDict[spotIds[i]] = newSpots[i];
                 }
-                _changesListener.SpotsWereChanged(singleSpotsDict);
+                _changesListener.SpotsWereChanged(singleSpotsDict.ToDictionary(c=>c.Key, c => new DesignBodySpotModification(){SpotData = c.Value}));
             }
 
             Dictionary<SpotId, List<SpotData>> changedSpots = new Dictionary<SpotId, List<SpotData>>();
@@ -165,7 +166,7 @@ namespace Assets.Trees.SpotUpdating.RTAlignment
                     await _spotChangeCalculator.CalculateChangeAsync(newHeightTexture, itemInTree.Group.BodiesPositions);
                 changedSpots[itemInTree.Group.Id] = spotDatas;
             }
-            _changesListener.SpotGroupsWereChanged(changedSpots);
+            _changesListener.SpotGroupsWereChanged(changedSpots.ToDictionary(c=>c.Key, c => c.Value.Select(k => new DesignBodySpotModification(){SpotData = k}).ToList()));
         }
 
         private RTAlignedArea GetAlignedArea(MyRectangle  terrainArea)

@@ -7,6 +7,7 @@ using Assets.Grass2.PositionResolving;
 using Assets.Grass2.Types;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Repositioning;
+using Assets.ShaderUtils;
 using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Trees.SpotUpdating;
 using Assets.Utils;
@@ -86,7 +87,7 @@ namespace Assets.Grass2.Planting
             }
         }
 
-        public void GrassGroupSpotChanged(SpotId spotId, List<SpotData> spotDatas)
+        public void GrassGroupSpotChanged(SpotId spotId, List< DesignBodySpotModification> spotDatas)
         {
             MyProfiler.BeginSample("GrassGroupsPlanter. GrassGroupSpotChanged");
             var groupId = _spotIdToGrassGroupId.Get(spotId);
@@ -103,7 +104,7 @@ namespace Assets.Grass2.Planting
             MyProfiler.EndSample();
         }
 
-        private void GroupMovingEnded(List<SpotData> spotDatas, GrassGroupId groupId)
+        private void GroupMovingEnded(List< DesignBodySpotModification> spotDatas, GrassGroupId groupId)
         {
             MyProfiler.BeginSample("GrassGroupsPlanter. GroupMovingEnded");
             var aspectInfos = _groupsAspectInfos[groupId];
@@ -116,7 +117,7 @@ namespace Assets.Grass2.Planting
             MyProfiler.EndSample();
         }
 
-        private void NewGroupResolvingEnded(SpotId spotId, List<SpotData> spotDatas, GroupWaitingToBePlanted info,
+        private void NewGroupResolvingEnded(SpotId spotId, List< DesignBodySpotModification> spotDatas, GroupWaitingToBePlanted info,
             GrassGroupId groupId)
         {
             MyProfiler.BeginSample("GrassGroupsPlanter. NewGroupResolvingEnded");
@@ -143,26 +144,36 @@ namespace Assets.Grass2.Planting
 
         private static bool WarningWasSaid = false;
 
-        private List<Grass2PositionedEntity> PositionEntitiesFromAspect(Grass2Aspect aspect, SpotData spotData)
+        private List<Grass2PositionedEntity> PositionEntitiesFromAspect(Grass2Aspect aspect,  DesignBodySpotModification modification)
         {
             var flatPos = aspect.FlatPos;
-            var rotation = Quaternion.LookRotation(spotData.Normal.normalized).eulerAngles * Mathf.Deg2Rad;
-
+            //var rotation = Quaternion.LookRotation(modification.Normal.normalized).eulerAngles * Mathf.Deg2Rad; //TODO recreate
             if (!WarningWasSaid)
             {
                 Debug.Log("W4 WARNING. GRASS ROTATION IS NOT SET. DO STH!!!");
                 WarningWasSaid = true;
             }
             var centerTriplet = new MyTransformTriplet(
-                new Vector3(flatPos.x, spotData.Height, flatPos.y),
+                new Vector3(flatPos.x, 0, flatPos.y),
                 Vector3.zero, //rotation,
                 Vector3.one
             );
+            if (modification.SpotData != null)
+            {
+                centerTriplet.Position = new Vector3(centerTriplet.Position.x, modification.SpotData.Height, centerTriplet.Position.z);
+            }
             var centerMatrix = centerTriplet.ToLocalToWorldMatrix();
+
+            var additionalUniforms = new UniformsPack();
+            if (modification.Uniforms != null)
+            {
+                additionalUniforms = modification.Uniforms;
+            }
+
             return aspect.Entities.Select(c => new Grass2PositionedEntity()
             {
                 LocalToWorldMatrix = centerMatrix * c.DeltaTransformTriplet.ToLocalToWorldMatrix(),
-                Uniforms = c.Uniforms
+                Uniforms = UniformsPack.MergeTwo( c.Uniforms, additionalUniforms)
             }).ToList();
         }
 

@@ -88,7 +88,7 @@ namespace Assets.Trees.RuntimeManagement
                         instanceBucketsContainer),
                     _designBodySpotUpdaterProxy));
             updater.SetChangesListener(
-                new LambdaSpotPositionChangesListener((dict) => _forgingContainerProxy.AddSpotModifications(dict.ToDictionary(c=>c.Key, c=> new DesignBodySpotModification(){SpotData = c.Value, Uniforms = new UniformsPack()}))));
+                new LambdaSpotPositionChangesListener((dict) => _forgingContainerProxy.AddSpotModifications(dict)));
 
             _runtimeManagement = new VegetationRuntimeManagement(
                 positionsProvider: CreateSamplePositionsDatabase(),

@@ -131,7 +131,7 @@ namespace Assets.FinalExecution
 
             mediatorSpotUpdater.SetTargetChangesListener(new LambdaSpotPositionChangesListener(dict =>
             {
-                forgingContainerProxy.AddSpotModifications(dict.ToDictionary(c=>c.Key, c=> new DesignBodySpotModification(){SpotData = c.Value, Uniforms = new UniformsPack()}));
+                forgingContainerProxy.AddSpotModifications(dict);
             }));
 
             _ultraUpdatableContainer.AddOtherThreadProxy(forgingContainerProxy);

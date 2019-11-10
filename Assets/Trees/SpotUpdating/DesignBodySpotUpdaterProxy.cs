@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Assets.Heightmaps.Ring1;
+using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Utils;
 using Assets.Utils.MT;
 using Assets.Utils.Services;
@@ -94,12 +95,12 @@ namespace Assets.Trees.SpotUpdating
             _innerListeners.Add(listener);
         }
 
-        public void SpotsWereChanged(Dictionary<SpotId, SpotData> changedSpots)
+        public void SpotsWereChanged(Dictionary<SpotId, DesignBodySpotModification> changedSpots)
         {
             _innerListeners.ForEach(c => c.SpotsWereChanged(changedSpots));
         }
 
-        public void SpotGroupsWereChanged(Dictionary<SpotId, List<SpotData>> changedSpots)
+        public void SpotGroupsWereChanged(Dictionary<SpotId, List< DesignBodySpotModification>> changedSpots)
         {
             _innerListeners.ForEach(c => c.SpotGroupsWereChanged(changedSpots));
         }
@@ -123,7 +124,7 @@ namespace Assets.Trees.SpotUpdating
         }
 
 
-        public void SpotsWereChanged(Dictionary<SpotId, SpotData> changedSpots)
+        public void SpotsWereChanged(Dictionary<SpotId, DesignBodySpotModification> changedSpots)
         {
             var filtered = changedSpots.Where(c => _ourTargetSpotIds.Contains(c.Key)).ToDictionary(c => c.Key, c => c.Value);
             if (filtered.Any())
@@ -132,7 +133,7 @@ namespace Assets.Trees.SpotUpdating
             }
         }
 
-        public void SpotGroupsWereChanged(Dictionary<SpotId, List<SpotData>> changedSpots)
+        public void SpotGroupsWereChanged(Dictionary<SpotId, List< DesignBodySpotModification>> changedSpots)
         {
             var filtered = changedSpots.Where(c => _ourTargetSpotIds.Contains(c.Key)).ToDictionary(c => c.Key, c => c.Value);
             if (filtered.Any())

@@ -9,6 +9,7 @@ using Assets.Heightmaps;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.TerrainMat;
+using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Utils;
 using Assets.Utils.Quadtree;
 using Assets.Utils.Services;
@@ -164,16 +165,13 @@ namespace Assets.Trees.SpotUpdating
 
         private async Task CheckChangedSpots(UpdatedTerrainTextures heightTexture, List<SpotInQuadtree> spots)
         {
-            var newSpotDatas =
-                await _spotChangeCalculator.CalculateChangeAsync(heightTexture,
-                    spots.Select(c => c.FlatPosition).ToList());
-
+            var newSpotDatas = await _spotChangeCalculator.CalculateChangeAsync(heightTexture, spots.Select(c => c.FlatPosition).ToList());
 
             _changesListener.SpotsWereChanged(
                 Enumerable.Range(0, spots.Count).Select(i => new
                 {
                     Id = spots[i].Id,
-                    Data = newSpotDatas[i]
+                    Data = new DesignBodySpotModification(){SpotData = newSpotDatas[i]}
                 }).ToDictionary(c => c.Id, c => c.Data)
             );
         }
@@ -194,7 +192,7 @@ namespace Assets.Trees.SpotUpdating
                 spotsSum += groupsLengths[i];
             }
 
-            _changesListener.SpotGroupsWereChanged(outDict);
+            _changesListener.SpotGroupsWereChanged(outDict.ToDictionary(c=>c.Key, c => c.Value.Select(k =>  new DesignBodySpotModification(){SpotData = k}).ToList()));
         }
 
         public void RemoveTerrainTextures(SpotUpdaterTerrainTextureId id)

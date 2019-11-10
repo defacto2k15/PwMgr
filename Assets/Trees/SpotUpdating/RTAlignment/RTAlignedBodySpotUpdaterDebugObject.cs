@@ -7,6 +7,7 @@ using Assets.Heightmaps;
 using Assets.Heightmaps.Ring1;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Heightmaps.Ring1.valTypes;
+using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Utils.MT;
 using Assets.Utils.Services;
 using Assets.Utils.Textures;
@@ -153,7 +154,7 @@ namespace Assets.Trees.SpotUpdating.RTAlignment
         }
 
         private int _changeNo = 0;
-        public void SpotsWereChanged(Dictionary<SpotId, SpotData> changedSpots)
+        public void SpotsWereChanged(Dictionary<SpotId, DesignBodySpotModification> changedSpots)
         {
             if (_createDebugObjects)
             {
@@ -161,7 +162,7 @@ namespace Assets.Trees.SpotUpdating.RTAlignment
                 foreach (var pair in changedSpots)
                 {
                     var elem = _elemsDict[pair.Key];
-                    var pos = new Vector3(elem.FlatPosition.x, pair.Value.Height * 1000, elem.FlatPosition.y);
+                    var pos = new Vector3(elem.FlatPosition.x, pair.Value.SpotData.Height * 1000, elem.FlatPosition.y);
                     elem.CreatedObject.transform.localPosition = pos;
                     elem.CreatedObject.transform.localScale = new Vector3(10, 10, 10);
                     elem.CreatedObject.transform.SetParent(go.transform);
@@ -169,7 +170,7 @@ namespace Assets.Trees.SpotUpdating.RTAlignment
             }
         }
 
-        public void SpotGroupsWereChanged(Dictionary<SpotId, List<SpotData>> changedSpots)
+        public void SpotGroupsWereChanged(Dictionary<SpotId, List< DesignBodySpotModification>> changedSpots)
         {
             if (_createDebugObjects)
             {
@@ -184,7 +185,7 @@ namespace Assets.Trees.SpotUpdating.RTAlignment
                     {
                         var spot = pair.spotDatas[i];
                         var elem = pair.elems[i];
-                        var pos = new Vector3(elem.FlatPosition.x, spot.Height * 1000, elem.FlatPosition.y);
+                        var pos = new Vector3(elem.FlatPosition.x, spot.SpotData.Height * 1000, elem.FlatPosition.y);
                         elem.CreatedObject.transform.localPosition = pos;
                         elem.CreatedObject.transform.localScale = new Vector3(10, 10, 10);
                         elem.CreatedObject.transform.SetParent(go.transform);

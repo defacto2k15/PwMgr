@@ -7,6 +7,7 @@ using Assets.Heightmaps;
 using Assets.Heightmaps.Ring1;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Heightmaps.Ring1.valTypes;
+using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Utils;
 using Assets.Utils.MT;
 using Assets.Utils.Services;
@@ -196,24 +197,25 @@ namespace Assets.Trees.SpotUpdating
                 _gameObjects = gameObjects;
             }
 
-            public void SpotsWereChanged(Dictionary<SpotId, SpotData> changedSpots)
+            public void SpotsWereChanged(Dictionary<SpotId, DesignBodySpotModification> changedSpots)
             {
+                //throw new NotImplementedException();
                 foreach (var pair in changedSpots)
                 {
                     if (!_gameObjects.ContainsKey(pair.Key))
                     {
-                        _notRecognizedSpots.Add(pair.Key, pair.Value);
+                        _notRecognizedSpots.Add(pair.Key, pair.Value.SpotData);
                     }
                     else
                     {
                         var transform = _gameObjects[pair.Key].transform;
                         var oldPosition = transform.position;
-                        transform.position = new Vector3(oldPosition.x, pair.Value.Height, oldPosition.z);
+                        transform.position = new Vector3(oldPosition.x, pair.Value.SpotData.Height, oldPosition.z);
                     }
                 }
             }
 
-            public void SpotGroupsWereChanged(Dictionary<SpotId, List<SpotData>> changedSpots)
+            public void SpotGroupsWereChanged(Dictionary<SpotId, List< DesignBodySpotModification>> changedSpots)
             {
                 throw new NotImplementedException();
             }

@@ -48,7 +48,10 @@ namespace Assets.Trees.DesignBodyDetails
             Scale = VectorUtils.MemberwiseMultiply(Scale, other.Scale);
             if (UniformsPack != null)
             {
-                UniformsPack.MergeWith(other.UniformsPack);
+                if (other.UniformsPack != null)
+                {
+                    UniformsPack.MergeWith(other.UniformsPack);
+                }
             }
             else
             {
