@@ -11,7 +11,7 @@ namespace Assets.PreComputation.Configurations
         public MyRectangle AreaOnMap =>
             //_precomputationConfiguration.Repositioner.InvMove(new UnityCoordsPositions2D(-360, -360, 1080, 1080));
             _precomputationConfiguration.Repositioner.InvMove(
-                MyRectangle.FromVertex(new Vector2(-3600, -3600), new Vector2(3600, 3600)));
+                MyRectangle.FromVertex(new Vector2(-3600*3, -3600*3), new Vector2(3600*3, 3600*3)));
         //new UnityCoordsPositions2D(
         //    56 * 720, 59 * 720, (8*3) * 720, (8*3) * 720);
 

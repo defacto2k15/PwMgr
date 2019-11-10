@@ -113,7 +113,7 @@ namespace Assets.FinalExecution
             var cachingConfiguration = new CachingConfiguration()
             {
                 SaveAssetsToFile = saveTexturesToFile,
-                LoadAssetsFromFiles = loadTexturesFromFile
+                UseFileCaching = loadTexturesFromFile
             };
 
             Func<IAssetsCache<InternalTerrainDetailElementToken, TextureWithSize>> terrainCacheGenerator =
@@ -137,7 +137,7 @@ namespace Assets.FinalExecution
             IAssetCachingFileManager<TQuery, TAsset> fileManager) where TQuery : IFromQueryFilenameProvider where TAsset : class
         {
             var inMemoryAssetsLevel2Cache = new InMemoryAssetsLevel2Cache<TQuery, TAsset>(inMemoryCacheConfiguration, entityActionsPerformer);
-            if (!cachingConfiguration.LoadAssetsFromFiles)
+            if (!cachingConfiguration.UseFileCaching)
             {
                 return inMemoryAssetsLevel2Cache;
             }
@@ -214,7 +214,7 @@ namespace Assets.FinalExecution
 
     public class CachingConfiguration
     {
-        public bool LoadAssetsFromFiles;
+        public bool UseFileCaching;
         public bool SaveAssetsToFile;
     }
 }

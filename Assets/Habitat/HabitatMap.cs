@@ -131,8 +131,7 @@ namespace Assets.Habitat
                         mapGridSize.y);
 
                     var geometryEnvelope = MyNetTopologySuiteUtils.ToGeometryEnvelope(gridArea);
-                    var fieldsInArea =
-                        fullTree.QueryWithIntersection(geometryEnvelope);
+                    var fieldsInArea = fullTree.QueryWithIntersection(geometryEnvelope);
                     //Debug.Log("U34: "+fieldsInArea.Count(c => c.Field.Type == HabitatType.Fell));
                     //if (fieldsInArea.Count(c => c.Field.Type == HabitatType.Fell) > 0 )
                     //{

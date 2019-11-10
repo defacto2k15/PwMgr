@@ -53,9 +53,7 @@ namespace Assets.Habitat
             {
                 for (int y = 0; y < gridCellsCount.Y; y++)
                 {
-                    var gridInfoFile =
-                        JsonUtility.FromJson<HabitatFieldsTypeInfoJson>(
-                            File.ReadAllText(pathGenerator.GridInfoFile(x, y)));
+                    var gridInfoFile = JsonUtility.FromJson<HabitatFieldsTypeInfoJson>( File.ReadAllText(pathGenerator.GridInfoFile(x, y)));
 
                     string oneCellFilePath = pathGenerator.GridWrtFile(x, y);
                     var tree = new MyQuadtree<HabitatFieldInTree>();

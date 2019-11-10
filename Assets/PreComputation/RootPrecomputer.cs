@@ -45,11 +45,11 @@ namespace Assets.PreComputation
 
             var msw = new MyStopWatch();
 
-            var queries = RecordingTerrainShapeDb.LoadQueriesFromFile(@"C:\inz\allQueries.json");
-            Debug.Log("H8: " + StringUtils.ToString(queries.Select(c => c.QueryArea)));
+            //var queries = RecordingTerrainShapeDb.LoadQueriesFromFile(@"C:\inz\allQueries.json");
+            //Debug.Log("H8: " + StringUtils.ToString(queries.Select(c => c.QueryArea)));
 
             //msw.StartSegment("TerrainDbInitialization");
-            InitializeTerrainDb(true);
+            //InitializeTerrainDb(true);
 
             //TestHeightNormalization();
             //return;
@@ -63,13 +63,13 @@ namespace Assets.PreComputation
             msw.StartSegment("HabitatMapDbPrecomputation");
             var habitatMapDbPrecomputation = new HabitatMapDbPrecomputation(_gameInitializationFields,
                 _precomputationConfiguration, _filePathsConfiguration);
-            //habitatMapDbPrecomputation.Compute();
+            habitatMapDbPrecomputation.Compute();
             habitatMapDbPrecomputation.Load();
 
-            msw.StartSegment("Ring1Precomputation");
-            var ring1Precomputation = new Ring1Precomputation(_gameInitializationFields, _precomputationConfiguration,
-                _filePathsConfiguration);
-            ring1Precomputation.Compute();
+            //msw.StartSegment("Ring1Precomputation");
+            //var ring1Precomputation = new Ring1Precomputation(_gameInitializationFields, _precomputationConfiguration,
+            //    _filePathsConfiguration);
+            //ring1Precomputation.Compute();
             //ring1Precomputation.Load();
 
             //msw.StartSegment("VegetationDatabasePrecomputation");
