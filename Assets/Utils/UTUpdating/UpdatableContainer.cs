@@ -89,7 +89,12 @@ namespace Assets.Utils.UTUpdating
 
                 _updatableElements.ForEach(c => c.Update());
                 _updatableElements.ForEach(c => c.UpdateCamera(camera));
-                _otherThreadProxys.ForEach(c => c.OtherThreadProxy.SynchronicUpdate());
+
+                _otherThreadProxys.ForEach(c =>
+                {
+                    int todo = 22;
+                    c.OtherThreadProxy.SynchronicUpdate();
+                });
 
                 _utScheduler.Update();
 

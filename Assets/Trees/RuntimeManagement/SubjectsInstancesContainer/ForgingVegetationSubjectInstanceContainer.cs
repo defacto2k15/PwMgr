@@ -259,7 +259,12 @@ namespace Assets.Trees.RuntimeManagement.SubjectsInstancesContainer
 
         public DesignBodyLevel2Detail GenerateLevel2Details()
         {
-            return new DesignBodyLevel2Detail(position: new Vector3(0, SpotData.Height, 0), rotation: Quaternion.identity, scale: new Vector3(1, 1, 1),
+            float height = 0;
+            if (SpotData != null)
+            {
+                height = SpotData.Height;
+            }
+            return new DesignBodyLevel2Detail(position: new Vector3(0, height, 0), rotation: Quaternion.identity, scale: new Vector3(1, 1, 1),
                 uniformsPack: Uniforms);
         }
     }

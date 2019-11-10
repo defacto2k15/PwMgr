@@ -78,8 +78,8 @@ namespace Assets.Trees.DesignBodyDetails
                             UniformsPack = uniformsPack
                         }, uniformsArrayTemplate: new GpuInstancingUniformsArrayTemplate(new List<GpuInstancingUniformTemplate>()
                         {
-                            new GpuInstancingUniformTemplate("_Color", GpuInstancingUniformType.Vector4)
-
+                            new GpuInstancingUniformTemplate("_Color", GpuInstancingUniformType.Vector4),
+                            new GpuInstancingUniformTemplate("_Pointer", GpuInstancingUniformType.Float)
                         }), detailProvider: _detailProviderRepository.CreateColorUniformDetailProvider(dispositionPerDetailDisposition))
                 };
                 var representationCombination = new DesignBodyRepresentationInstanceCombination(templates: containerTemplates,
@@ -109,7 +109,8 @@ namespace Assets.Trees.DesignBodyDetails
                                 new List<GpuInstancingUniformTemplate>()
                                 {
                                     new GpuInstancingUniformTemplate("_BaseYRotation", GpuInstancingUniformType.Float),
-                                    new GpuInstancingUniformTemplate("_Color", GpuInstancingUniformType.Vector4)
+                                    new GpuInstancingUniformTemplate("_Color", GpuInstancingUniformType.Vector4),
+                                    new GpuInstancingUniformTemplate("_Pointer", GpuInstancingUniformType.Float)
                                 }),
                             detailProvider: _detailProviderRepository
                                 .CalculateBillboardDesignBodyTreeScaleDetailProvider(

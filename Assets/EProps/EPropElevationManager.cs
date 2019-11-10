@@ -209,20 +209,19 @@ namespace Assets.EProps
     public class EPropElevationLocalePointersOccupancyContainer
     {
         private DoubleDictionary<EPropElevationId, EPropElevationPointer> _pointerIdDict;
-        private bool[] _occupancyArray; //todo use some better data structure
+        private Queue<int> _freePointers; //todo use some better data structure
+        private Queue<int> _takenPointers; //todo use some better data structure
 
         public EPropElevationLocalePointersOccupancyContainer(EPropElevationConfiguration configuration)
         {
-            _occupancyArray = new bool[configuration.MaxLocalePointersCount];
-            _occupancyArray[0] = true; //dummy first value
+            _freePointers = new Queue<int>(Enumerable.Range(0, configuration.MaxLocalePointersCount).ToList());
+            _takenPointers = new Queue<int>();
             _pointerIdDict = new DoubleDictionary<EPropElevationId, EPropElevationPointer>();
         }
 
         public EPropElevationPointer ClaimFreePointer(EPropElevationId id)
         {
-            uint freeIndex = (uint)_occupancyArray.Select((c,i)=>new{c,i}).Where(c => !c.c).Select(c => c.i).FirstOrDefault();
-            Preconditions.Assert(freeIndex!=0, "There is no more free locale pointers");
-            _occupancyArray[freeIndex] = true;
+            uint freeIndex = (uint) _freePointers.Dequeue();
             var pointer = new EPropElevationPointer()
             {
                 Value = freeIndex

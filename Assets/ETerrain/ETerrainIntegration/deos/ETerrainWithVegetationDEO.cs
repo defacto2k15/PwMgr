@@ -113,8 +113,13 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             Debug.Log("Init time "+msw.CollectResults());
         }
 
+        private bool _wasFirstUpdateDone = false;
+
         public void Update()
         {
+            var msw = new MyStopWatch();
+            msw.StartSegment("FIRST UPDATE");
+
             _updaterUntilException.Execute(() => { _ultraUpdatableContainer.Update(FindObjectOfType<Camera>()); });
             var position3D = Traveller.transform.position;
             var travellerFlatPosition = new Vector2(position3D.x, position3D.z);
@@ -122,14 +127,19 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
 
             var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
-             _elevationManager.Update(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters);
+            _elevationManager.Update(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters);
 
-            if (Time.frameCount % 100 == 0)
+            //if (Time.frameCount % 100 == 0)
+            //{
+            //    if (false)
+            //    {
+            //        var propLocaleChanges = _elevationManager.RecalculateSectorsDivision(travellerFlatPosition);
+            //    }
+            //}
+            if (!_wasFirstUpdateDone)
             {
-                if (false)
-                {
-                    var propLocaleChanges = _elevationManager.RecalculateSectorsDivision(travellerFlatPosition);
-                }
+                Debug.Log("FIRST UPDATE RESULT " + msw.CollectResults());
+                _wasFirstUpdateDone = true;
             }
         }
 
@@ -152,18 +162,14 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 c => c.Value.LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
             _ePropHotAreaSelector = new EPropHotAreaSelector(levelWorldSizes, ringMergeRanges);
 
+            var spotUpdater = new EPropsDesignBodyChangesListener(_elevationManager );
+            var designBodySpotUpdaterProxy = new DesignBodySpotUpdaterProxy(spotUpdater);
+            _gameInitializationFields.SetField(designBodySpotUpdaterProxy);
+            _ultraUpdatableContainer.AddOtherThreadProxy(designBodySpotUpdaterProxy);
 
-            //var designBodySpotUpdaterProxy = new DesignBodySpotUpdaterProxy(spotUpdater);
-            //_gameInitializationFields.SetField(designBodySpotUpdaterProxy);
-
-            //_updatableContainer.AddOtherThreadProxy(designBodySpotUpdaterProxy);
-            //var gRingSpotUpdater = new GRingSpotUpdater(designBodySpotUpdaterProxy);
-            //_gameInitializationFields.SetField(gRingSpotUpdater);
-
-            //var rootMediator = new RootMediatorSpotPositionsUpdater();
-            //spotUpdater.SetChangesListener(rootMediator);
-
-            //_gameInitializationFields.SetField(rootMediator);
+            var rootMediator = new RootMediatorSpotPositionsUpdater();
+            spotUpdater.SetChangesListener(rootMediator);
+            _gameInitializationFields.SetField(rootMediator);
 
         }
 

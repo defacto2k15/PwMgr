@@ -276,7 +276,7 @@ namespace Assets.EProps
 
             _propertyBlock.SetFloatArray("_LocaleBufferScopeIndexArray", _localeBufferScopeIndexArray);
             _propertyBlock.SetFloatArray("_InScopeIndexArray", _inScopeIndexArray);
-            _propertyBlock.SetFloatArray("_PointersArray", _pointersArray);
+            _propertyBlock.SetFloatArray("_Pointer", _pointersArray);
             _currentObjectsCount += newPropIds.Length;
         }
 

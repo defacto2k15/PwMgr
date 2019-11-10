@@ -186,11 +186,11 @@ MonoBehaviour:
       EVegetationMainTexture: {fileID: 0}
       GrassMaterial: {fileID: 0}
       Prefabs:
-      - {fileID: 0}
-      - {fileID: 0}
-      - {fileID: 0}
-      - {fileID: 0}
-      - {fileID: 0}
+      - {fileID: 186700, guid: 35d5e3901b785d74fb02e626a6eb3a5f, type: 3}
+      - {fileID: 158626, guid: 1017ed3fa26cf0743bc990a16b64a8f9, type: 3}
+      - {fileID: 146036, guid: aa460d316bdb2b24882f9198ab5c0fc3, type: 3}
+      - {fileID: 189768, guid: 9a79a8d2a2d1a5d4291ebfcda284e94b, type: 3}
+      - {fileID: 193400, guid: 3addedb4ce9735b44b416709f5bf528e, type: 3}
     Mode: 1
     GenerateTrees: 1
     GenerateBigBushes: 0

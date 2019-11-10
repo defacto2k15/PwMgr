@@ -40,7 +40,7 @@
 			UNITY_INSTANCING_BUFFER_START(Props)
 				UNITY_DEFINE_INSTANCED_PROP(float, _LocaleBufferScopeIndexArray)
 				UNITY_DEFINE_INSTANCED_PROP(float, _InScopeIndexArray)
-				UNITY_DEFINE_INSTANCED_PROP(float, _PointersArray)
+				UNITY_DEFINE_INSTANCED_PROP(float, _Pointer)
 			UNITY_INSTANCING_BUFFER_END(Props)
 
 #include "eterrain_EPropLocaleCommon.hlsl"
@@ -55,13 +55,13 @@
 				UNITY_SETUP_INSTANCE_ID(v);
 				UNITY_TRANSFER_INSTANCE_ID(v, o);
 
-				uint scopeIndexArray = asuint(UNITY_ACCESS_INSTANCED_PROP(Props, _LocaleBufferScopeIndexArray));
-				uint inScopeIndexArray = asuint(UNITY_ACCESS_INSTANCED_PROP(Props,  _InScopeIndexArray));
-				uint localeIndex = ComputeIndexInLocaleBuffer(_ScopeLength,  scopeIndexArray, inScopeIndexArray);
+				//uint scopeIndexArray = asuint(UNITY_ACCESS_INSTANCED_PROP(Props, _LocaleBufferScopeIndexArray));
+				//uint inScopeIndexArray = asuint(UNITY_ACCESS_INSTANCED_PROP(Props,  _InScopeIndexArray));
+				//uint localeIndex = ComputeIndexInLocaleBuffer(_ScopeLength,  scopeIndexArray, inScopeIndexArray);
 
-				//uint pointerValue = asuint(UNITY_ACCESS_INSTANCED_PROP(Props, _PointersArray));
-				//EPropElevationId  elevationId = _EPropIdsBuffer[pointerValue];
-				//uint localeIndex = ComputeIndexInLocaleBuffer(_ScopeLength, elevationId.LocaleBufferScopeIndex, elevationId.InScopeIndex);
+				uint pointerValue = asuint(UNITY_ACCESS_INSTANCED_PROP(Props, _Pointer));
+				EPropElevationId  elevationId = _EPropIdsBuffer[pointerValue];
+				uint localeIndex = ComputeIndexInLocaleBuffer(_ScopeLength, elevationId.LocaleBufferScopeIndex, elevationId.InScopeIndex);
 
 				float height = _EPropLocaleBuffer[localeIndex].Height;
 
@@ -95,7 +95,6 @@
 				uint localeIndex = ComputeIndexInLocaleBuffer(_ScopeLength,  scopeIndexArray, inScopeIndexArray);
 				float height = _EPropLocaleBuffer[localeIndex].Height;
 
-				return height;
 				return generateRandomColor(scopeIndexArray).xyzz;
 			}
 			ENDCG
