@@ -1,9 +1,11 @@
-﻿using Assets.ComputeShaders;
+﻿using System.Collections.Generic;
+using Assets.ComputeShaders;
 using Assets.ETerrain.SectorFilling;
 using Assets.FinalExecution;
 using Assets.Heightmaps.Ring1.MeshGeneration;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Heightmaps.Ring1.valTypes;
+using Assets.Ring2.Db;
 using Assets.Utils;
 using Assets.Utils.MT;
 using Assets.Utils.Services;
@@ -24,7 +26,7 @@ namespace Assets.ETerrain.ETerrainIntegration
             {
                 for (int y = 0; y < tex.height; y++)
                 {
-                    rawTextureData[x + y * tex.width] = offset+ ((x+y*4) / 400f)*stepMultiplier;
+                    rawTextureData[x + y * tex.width] = offset + ((x + y * 4) / 400f) * stepMultiplier;
                 }
             }
 
@@ -42,9 +44,9 @@ namespace Assets.ETerrain.ETerrainIntegration
             {
                 for (int y = 0; y < tex.height; y++)
                 {
-                    var uvInTexture = new Vector2(x/240f, y/240f);
+                    var uvInTexture = new Vector2(x / 240f, y / 240f);
                     var worldSpacePosition = worldSpaceRectangle.SampleByUv(uvInTexture);
-                    rawTextureData[x + y * tex.width] = Mathf.Repeat(worldSpacePosition.x+ worldSpacePosition.y*4, repreatLength) / repreatLength;
+                    rawTextureData[x + y * tex.width] = Mathf.Repeat(worldSpacePosition.x + worldSpacePosition.y * 4, repreatLength) / repreatLength;
                 }
             }
 
@@ -55,7 +57,8 @@ namespace Assets.ETerrain.ETerrainIntegration
         }
 
 
-        public static UltraUpdatableContainer InitializeFinalElements( FEConfiguration configuration, ComputeShaderContainerGameObject containerGameObject, GameInitializationFields gameInitializationFields)
+        public static UltraUpdatableContainer InitializeFinalElements(FEConfiguration configuration, ComputeShaderContainerGameObject containerGameObject,
+            GameInitializationFields gameInitializationFields, Dictionary<int, Ring2RegionsDbGeneratorConfiguration> ring2RegionsDatabasesConfiguration = null)
         {
             TaskUtils.SetGlobalMultithreading(configuration.Multithreading);
             TaskUtils.SetMultithreadingOverride(true);
@@ -63,7 +66,7 @@ namespace Assets.ETerrain.ETerrainIntegration
             GlobalServicesProfileInfo servicesProfileInfo = new GlobalServicesProfileInfo();
             var ultraUpdatableContainer = new UltraUpdatableContainer(
                 configuration.SchedulerConfiguration,
-                servicesProfileInfo, 
+                servicesProfileInfo,
                 configuration.UpdatableContainerConfiguration);
 
             configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
@@ -82,7 +85,14 @@ namespace Assets.ETerrain.ETerrainIntegration
             initializingHelper.InitializeDesignBodySpotUpdater();
             initializingHelper.InitializeUTRendererProxy();
             initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
-            initializingHelper.InitializeMonoliticRing2RegionsDatabase();
+            if (ring2RegionsDatabasesConfiguration != null)
+            {
+                initializingHelper.InitializeComplexRing2RegionsDatabase(ring2RegionsDatabasesConfiguration);
+            }
+            else
+            {
+                initializingHelper.InitializeMonoliticRing2RegionsDatabase();
+            }
 
             //var finalTerrainInitialization = new FinalTerrainInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, FeGRingConfiguration);
             //finalTerrainInitialization.Start();

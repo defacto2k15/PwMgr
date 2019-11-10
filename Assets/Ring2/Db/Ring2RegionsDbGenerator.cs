@@ -44,10 +44,10 @@ namespace Assets.Ring2.Db
             var fromHabitatTemplates = _configuration.FromHabitatTemplates;
             foreach (var field in habitatFields.QueryAll().Select(c => c.Field))
             {
-                //if (field.Geometry.Area < _configuration.MinimalRegionArea)
-                //{
-                //    continue;
-                //}
+                if (field.Geometry.Area < _configuration.MinimalRegionArea)
+                {
+                    continue;
+                }
 
                 Preconditions.Assert(fromHabitatTemplates.ContainsKey(field.Type), "no for type: " + field.Type);
                 var template = fromHabitatTemplates[field.Type];
@@ -104,6 +104,6 @@ namespace Assets.Ring2.Db
         public MyRectangle Ring2RoadsQueryArea;
         public float PathWidth = 1.5f;
         public bool GenerateRoadHabitats = true;
-        public float MinimalRegionArea = float.MaxValue;
+        public float MinimalRegionArea = 0;
     }
 }

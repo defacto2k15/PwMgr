@@ -55,7 +55,6 @@ namespace Assets.Ring2.RuntimeManagementOtherThread
             var sizeInPixels = new Vector2(Mathf.Ceil((float) (patternPixelsPerUnit * sliceArea.CalculatedWidth())),
                 Mathf.Ceil((float) (patternPixelsPerUnit * sliceArea.CalculatedHeight())));
             var sizeOfOnePixel = new Vector2(1f / patternPixelsPerUnit, 1f / patternPixelsPerUnit);
-            Debug.Log("XXXXXXXXXX "+sizeInPixels);
 
             MyTextureTemplate texture = new MyTextureTemplate((int) sizeInPixels.x, (int) sizeInPixels.y,
                 TextureFormat.RGBA32, false, FilterMode.Bilinear);

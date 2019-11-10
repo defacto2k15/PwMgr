@@ -13,7 +13,9 @@ using Assets.Heightmaps.Ring1.TerrainDescription;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.PreComputation.Configurations;
 using Assets.Repositioning;
+using Assets.Ring2.Db;
 using Assets.Ring2.GRuntimeManagementOtherThread;
+using Assets.Ring2.IntensityProvider;
 using Assets.Ring2.RuntimeManagementOtherThread;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
 using Assets.Ring2.Stamping;
@@ -43,14 +45,24 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
             ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
             _gameInitializationFields = new GameInitializationFields();
-            _ultraUpdatableContainer = ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields);
+            Dictionary<int, Ring2RegionsDbGeneratorConfiguration> ring2RegionsDatabasesConfiguration = Enumerable.Range(1, 3)
+                .ToDictionary(i => i, i => _configuration.Ring2RegionsDbGeneratorConfiguration(new Ring2AreaDistanceDatabase()));
+
+            ring2RegionsDatabasesConfiguration[2].GenerateRoadHabitats = false;
+            ring2RegionsDatabasesConfiguration[2].MinimalRegionArea = 2000;
+            ring2RegionsDatabasesConfiguration[3].GenerateRoadHabitats = false;
+            ring2RegionsDatabasesConfiguration[3].MinimalRegionArea = 10000;
+
+
+            _ultraUpdatableContainer =
+                ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields, ring2RegionsDatabasesConfiguration);
 
             var startConfiguration = ETerrainHeightPyramidFacadeStartConfiguration.DefaultConfiguration;
             startConfiguration.CommonConfiguration.YScale = _gameInitializationFields.Retrive<HeightDenormalizer>().DenormalizationMultiplier;
             startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/6.0f;
             startConfiguration.InitialTravellerPosition = new Vector2(490, -21) + new Vector2(90f*8, 90f*4);
             //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
-            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top};//, HeightPyramidLevel.Mid};//, HeightPyramidLevel.Bottom};
+            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top, HeightPyramidLevel.Mid};//, HeightPyramidLevel.Bottom};
 
             ETerrainHeightBuffersManager buffersManager = new ETerrainHeightBuffersManager();
             _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,
@@ -86,9 +98,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             };
             feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit= new Dictionary<int, float>()
             {
-                [1] = 3f,
-                [2] = 3 /8f,
-                [3] = 3 / 64f
+                [1] = 1/3f,
+                [2] = 1 /(3*8f),
+                [3] = 1 /(3f*64f)
             }; 
 
             var patchInitializer = new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, feRing2PatchConfiguration);
@@ -100,7 +112,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
 
             UTTextureRendererProxy textureRendererProxy = _gameInitializationFields.Retrive<UTTextureRendererProxy>();
-            ESurfaceTexturesPack onlyPack = null;
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                 {
@@ -122,31 +133,21 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                         if (pack != null)
                                         {
                                             var mainTexture = pack.MainTexture;
-                                        //Debug.Log("Resolution is "+mainTexture.width+"x"+mainTexture.height+" query size is "+surfaceWorldSpaceRectangle.Width+"x"+surfaceWorldSpaceRectangle.Height);
-                                        segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
-                                        GameObject.Destroy(mainTexture);
+                                            //Debug.Log("Resolution is "+mainTexture.width+"x"+mainTexture.height+" query size is "+surfaceWorldSpaceRectangle.Width+"x"+surfaceWorldSpaceRectangle.Height);
+                                            segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
+                                            GameObject.Destroy(mainTexture);
+                                        }
                                     }
-                                }
                                     else
                                     {
 
-                                        ESurfaceTexturesPack pack = null;
-                                        if (onlyPack != null)
-                                        {
-                                            pack = onlyPack;
-                                        }
-                                        else
-                                        {
-                                            pack = surfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
+                                        ESurfaceTexturesPack pack = surfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
                                                 new FlatLod(2, 1));
-                                            onlyPack = pack;
-                                        }
-
                                         if (pack != null)
                                         {
                                             var mainTexture = pack.MainTexture;
-                                            Debug.Log("Resolution is " + mainTexture.width + "x" + mainTexture.height + " query size is " +
-                                                      surfaceWorldSpaceRectangle.Width + "x" + surfaceWorldSpaceRectangle.Height);
+                                            //Debug.Log("Resolution is " + mainTexture.width + "x" + mainTexture.height + " query size is " +
+                                            //          surfaceWorldSpaceRectangle.Width + "x" + surfaceWorldSpaceRectangle.Height);
                                             segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
                                             GameObject.Destroy(mainTexture);
                                         }

@@ -73,8 +73,7 @@ namespace Assets.FinalExecution
                         _gameInitializationFields.Retrive<ComputeShaderContainerGameObject>());
 
                 TerrainDetailProvider terrainDetailProvider =
-                    CreateTerrainDetailProvider(terrainDetailGenerator,
-                        _gameInitializationFields.Retrive<CommonExecutorUTProxy>());
+                    CreateTerrainDetailProvider(terrainDetailGenerator);
 
                 var commonExecutorUtProxy = _gameInitializationFields.Retrive<CommonExecutorUTProxy>();
 
@@ -167,12 +166,8 @@ namespace Assets.FinalExecution
             return generator;
         }
 
-        private TerrainDetailProvider CreateTerrainDetailProvider(
-            TerrainDetailGenerator generator,
-            CommonExecutorUTProxy commonExecutorUtProxy)
+        private TerrainDetailProvider CreateTerrainDetailProvider(TerrainDetailGenerator generator)
         {
-
-
             var cornerMerger = new TerrainDetailCornerMerger(
                 new LateAssignFactory<BaseTerrainDetailProvider>(() => _gameInitializationFields.Retrive<BaseTerrainDetailProvider>()), 
                 _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>(),

@@ -41,7 +41,7 @@ namespace Assets.FinalExecution
             _ultraUpdatableContainer.Add(ring2PatchesPainterUtProxy);
 
             var patchesCreator = new GRing2PatchesCreator(
-                _gameInitializationFields.Retrive<MonoliticRing2RegionsDatabase>(),
+                _gameInitializationFields.Retrive<IRing2RegionsDatabase>(),
                 new GRing2RegionsToPatchTemplateConventer(),
                 new Ring2PatchTemplateCombiner(),
                 new Ring2PatchCreator(),
