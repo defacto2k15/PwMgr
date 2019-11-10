@@ -51,14 +51,22 @@ namespace Assets.FinalExecution
     {
         private readonly GameInitializationFields _initializationFields;
         private readonly UltraUpdatableContainer _ultraUpdatableContainer;
+        private readonly ComputeBuffersPack _buffersPack;
         private readonly FinalVegetationConfiguration _veConfiguration;
 
         public FinalVegetation(GameInitializationFields initializationFields,
-            UltraUpdatableContainer ultraUpdatableContainer, FinalVegetationConfiguration veConfiguration)
+            UltraUpdatableContainer ultraUpdatableContainer, FinalVegetationConfiguration veConfiguration,  ComputeBuffersPack buffersPack = null)
         {
             this._initializationFields = initializationFields;
             this._ultraUpdatableContainer = ultraUpdatableContainer;
             _veConfiguration = veConfiguration;
+            _buffersPack = buffersPack;
+
+            if (buffersPack == null)
+            {
+                buffersPack = new ComputeBuffersPack();
+            }
+            _buffersPack = buffersPack;
         }
 
         public void Start()
@@ -102,7 +110,7 @@ namespace Assets.FinalExecution
             else
             {
                 var eVegetationShifter = new EVegetationDetailProviderShifter(new DetailProviderRepository(), quadBillboardMesh,
-                    _veConfiguration.ReferencedAssets);
+                    _veConfiguration.ReferencedAssets, _buffersPack);
                 combinationProvider = new EVegetationDesignBodyRepresentationInstanceCombinationProvider(new TreePrefabManager(), eVegetationShifter, _veConfiguration.ReferencedAssets);
             }
 

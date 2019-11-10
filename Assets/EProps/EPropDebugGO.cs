@@ -119,18 +119,12 @@ namespace Assets.EProps
 
             Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
 
-            Dictionary<HeightPyramidLevel, Vector2> levelCentersWorldSpace = new Dictionary<HeightPyramidLevel, Vector2>()
-            {
-                {HeightPyramidLevel.Bottom, Vector2.zero },
-                {HeightPyramidLevel.Mid, Vector2.zero },
-                {HeightPyramidLevel.Top, Vector2.zero },
-            };
-
             var ePropLocationConfiguration = new EPropElevationConfiguration();
             EPropConstantPyramidParameters ePropConstantPyramidParameters = new EPropConstantPyramidParameters()
             {
                 LevelsCount = startConfiguration.HeightPyramidLevels.Count,
-                RingsPerLevelCount = startConfiguration.CommonConfiguration.MaxRingsPerLevelCount //TODO parametrize
+                RingsPerLevelCount = startConfiguration.CommonConfiguration.MaxRingsPerLevelCount, //TODO parametrize
+                HeightScale = startConfiguration.CommonConfiguration.YScale
             };
             _elevationManager = new EPropElevationManager( ePropLocationConfiguration, shaderExecutorObject, ePropConstantPyramidParameters);
             _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,

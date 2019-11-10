@@ -23,6 +23,7 @@ using Assets.Ring2.Db;
 using Assets.Ring2.GRuntimeManagementOtherThread;
 using Assets.Ring2.IntensityProvider;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
+using Assets.ShaderUtils;
 using Assets.Trees.SpotUpdating;
 using Assets.Utils;
 using Assets.Utils.Services;
@@ -69,7 +70,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
             startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
 
-            ETerrainHeightBuffersManager buffersManager = new ETerrainHeightBuffersManager();
+            var buffersManager = new ETerrainHeightBuffersManager();
             _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,
                 _gameInitializationFields.Retrive<MeshGeneratorUTProxy>(),
                 _gameInitializationFields.Retrive<UTTextureRendererProxy>(), startConfiguration);
@@ -92,7 +93,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var initializingHelper = new FEInitializingHelper(_gameInitializationFields,_ultraUpdatableContainer,_configuration);
             initializingHelper.InitializeGlobalInstancingContainer();
 
-
             var dbProxy = _gameInitializationFields.Retrive<TerrainShapeDbProxy>();
 
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
@@ -106,7 +106,11 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
             InitializeDesignBodySpotUpdater(startConfiguration, _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager,
                 perLevelTemplates);
-            var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration);
+
+            ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack();
+            computeBuffersPack.SetBuffer("_EPropLocaleBuffer", _elevationManager.EPropLocaleBuffer);
+            computeBuffersPack.SetBuffer("_EPropIdsBuffer", _elevationManager.EPropIdsBuffer);
+            var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration, computeBuffersPack);
             finalVegetation.Start();
 
             Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
@@ -151,7 +155,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var ePropConstantPyramidParameters = new EPropConstantPyramidParameters()
             {
                 LevelsCount = startConfiguration.HeightPyramidLevels.Count,
-                RingsPerLevelCount = startConfiguration.CommonConfiguration.MaxRingsPerLevelCount //TODO parametrize
+                RingsPerLevelCount = startConfiguration.CommonConfiguration.MaxRingsPerLevelCount, //TODO parametrize
+                HeightScale = startConfiguration.CommonConfiguration.YScale
             };
             _elevationManager = new EPropElevationManager( ePropLocationConfiguration, shaderExecutorObject, ePropConstantPyramidParameters);
             _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,

@@ -7,6 +7,7 @@ cbuffer ConstantGlobalParameters {
 	float4 g_travellerPositionWorldSpace;
 	int g_ringsPerLevelCount;
 	int g_levelsCount;
+	float g_heightScale;
 };
 
 	sampler2D _HeightMap0;
@@ -88,7 +89,7 @@ void  CSETerrain_LocaleBufferUpdater(uint3 id : SV_DispatchThreadID)
 
 	EPropLocale newLocale;
 	newLocale.FlatPosition = order.FlatPosition;
-	newLocale.Height =  samplingResult.height * 50;
+	newLocale.Height =  samplingResult.height * g_heightScale;
 	newLocale.Normal = float3(samplingResult.levelIndex, samplingResult.ringIndex, samplingResult.terrainMergingLerpParam);
 
 	_EPropLocaleBuffer[ePropLocaleIndex] = newLocale;
@@ -111,7 +112,7 @@ void CSETerrain_LocaleRecalculate(uint3 id : SV_DispatchThreadID)
 
 	ETerrainHeightSamplingResult samplingResult = SampleHeightAtPosition(g_travellerPositionWorldSpace, locale.FlatPosition);
 
-	locale.Height =  samplingResult.height * 50;
+	locale.Height = samplingResult.height * g_heightScale;
 	locale.Normal = float3(samplingResult.levelIndex, samplingResult.ringIndex, samplingResult.terrainMergingLerpParam);
 	//TODO normal
 

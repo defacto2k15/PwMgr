@@ -20,12 +20,15 @@ namespace Assets.Trees.DesignBodyDetails
         private DetailProviderRepository _detailProviderRepository;
         private Mesh _quadBillboardMesh;
         private readonly FinalVegetationReferencedAssets _referencedAssets;
+        private readonly ComputeBuffersPack _computeBuffersPack;
 
-        public  EVegetationDetailProviderShifter (DetailProviderRepository detailProviderRepository, Mesh quadBillboardMesh, FinalVegetationReferencedAssets referencedAssets)
+        public  EVegetationDetailProviderShifter (DetailProviderRepository detailProviderRepository, Mesh quadBillboardMesh,
+            FinalVegetationReferencedAssets referencedAssets, ComputeBuffersPack computeBuffersPack)
         {
             _detailProviderRepository = detailProviderRepository;
             _quadBillboardMesh = quadBillboardMesh;
             _referencedAssets = referencedAssets;
+            _computeBuffersPack = computeBuffersPack;
         }
 
         public Dictionary<DesignBodyRepresentationQualifier, List<DesignBodyRepresentationInstanceCombination>>
@@ -62,6 +65,7 @@ namespace Assets.Trees.DesignBodyDetails
             var combinationsList = new List<DesignBodyRepresentationInstanceCombination>();
 
             Material material = new Material(Shader.Find("Custom/EVegetation/BaseTreeInstanced"));
+            _computeBuffersPack.SetBuffersToMaterial(material);
             UniformsPack uniformsPack = new UniformsPack();
             uniformsPack.SetTexture("_MainTex", _referencedAssets.EVegetationMainTexture);
             foreach (var mesh in allMeshes)
@@ -93,6 +97,7 @@ namespace Assets.Trees.DesignBodyDetails
         private List<DesignBodyRepresentationInstanceCombination> CreateBillboardRepresentationEnhanced(List<EBillboardTextureArray> billboardArrays, SingleDetailDisposition disposition)
         {
             var material = new Material(Shader.Find("Custom/EVegetation/GenericBillboard.Instanced"));
+            _computeBuffersPack.SetBuffersToMaterial(material);
             return billboardArrays.Select(collageTexture =>
                 new DesignBodyRepresentationInstanceCombination(
                     templates: new List<GpuInstancerContainerTemplate>()

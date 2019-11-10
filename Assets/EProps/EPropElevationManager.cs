@@ -423,6 +423,7 @@ namespace Assets.EProps
     {
         public int LevelsCount;
         public int RingsPerLevelCount;
+        public float HeightScale;
     }
 
     public class EPropLocaleBufferManager
@@ -501,6 +502,7 @@ namespace Assets.EProps
                 localeBufferUpdateShader.SetGlobalUniform("g_ringsPerLevelCount", _constantPyramidParameters.RingsPerLevelCount);
                 localeBufferUpdateShader.SetGlobalUniform("g_levelsCount", _constantPyramidParameters.LevelsCount);
                 localeBufferUpdateShader.SetGlobalUniform("g_ScopeLength", _configuration.ScopeLength);
+                localeBufferUpdateShader.SetGlobalUniform("g_heightScale", _constantPyramidParameters.HeightScale);
 
                 var expectedLevels = new List<HeightPyramidLevel>() {HeightPyramidLevel.Bottom, HeightPyramidLevel.Mid, HeightPyramidLevel.Top};
                 foreach (var level in expectedLevels) //TODO remove, this is temporary
@@ -562,6 +564,7 @@ namespace Assets.EProps
                 localeBufferUpdateShader.SetGlobalUniform("g_ringsPerLevelCount", _constantPyramidParameters.RingsPerLevelCount);
                 localeBufferUpdateShader.SetGlobalUniform("g_levelsCount", _constantPyramidParameters.LevelsCount);
                 localeBufferUpdateShader.SetGlobalUniform("g_ScopeLength", _configuration.ScopeLength);
+                localeBufferUpdateShader.SetGlobalUniform("g_heightScale", _constantPyramidParameters.HeightScale);
 
                 return _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
                 {
@@ -614,6 +617,7 @@ namespace Assets.EProps
                 localeBufferUpdateShader.SetGlobalUniform("g_ringsPerLevelCount", _constantPyramidParameters.RingsPerLevelCount);
                 localeBufferUpdateShader.SetGlobalUniform("g_levelsCount", _constantPyramidParameters.LevelsCount);
                 localeBufferUpdateShader.SetGlobalUniform("g_ScopeLength", _configuration.ScopeLength);
+                localeBufferUpdateShader.SetGlobalUniform("g_heightScale", _constantPyramidParameters.HeightScale);
 
                 var expectedLevels = new List<HeightPyramidLevel>() {HeightPyramidLevel.Bottom, HeightPyramidLevel.Mid, HeightPyramidLevel.Top};
                 foreach (var level in expectedLevels) //TODO remove, this is temporary
