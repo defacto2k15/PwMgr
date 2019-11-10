@@ -157,13 +157,13 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             //_gameInitializationFields.SetField(designBodySpotUpdaterProxy);
 
             //_updatableContainer.AddOtherThreadProxy(designBodySpotUpdaterProxy);
-            var gRingSpotUpdater = new GRingSpotUpdater(designBodySpotUpdaterProxy);
-            _gameInitializationFields.SetField(gRingSpotUpdater);
+            //var gRingSpotUpdater = new GRingSpotUpdater(designBodySpotUpdaterProxy);
+            //_gameInitializationFields.SetField(gRingSpotUpdater);
 
-            var rootMediator = new RootMediatorSpotPositionsUpdater();
-            spotUpdater.SetChangesListener(rootMediator);
+            //var rootMediator = new RootMediatorSpotPositionsUpdater();
+            //spotUpdater.SetChangesListener(rootMediator);
 
-            _gameInitializationFields.SetField(rootMediator);
+            //_gameInitializationFields.SetField(rootMediator);
 
         }
 

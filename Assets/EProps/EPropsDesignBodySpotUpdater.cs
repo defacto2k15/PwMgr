@@ -8,26 +8,40 @@ using UnityEngine;
 
 namespace Assets.EProps
 {
-    public class EPropsDesignBodySpotUpdater : IDesignBodySpotUpdater
-    {
-        public Task RegisterDesignBodiesAsync(List<FlatPositionWithSpotId> bodiesWithIds)
-        {
-        }
+    //public class EPropsDesignBodySpotUpdater : IDesignBodySpotUpdater
+    //{
+    //    private EPropElevationManager _elevationManager;
+    //    private ISpotPositionChangesListener _changesListener;
 
-        public Task RegisterDesignBodiesGroupAsync(SpotId id, List<Vector2> bodiesPositions)
-        {
-        }
+    //    public EPropsDesignBodySpotUpdater(EPropElevationManager elevationManager)
+    //    {
+    //        _elevationManager = elevationManager;
+    //    }
 
-        public void ForgetDesignBodies(List<SpotId> bodiesToRemove)
-        {
-        }
+    //    public void SetChangesListener(ISpotPositionChangesListener listener)
+    //    {
+    //        _changesListener = listener;
+    //    }
 
-        public Task UpdateBodiesSpotsAsync(UpdatedTerrainTextures newHeightTexture)
-        {
-        }
+    //    public Task RegisterDesignBodiesAsync(List<FlatPositionWithSpotId> bodiesWithIds)
+    //    {
+    //        _changesListener.SpotsWereChanged();
+    //    }
 
-        public void RemoveTerrainTextures(SpotUpdaterTerrainTextureId id)
-        {
-        }
-    }
+    //    public Task RegisterDesignBodiesGroupAsync(SpotId id, List<Vector2> bodiesPositions)
+    //    {
+    //    }
+
+    //    public void ForgetDesignBodies(List<SpotId> bodiesToRemove)
+    //    {
+    //    }
+
+    //    public Task UpdateBodiesSpotsAsync(UpdatedTerrainTextures newHeightTexture)
+    //    {
+    //    }
+
+    //    public void RemoveTerrainTextures(SpotUpdaterTerrainTextureId id)
+    //    {
+    //    }
+    //}
 }

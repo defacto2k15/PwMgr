@@ -43,6 +43,7 @@ namespace Assets.FinalExecution
             _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = UseMultithreading};
             _configuration.TerrainShapeDbConfiguration = TerrainShapeDbConfiguration;
             FeGRingConfiguration.FeConfiguration = _configuration;
+            VegetationConfiguration.FeConfiguration = _configuration;
 
             TaskUtils.SetGlobalMultithreading(_configuration.Multithreading);
             TaskUtils.SetMultithreadingOverride(true);

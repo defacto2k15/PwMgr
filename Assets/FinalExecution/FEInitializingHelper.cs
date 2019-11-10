@@ -115,13 +115,15 @@ namespace Assets.FinalExecution
 
             var designBodySpotUpdaterProxy = new DesignBodySpotUpdaterProxy(spotUpdater);
             _gameInitializationFields.SetField(designBodySpotUpdaterProxy);
-
             _updatableContainer.AddOtherThreadProxy(designBodySpotUpdaterProxy);
 
             var rootMediator = new RootMediatorSpotPositionsUpdater();
             spotUpdater.SetChangesListener(rootMediator);
 
             _gameInitializationFields.SetField(rootMediator);
+
+            var gRingSpotUpdater = new GRingSpotUpdater(designBodySpotUpdaterProxy);
+            _gameInitializationFields.SetField(gRingSpotUpdater);
         }
 
         public void InitializeGlobalInstancingContainer()
