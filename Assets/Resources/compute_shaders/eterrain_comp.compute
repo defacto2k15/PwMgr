@@ -89,7 +89,7 @@ void  CSETerrain_LocaleBufferUpdater(uint3 id : SV_DispatchThreadID)
 
 	EPropLocale newLocale;
 	newLocale.FlatPosition = order.FlatPosition;
-	newLocale.Height =  samplingResult.height * g_heightScale;
+	newLocale.Height =samplingResult.height * g_heightScale;
 	newLocale.Normal = float3(samplingResult.levelIndex, samplingResult.ringIndex, samplingResult.terrainMergingLerpParam);
 
 	_EPropLocaleBuffer[ePropLocaleIndex] = newLocale;
@@ -112,7 +112,7 @@ void CSETerrain_LocaleRecalculate(uint3 id : SV_DispatchThreadID)
 
 	ETerrainHeightSamplingResult samplingResult = SampleHeightAtPosition(g_travellerPositionWorldSpace, locale.FlatPosition);
 
-	locale.Height = samplingResult.height * g_heightScale;
+	locale.Height =  samplingResult.height * g_heightScale;
 	locale.Normal = float3(samplingResult.levelIndex, samplingResult.ringIndex, samplingResult.terrainMergingLerpParam);
 	//TODO normal
 

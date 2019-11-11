@@ -51,22 +51,21 @@ namespace Assets.FinalExecution
     {
         private readonly GameInitializationFields _initializationFields;
         private readonly UltraUpdatableContainer _ultraUpdatableContainer;
-        private readonly ComputeBuffersPack _buffersPack;
         private readonly FinalVegetationConfiguration _veConfiguration;
+        private readonly UniformsAndComputeBuffersPack _materialCommonPack;
 
         public FinalVegetation(GameInitializationFields initializationFields,
-            UltraUpdatableContainer ultraUpdatableContainer, FinalVegetationConfiguration veConfiguration,  ComputeBuffersPack buffersPack = null)
+            UltraUpdatableContainer ultraUpdatableContainer, FinalVegetationConfiguration veConfiguration, UniformsAndComputeBuffersPack materialCommonPack=null)
         {
             this._initializationFields = initializationFields;
             this._ultraUpdatableContainer = ultraUpdatableContainer;
             _veConfiguration = veConfiguration;
-            _buffersPack = buffersPack;
 
-            if (buffersPack == null)
+            if (materialCommonPack== null)
             {
-                buffersPack = new ComputeBuffersPack();
+                materialCommonPack = new UniformsAndComputeBuffersPack(new UniformsPack(), new ComputeBuffersPack() );
             }
-            _buffersPack = buffersPack;
+            _materialCommonPack = materialCommonPack;
         }
 
         public void Start()
@@ -109,8 +108,10 @@ namespace Assets.FinalExecution
             }
             else
             {
-                var eVegetationShifter = new EVegetationDetailProviderShifter(new DetailProviderRepository(), quadBillboardMesh,
-                    _veConfiguration.ReferencedAssets, _buffersPack);
+                var eVegetationShifter = new EVegetationDetailProviderShifter(
+                    _veConfiguration.ShaderNames,
+                    new DetailProviderRepository(), quadBillboardMesh,
+                    _veConfiguration.ReferencedAssets, _materialCommonPack);
                 combinationProvider = new EVegetationDesignBodyRepresentationInstanceCombinationProvider(new TreePrefabManager(), eVegetationShifter, _veConfiguration.ReferencedAssets);
             }
 

@@ -352,6 +352,9 @@ MonoBehaviour:
     GenerateBigBushes: 0
     GenerateGrass: 0
     GenerateSmallBushes: 0
+    ShaderNames:
+      TreeBillboardShader: Custom/EVegetation/GenericBillboardLocaledInstanced
+      BaseTreeShader: Custom/EVegetation/BaseTreeLocaledInstanced
     SupportedLeadingBushSpecies: 1500000016000000
     BushSingleGenerationArea: {x: 11.25, y: 11.25}
 --- !u!4 &641582741

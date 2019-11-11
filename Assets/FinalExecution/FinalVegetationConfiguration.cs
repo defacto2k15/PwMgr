@@ -37,6 +37,8 @@ namespace Assets.FinalExecution
         public FEConfiguration FeConfiguration { get; set; }
 
         /////////////////// Shifting!
+        public VegetationShaderNamesConfiguration ShaderNames = new VegetationShaderNamesConfiguration();
+
         public Dictionary<VegetationSpeciesEnum, RootSinglePlantShiftingConfiguration> ShiftingConfigurations => new
             Dictionary<VegetationSpeciesEnum, RootSinglePlantShiftingConfiguration>()
             {
@@ -425,7 +427,6 @@ namespace Assets.FinalExecution
                     }
                 },
             };
-
 
         public Dictionary<VegetationSpeciesEnum, List<VegetationSpeciesEnum>> SpeciesChangingList => new
             Dictionary<VegetationSpeciesEnum, List<VegetationSpeciesEnum>>()
@@ -833,5 +834,12 @@ namespace Assets.FinalExecution
         public string LivePrefabPath;
         public string EVegetationPrefabName;
         public MainPlantDetailProviderDisposition PlantDetailProviderDisposition;
+    }
+
+    [Serializable]
+    public class VegetationShaderNamesConfiguration
+    {
+        public string TreeBillboardShader = "Custom/EVegetation/GenericBillboard.Instanced";
+        public string BaseTreeShader = "Custom/EVegetation/BaseTreeInstanced";
     }
 }

@@ -29,12 +29,8 @@
 		float _RowsCount;
 		float _BaseYRotation;
 
-		struct Input {  
-			float2 pos; // w pos.x przechowywany jest kąt
-			float angle_degrees;
-		};
-
 		#include "GenericBillboard.hlsl"
+		#include "GenericBillboardSurf.hlsl"
 
 		//Our Vertex Shader 
 		void vert (inout appdata_base v, out Input o){

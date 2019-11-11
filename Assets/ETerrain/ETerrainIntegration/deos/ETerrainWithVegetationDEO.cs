@@ -27,6 +27,7 @@ using Assets.ShaderUtils;
 using Assets.Trees.SpotUpdating;
 using Assets.Utils;
 using Assets.Utils.Services;
+using Assets.Utils.ShaderBuffers;
 using Assets.Utils.UTUpdating;
 using UnityEngine;
 
@@ -104,13 +105,20 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             );
 
             initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
-            InitializeDesignBodySpotUpdater(startConfiguration, _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager,
+            EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
+            InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration, _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager,
                 perLevelTemplates);
 
-            ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack();
+            var reloader = FindObjectOfType<BufferReloaderRootGO>();
+            var commonUniforms = new UniformsPack();
+            commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
+            ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
             computeBuffersPack.SetBuffer("_EPropLocaleBuffer", _elevationManager.EPropLocaleBuffer);
             computeBuffersPack.SetBuffer("_EPropIdsBuffer", _elevationManager.EPropIdsBuffer);
-            var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration, computeBuffersPack);
+
+            Debug.Log(VegetationConfiguration.ShaderNames.BaseTreeShader);
+            var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
+                , new UniformsAndComputeBuffersPack(commonUniforms,computeBuffersPack));
             finalVegetation.Start();
 
             Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
@@ -148,10 +156,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         }
 
         public void InitializeDesignBodySpotUpdater(ETerrainHeightPyramidFacadeStartConfiguration startConfiguration,
+            EPropElevationConfiguration ePropLocationConfiguration,
             UnityThreadComputeShaderExecutorObject shaderExecutorObject, ETerrainHeightBuffersManager buffersManager,
             Dictionary<HeightPyramidLevel, HeightPyramidLevelTemplateWithShapeConfiguration> perLevelTemplates)
         {
-            var ePropLocationConfiguration = new EPropElevationConfiguration();
             var ePropConstantPyramidParameters = new EPropConstantPyramidParameters()
             {
                 LevelsCount = startConfiguration.HeightPyramidLevels.Count,
@@ -167,7 +175,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 c => c.Value.LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
             _ePropHotAreaSelector = new EPropHotAreaSelector(levelWorldSizes, ringMergeRanges);
 
-            var spotUpdater = new EPropsDesignBodyChangesListener(_elevationManager );
+            var spotUpdater = new EPropsDesignBodyChangesListener(_elevationManager, Repositioner.Default ); // todo get repositioner from other place
             var designBodySpotUpdaterProxy = new DesignBodySpotUpdaterProxy(spotUpdater);
             _gameInitializationFields.SetField(designBodySpotUpdaterProxy);
             _ultraUpdatableContainer.AddOtherThreadProxy(designBodySpotUpdaterProxy);

@@ -17,18 +17,20 @@ namespace Assets.Trees.DesignBodyDetails
 {
     public class EVegetationDetailProviderShifter 
     {
+        private readonly VegetationShaderNamesConfiguration _shaderNamesConfiguration;
         private DetailProviderRepository _detailProviderRepository;
         private Mesh _quadBillboardMesh;
         private readonly FinalVegetationReferencedAssets _referencedAssets;
-        private readonly ComputeBuffersPack _computeBuffersPack;
+        private readonly UniformsAndComputeBuffersPack _materialCommonPack;
 
-        public  EVegetationDetailProviderShifter (DetailProviderRepository detailProviderRepository, Mesh quadBillboardMesh,
-            FinalVegetationReferencedAssets referencedAssets, ComputeBuffersPack computeBuffersPack)
+        public  EVegetationDetailProviderShifter (VegetationShaderNamesConfiguration shaderNamesConfiguration, DetailProviderRepository detailProviderRepository, Mesh quadBillboardMesh,
+            FinalVegetationReferencedAssets referencedAssets,  UniformsAndComputeBuffersPack materialCommonPack)
         {
+            _shaderNamesConfiguration = shaderNamesConfiguration;
             _detailProviderRepository = detailProviderRepository;
             _quadBillboardMesh = quadBillboardMesh;
             _referencedAssets = referencedAssets;
-            _computeBuffersPack = computeBuffersPack;
+            _materialCommonPack = materialCommonPack;
         }
 
         public Dictionary<DesignBodyRepresentationQualifier, List<DesignBodyRepresentationInstanceCombination>>
@@ -64,8 +66,8 @@ namespace Assets.Trees.DesignBodyDetails
         {
             var combinationsList = new List<DesignBodyRepresentationInstanceCombination>();
 
-            Material material = new Material(Shader.Find("Custom/EVegetation/BaseTreeInstanced"));
-            _computeBuffersPack.SetBuffersToMaterial(material);
+            Material material = new Material(Shader.Find(_shaderNamesConfiguration.BaseTreeShader));
+            _materialCommonPack.SetToMaterial(material);
             UniformsPack uniformsPack = new UniformsPack();
             uniformsPack.SetTexture("_MainTex", _referencedAssets.EVegetationMainTexture);
             foreach (var mesh in allMeshes)
@@ -96,8 +98,8 @@ namespace Assets.Trees.DesignBodyDetails
 
         private List<DesignBodyRepresentationInstanceCombination> CreateBillboardRepresentationEnhanced(List<EBillboardTextureArray> billboardArrays, SingleDetailDisposition disposition)
         {
-            var material = new Material(Shader.Find("Custom/EVegetation/GenericBillboard.Instanced"));
-            _computeBuffersPack.SetBuffersToMaterial(material);
+            var material = new Material(Shader.Find(_shaderNamesConfiguration.TreeBillboardShader));
+            _materialCommonPack.SetToMaterial(material);
             return billboardArrays.Select(collageTexture =>
                 new DesignBodyRepresentationInstanceCombination(
                     templates: new List<GpuInstancerContainerTemplate>()
@@ -142,4 +144,5 @@ namespace Assets.Trees.DesignBodyDetails
             return uniforms;
         }
     }
+
 }

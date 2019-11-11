@@ -124,7 +124,7 @@ namespace Assets.EProps
             {
                 LevelsCount = startConfiguration.HeightPyramidLevels.Count,
                 RingsPerLevelCount = startConfiguration.CommonConfiguration.MaxRingsPerLevelCount, //TODO parametrize
-                HeightScale = startConfiguration.CommonConfiguration.YScale
+                HeightScale =startConfiguration.CommonConfiguration.YScale
             };
             _elevationManager = new EPropElevationManager( ePropLocationConfiguration, shaderExecutorObject, ePropConstantPyramidParameters);
             _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,

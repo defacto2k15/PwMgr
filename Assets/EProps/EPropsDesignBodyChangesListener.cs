@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Assets.Repositioning;
 using Assets.ShaderUtils;
 using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Trees.SpotUpdating;
@@ -15,13 +16,15 @@ namespace Assets.EProps
     public class EPropsDesignBodyChangesListener :  IDesignBodySpotUpdater
     {
         private EPropElevationManager _elevationManager;
+        private Repositioner _repositioner;
         private ISpotPositionChangesListener _changesListener;
         private Dictionary<SpotId, EPropElevationPointer> _spotIdToElevationIdDict;
         private Dictionary<SpotId, List<EPropElevationPointer>> _spotIdToGroupElevationIdDict;
 
-        public EPropsDesignBodyChangesListener(EPropElevationManager elevationManager)
+        public EPropsDesignBodyChangesListener(EPropElevationManager elevationManager, Repositioner repositioner)
         {
             _elevationManager = elevationManager;
+            _repositioner = repositioner;
             _spotIdToElevationIdDict = new Dictionary<SpotId, EPropElevationPointer>();
             _spotIdToGroupElevationIdDict = new Dictionary<SpotId, List<EPropElevationPointer>>();
         }
@@ -36,7 +39,7 @@ namespace Assets.EProps
             Dictionary<SpotId, DesignBodySpotModification> modifications = new Dictionary<SpotId, DesignBodySpotModification>();
             foreach (var pair in bodiesWithIds)
             {
-                var elevationId = _elevationManager.RegisterProp(pair.FlatPosition);
+                var elevationId = _elevationManager.RegisterProp(_repositioner.Move(pair.FlatPosition));
                 _spotIdToElevationIdDict[pair.SpotId] = elevationId;
 
                 modifications[pair.SpotId] = new DesignBodySpotModification()
@@ -58,7 +61,7 @@ namespace Assets.EProps
 
         public Task RegisterDesignBodiesGroupAsync(SpotId id, List<Vector2> bodiesPositions)
         {
-            var pointers = bodiesPositions.Select(c => _elevationManager.RegisterProp(c)).ToList();
+            var pointers = bodiesPositions.Select(c => _repositioner.Move(c)).Select(c => _elevationManager.RegisterProp(c)).ToList();
             _spotIdToGroupElevationIdDict[id] = pointers;
             _changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<DesignBodySpotModification>>()
             {
