@@ -3,14 +3,15 @@
     Properties
     {
         [NoScaleOffset] _MainTex ("Texture", 2D) = "white" {}
-    }
-    SubShader
-    {
-        Pass
-        {
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
+		_ScopeLength("ScopeLength", Range(0,300)) = 0
+	}
+		SubShader
+	{
+		Pass
+		{
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
 			#pragma multi_compile_instancing
 			#include "UnityCG.cginc" // for UnityObjectToWorldNormal
 
@@ -19,6 +20,7 @@
 				UNITY_DEFINE_INSTANCED_PROP(float, _Pointer)
 			UNITY_INSTANCING_BUFFER_END(Props)
 
+			int _ScopeLength;  
 			#include "eterrain_EPropLocaleHeightAccessing.hlsl"
 
             // vertex shader inputs

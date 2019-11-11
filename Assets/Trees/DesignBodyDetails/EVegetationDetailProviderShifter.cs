@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Assets.FinalExecution;
+using Assets.MeshGeneration;
 using Assets.ShaderUtils;
 using Assets.Trees.DesignBodyDetails.DesignBodyCharacteristics;
 using Assets.Trees.DesignBodyDetails.DetailProvider;
@@ -72,6 +73,7 @@ namespace Assets.Trees.DesignBodyDetails
             uniformsPack.SetTexture("_MainTex", _referencedAssets.EVegetationMainTexture);
             foreach (var mesh in allMeshes)
             {
+                MeshGenerationUtils.SetYBoundsToInfinity(mesh);
                 var containerTemplates = new List<GpuInstancerContainerTemplate>
                 {
                     new GpuInstancerContainerTemplate(
@@ -100,6 +102,7 @@ namespace Assets.Trees.DesignBodyDetails
         {
             var material = new Material(Shader.Find(_shaderNamesConfiguration.TreeBillboardShader));
             _materialCommonPack.SetToMaterial(material);
+            MeshGenerationUtils.SetYBoundsToInfinity(_quadBillboardMesh);
             return billboardArrays.Select(collageTexture =>
                 new DesignBodyRepresentationInstanceCombination(
                     templates: new List<GpuInstancerContainerTemplate>()

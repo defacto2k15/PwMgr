@@ -165,7 +165,7 @@ namespace Assets.ETerrain.Pyramid.Shape
                 {
                     var centerMesh = _meshGenerator.AddOrder(() =>
                             PlaneGenerator.CreateETerrainSegmentMesh(_configuration.CenterObjectMeshVertexLength.X, _configuration.CenterObjectMeshVertexLength.Y)) .Result; //todo
-                    centerMesh.bounds = new Bounds(Vector3.zero, new Vector3(1000000,1000000,1000000));
+                    MeshGenerationUtils.SetYBoundsToInfinity(centerMesh);
                     centerObject = CreateShapeObject(centerMesh, ringTemplate, shapeTemplate, "Center");
 
                     centerObject.transform.SetParent(parentGO.transform);
@@ -173,7 +173,7 @@ namespace Assets.ETerrain.Pyramid.Shape
                 else
                 {
                     var ringElementMesh = _meshGenerator.AddOrder(() => PlaneGenerator.CreateETerrainSegmentMesh(60, 60)).Result; //todo
-                    ringElementMesh.bounds = new Bounds(Vector3.zero, new Vector3(1000000,1000000,1000000));
+                    MeshGenerationUtils.SetYBoundsToInfinity(ringElementMesh);
                     var shape = CreateShapeObject(ringElementMesh, ringTemplate, shapeTemplate, "Ring " + shapeTemplate.RingIndex);
                     shape.transform.SetParent(parentGO.transform);
                     objectsPerRing[shapeTemplate.RingIndex].Add(shape);

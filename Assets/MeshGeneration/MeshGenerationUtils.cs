@@ -113,5 +113,11 @@ namespace Assets.MeshGeneration
 
             mesh.tangents = tangents;
         }
+
+        public static void SetYBoundsToInfinity(Mesh mesh)
+        {
+            var oldBounds = mesh.bounds;
+            mesh.bounds = new Bounds(oldBounds.center, new Vector3(oldBounds.size.x, 100000000, oldBounds.size.z));
+        }
     }
 }

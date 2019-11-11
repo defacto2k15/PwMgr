@@ -2,11 +2,11 @@
 #define ETERRAIN_EPROPLOCALEHEIGHTACCESSING_INC
 
 #include "eterrain_EPropLocaleCommon.hlsl"
+
 #ifdef SHADER_API_D3D11
 			StructuredBuffer<EPropLocale> _EPropLocaleBuffer;
 			StructuredBuffer<EPropElevationId> _EPropIdsBuffer;
 
-			int _ScopeLength;
 
 			float RetriveHeight() {
 				uint pointerValue = asuint(UNITY_ACCESS_INSTANCED_PROP(Props, _Pointer));

@@ -6,6 +6,7 @@ Shader "Custom/EVegetation/GenericBillboardLocaledInstanced" {
 		_ImagesInArrayCount("_ImagesInArrayCount", int) = 4 
 		_BaseYRotation("BaseYRotation", Range(0, 360)) = 0
 		_Color("Color", Vector) = (1,1,1,1)
+		_ScopeLength("ScopeLength", Range(0,300)) = 0
 	}
 	SubShader {
 		LOD 200  
@@ -30,6 +31,7 @@ Shader "Custom/EVegetation/GenericBillboardLocaledInstanced" {
 
 		#include "GenericBillboard.hlsl"
 
+			int _ScopeLength;    
 #include "eterrain_EPropLocaleHeightAccessing.hlsl"
 
 		//Our Vertex Shader 
@@ -38,7 +40,7 @@ Shader "Custom/EVegetation/GenericBillboardLocaledInstanced" {
 
 			float heightOffset =  RetriveHeight();
 			float3 objectOffset = mul((float3x3)unity_WorldToObject, float3(0,heightOffset,0));
-			v.vertex.xyz += objectOffset;// RetriveHeight();
+			v.vertex.xyz += objectOffset;
 		} 
 		
 		fixed4 LightingNoLighting(SurfaceOutput s, fixed3 lightDir, fixed atten)
