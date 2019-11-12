@@ -92,10 +92,7 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
                 return null;
             }
 
-            int MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS = 5;
-            Preconditions.Assert(slicedTextures.Count <= MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS,
-                "Too much elements in slice");
-            if (slicedTextures.Count == 1 ) //todo repair
+            if (slicedTextures.Count == 1 ) 
             {
                 return slicedTextures[0];
             }
@@ -128,8 +125,31 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
             return outList;
         }
 
+        private const int MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS = 5;
+
         private async Task<Ring2PlateStamp> FuseSliceStampsAsync(List<Ring2PlateStamp> slices)
         {
+            Preconditions.Assert(slices.Any(), "There was no slices stamps to create");
+            var passCount = Mathf.CeilToInt((float) slices.Count / MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS);
+            if (passCount == 1)
+            {
+                return await SinglePassFuseSliceStampsAsync(slices);
+            }
+            else
+            {
+                var firstPassSlices = slices.Take(MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS).ToList();
+                var secondPassSlices = slices.Skip(MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS).ToList();
+
+                var firstStamp = await SinglePassFuseSliceStampsAsync(firstPassSlices);
+                var secondStamp = await FuseSliceStampsAsync(secondPassSlices);
+                return await SinglePassFuseSliceStampsAsync(new List<Ring2PlateStamp>() {firstStamp, secondStamp});// todo more optimal solution. We can merge not 2 but 5
+            }
+        }
+
+        private async Task<Ring2PlateStamp> SinglePassFuseSliceStampsAsync(List<Ring2PlateStamp> slices)
+        {
+            Preconditions.Assert(slices.Count <= MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS, "Too much elements in slice");
+
             Preconditions.Assert(slices.Any(), "There was no slices stampes created");
             var size = slices[0].Resolution;
 

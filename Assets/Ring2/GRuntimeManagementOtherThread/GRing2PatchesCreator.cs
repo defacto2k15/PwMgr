@@ -62,9 +62,9 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
 
             // dzielone s¹ na patche o patch size, ka¿dy patch sk³ada siê ze sliców
 
-            MyProfiler.BeginSample("GRing2PatchesCreation PatchCombiner");
-            patchTemplates = _templateCombiner.CombineTemplates(patchTemplates);
-            MyProfiler.EndSample();
+            //MyProfiler.BeginSample("GRing2PatchesCreation PatchCombiner"); //TODO remove, not not used as we use only stamped patches and even these only with rendering one slice per pass
+            //patchTemplates = _templateCombiner.CombineTemplates(patchTemplates);
+            //MyProfiler.EndSample();
 
             // slice w pojedyñczym patchu sa ³¹czone
 

@@ -491,36 +491,6 @@ half rand2XX(half2 p)
 				return new_TextureLayerOutput( color, normal, intensity, 1);
 			}
 
-			//////
-			// Calc sum of layers
-			/////
-
-			
-			TextureLayerOutput SumLayers( TextureLayerOutput layers[4], float4 layerPriorities, float4 controlValue, int layerCount){
-				
-				float maxStrength = -1;
-				float finalStrength =0;
-				float3 finalColor = 0;
-				float3 finalNormal = 0;
-				float finalAlpha = 0;
-
-				for( int i = 0; i < layerCount; i++){
-					TextureLayerOutput layer = layers[i];
-					float strength = layer.outHeightIntensity *layerPriorities[i];
-					if( maxStrength < strength){
-						maxStrength = strength;
-						finalStrength = layer.outHeightIntensity;
-						finalColor = layer.color;
-						finalNormal = layer.normal;
-						//if( controlValue[i] < 0.1){
-						//	finalAlpha = strength * controlValue[i];
-						//} else{
-							finalAlpha = 1;
-						//}
-					}
-				}
-				return new_TextureLayerOutput(finalColor, finalNormal, finalStrength, finalAlpha);
-			}
 
 
 GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
@@ -581,6 +551,7 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 
 				float randomSeed = _RandomSeeds[layerIndex];
 				flatPos += + float2(fmod(randomSeed, 2231.312), fmod(randomSeed, 5212.42123));
+				flatPos /= 20.0;
 				float strength = 0;
 
 #define MAX_LAYER_COUNT (4)
@@ -589,6 +560,8 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 				TextureLayerOutput layerOutput = null_TextureLayerOutput();
 
 				float2 turncatedInputPos = fmod(flatPos, 1000);
+				//turncatedInputPos = fmod(turncatedInputPos + round(flatPos / 1000.0)*5.1232, 1000);
+				
 
 				#ifdef OT_BASE
 					palette[0] = JitterColor(colors[ layerIndex*4 + 0],  0 + 0*10, flatPos);

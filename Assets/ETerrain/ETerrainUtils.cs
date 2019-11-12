@@ -37,7 +37,7 @@ namespace Assets.ETerrain
             return null;
         }
 
-        public static MyRectangle SegmentAlignedPositionToWorldSpaceArea(HeightPyramidLevel level, HeightPyramidPerLevelConfiguration perLevelConfiguration,
+        public static MyRectangle TerrainShapeSegmentAlignedPositionToWorldSpaceArea(HeightPyramidLevel level, HeightPyramidPerLevelConfiguration perLevelConfiguration,
             IntVector2 segmentAlignedPosition)
         {
             var segmentLength = perLevelConfiguration.BiggestShapeObjectInGroupLength;
@@ -55,6 +55,25 @@ namespace Assets.ETerrain
             return surfaceWorldSpaceRectangle;
         }
 
+
+        public static MyRectangle SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(HeightPyramidLevel level, HeightPyramidPerLevelConfiguration perLevelConfiguration,
+            IntVector2 segmentAlignedPosition)
+        {
+            var segmentLength = perLevelConfiguration.BiggestShapeObjectInGroupLength;
+            var floatSegmentAlignedPosition = segmentAlignedPosition.ToFloatVec();
+            if (level == HeightPyramidLevel.Mid)
+            {
+                floatSegmentAlignedPosition = floatSegmentAlignedPosition + new Vector2(-1, -0.5f);
+            }
+            else if (level == HeightPyramidLevel.Top)
+            {
+                floatSegmentAlignedPosition = floatSegmentAlignedPosition + new Vector2(-8, -4);
+            }
+
+            var surfaceWorldSpaceRectangle = new MyRectangle( floatSegmentAlignedPosition.x * segmentLength, floatSegmentAlignedPosition.y * segmentLength
+                , segmentLength, segmentLength);
+            return surfaceWorldSpaceRectangle;
+        }
 
 
     }

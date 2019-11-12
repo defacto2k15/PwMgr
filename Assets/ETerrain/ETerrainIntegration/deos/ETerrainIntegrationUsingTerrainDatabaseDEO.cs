@@ -94,7 +94,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                         return new LambdaSegmentFillingListener(
                             c =>
                             {
-                                var surfaceWorldSpaceRectangle = ETerrainUtils.SegmentAlignedPositionToWorldSpaceArea(level,
+                                var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
                                     startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
 
                                 var terrainDetailElementOutput = dbProxy.Query(new TerrainDescriptionQuery()

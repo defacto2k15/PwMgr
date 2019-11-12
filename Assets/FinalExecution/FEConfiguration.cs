@@ -99,10 +99,10 @@ namespace Assets.FinalExecution
                 {
                     new Ring2Fabric(Ring2Fiber.DrySandFiber, new Ring2FabricColors(
                             _colorsConfiguration.ColorPaletteFile.RetriveList(ColorPaletteLines.Road1, 4)),
-                        new FromAreaEdgeDistanceRing2IntensityProvider(0.2f, distanceDatabase), 10),
+                        new FromAreaEdgeDistanceRing2IntensityProvider(0.2f, distanceDatabase), 1),
                     new Ring2Fabric(Ring2Fiber.DottedTerrainFiber, new Ring2FabricColors(
                             _colorsConfiguration.ColorPaletteFile.RetriveList(ColorPaletteLines.Road1_Dots, 4)),
-                        new FromAreaEdgeDistanceRing2IntensityProvider(0.4f, distanceDatabase), 2),
+                        new FromAreaEdgeDistanceRing2IntensityProvider(0.4f, distanceDatabase), 0.8f),
                 },
                 Magnitude = 10,
                 BufferLength = 1
@@ -122,11 +122,11 @@ namespace Assets.FinalExecution
                             new Ring2Fabric(Ring2Fiber.BaseGroundFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Forrest_Ground, 4))
-                                , new FromAreaEdgeDistanceRing2IntensityProvider(5f, distanceDatabase), 2),
+                                , new FromAreaEdgeDistanceRing2IntensityProvider(5f, distanceDatabase), 0.3f),
                             new Ring2Fabric(Ring2Fiber.GrassyFieldFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Forrest_GrassyField, 4))
-                                , new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1.5f)
+                                , new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.6f)
                         },
                         Magnitude = 1,
                         BufferLength = 5
@@ -140,11 +140,11 @@ namespace Assets.FinalExecution
                             new Ring2Fabric(Ring2Fiber.BaseGroundFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Fell_Ground, 4))
-                                , new FromAreaEdgeDistanceRing2IntensityProvider(5f, distanceDatabase), 2),
+                                , new FromAreaEdgeDistanceRing2IntensityProvider(5f, distanceDatabase), 0.4f),
                             new Ring2Fabric(Ring2Fiber.GrassyFieldFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Fell_GrassyField, 4))
-                                , new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 30)
+                                , new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.65f)
                         },
                         Magnitude = 2,
                         BufferLength = 3
@@ -158,11 +158,11 @@ namespace Assets.FinalExecution
                             new Ring2Fabric(Ring2Fiber.DottedTerrainFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Not_Specified_Dotted, 4)),
-                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1),
+                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.4f),
                             new Ring2Fabric(Ring2Fiber.BaseGroundFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Not_Specified_Ground, 4)),
-                                new FromAreaEdgeDistanceRing2IntensityProvider(5f, distanceDatabase), 3),
+                                new FromAreaEdgeDistanceRing2IntensityProvider(5f, distanceDatabase), 0.3f),
                         },
                         Magnitude = 3,
                         BufferLength = 3
@@ -176,11 +176,11 @@ namespace Assets.FinalExecution
                             new Ring2Fabric(Ring2Fiber.GrassyFieldFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Grassland_GrassyField, 4)),
-                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 5),
+                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.7f),
                             new Ring2Fabric(Ring2Fiber.BaseGroundFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Grassland_Ground, 4)),
-                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1)
+                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.3f)
                         },
                         Magnitude = 3,
                         BufferLength = 3
@@ -194,7 +194,7 @@ namespace Assets.FinalExecution
                             new Ring2Fabric(Ring2Fiber.DrySandFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Meadow_DrySand, 4)),
-                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1)
+                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.7f)
                         },
                         Magnitude = 3,
                         BufferLength = 3
@@ -208,7 +208,7 @@ namespace Assets.FinalExecution
                             new Ring2Fabric(Ring2Fiber.GrassyFieldFiber, new Ring2FabricColors(
                                     _colorsConfiguration.ColorPaletteFile.RetriveList(
                                         ColorPaletteLines.Ring2_Habitat_Meadow_DrySand, 4)),
-                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1)
+                                new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.75f)
                         },
                         Magnitude = 3,
                         BufferLength = 3

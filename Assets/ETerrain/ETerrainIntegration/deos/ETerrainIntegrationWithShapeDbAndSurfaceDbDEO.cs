@@ -121,7 +121,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                         FETerrainShapeDbInitialization.CreateLevel2AssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack>(
                             cachingConfiguration: new CachingConfiguration()
                             {
-                                SaveAssetsToFile = true,
+                                SaveAssetsToFile =true,
                                 UseFileCaching = true,
                             }
                             , new InMemoryCacheConfiguration()
@@ -142,7 +142,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                             (level, segmentModificationManager) => new LambdaSegmentFillingListener(
                                 (c) =>
                                 {
-                                    var surfaceWorldSpaceRectangle = ETerrainUtils.SegmentAlignedPositionToWorldSpaceArea(level,
+                                    var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
                                         startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
                                     if (level == HeightPyramidLevel.Top)
                                     {

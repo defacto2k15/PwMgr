@@ -1,4 +1,5 @@
 using Assets.Ring2.IntensityProvider;
+using Assets.Utils;
 
 namespace Assets.Ring2.BaseEntities
 {
@@ -16,6 +17,7 @@ namespace Assets.Ring2.BaseEntities
             _paletteColors = paletteColors;
             _intensityProvider = intensityProvider;
             _layerPriority = layerPriority;
+            Preconditions.Assert(layerPriority<=1, "Layer priority should not be > than 0, but it is "+layerPriority);
         }
 
         public Ring2Fiber Fiber
