@@ -108,6 +108,7 @@ namespace Assets.Ring2.Devising
     public class MaterialPropertyBlockTemplate
     {
         private Dictionary<string, float> _floatDict = new Dictionary<string, float>();
+        private Dictionary<string,int > _intDict = new Dictionary<string, int>();
         private Dictionary<string, Vector4[]> _vectorArrayDict = new Dictionary<string, Vector4[]>();
         private Dictionary<string, Vector4> _vectorDict = new Dictionary<string, Vector4>();
         private Dictionary<string, Texture> _textureDict = new Dictionary<string, Texture>();
@@ -132,12 +133,21 @@ namespace Assets.Ring2.Devising
             _textureDict[name] = value;
         }
 
+       public void SetInt(string layerindex, int value)
+       {
+           _intDict[layerindex] = value;
+       }
+
         public MaterialPropertyBlock CreateBlock()
         {
             var mpb = new MaterialPropertyBlock();
             foreach (var pair in _floatDict)
             {
                 mpb.SetFloat(pair.Key, pair.Value);
+            }
+            foreach (var pair in _intDict)
+            {
+                mpb.SetInt(pair.Key, pair.Value);
             }
             foreach (var pair in _vectorArrayDict)
             {
@@ -160,6 +170,10 @@ namespace Assets.Ring2.Devising
             {
                 material.SetFloat(pair.Key, pair.Value);
             }
+            foreach (var pair in _intDict)
+            {
+                material.SetInt(pair.Key, pair.Value);
+            }
             foreach (var pair in _vectorArrayDict)
             {
                 material.SetVectorArray(pair.Key, pair.Value);
@@ -173,5 +187,18 @@ namespace Assets.Ring2.Devising
                 material.SetTexture(pair.Key, pair.Value);
             }
         }
-    }
+
+        public MaterialPropertyBlockTemplate Clone()
+        {
+            return new MaterialPropertyBlockTemplate()
+            {
+                _floatDict = _floatDict.ToDictionary(c=>c.Key, c=>c.Value),
+                _intDict =  _intDict.ToDictionary(c=>c.Key,c=>c.Value),
+                _textureDict = _textureDict.ToDictionary(c=>c.Key, c=>c.Value),
+                _vectorArrayDict = _vectorArrayDict.ToDictionary(c=>c.Key, c=>c.Value),
+                _vectorDict = _vectorDict.ToDictionary(c=>c.Key, c=>c.Value)
+            };
+        }
+
+     }
 }

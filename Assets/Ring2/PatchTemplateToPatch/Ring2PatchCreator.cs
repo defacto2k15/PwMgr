@@ -26,11 +26,36 @@ namespace Assets.Ring2.PatchTemplateToPatch
             var keywords = sliceTemplate.Substance.RetriveShaderKeywordSet();
             var slicePalette = CreateSlicePalette(sliceTemplate.Substance);
             Vector4 layerPriorities = sliceTemplate.Substance.GetProperLayerFabricsPriorities;
+            var randomSeeds = CreateRandomSeeds(sliceTemplate.Substance);
 
-            var ring2Slice = new Ring2Slice(keywords, slicePalette, layerPriorities);
+            var ring2Slice = new Ring2Slice(keywords, slicePalette, layerPriorities, randomSeeds);
             return ring2Slice;
         }
 
+        private Vector4 CreateRandomSeeds(Ring2Substance substance)
+        {
+            var outSeeds = Vector4.zero;
+
+            var fabrics = substance.GetProperLayerFabrics.OrderBy(c => c.Fiber.Index).ToList();
+            for (int i = 0; i < fabrics.Count; i++)
+            {
+                var ring2Fabric = fabrics[i];
+                var fabricColors = ring2Fabric.PaletteColors.Colors;
+
+                unchecked
+                {
+                    var hashCode = ring2Fabric.Fiber.FiberKeyword.GetHashCode();
+                    for (int k = 0; k < fabricColors.Count; k++)
+                    {
+                        hashCode = (hashCode * 397) ^ fabricColors[k].GetHashCode();
+                    }
+
+                    outSeeds[i] = hashCode;
+                }
+            }
+
+            return outSeeds;
+        }
 
         private Ring2SlicePalette CreateSlicePalette(Ring2Substance substance)
         {

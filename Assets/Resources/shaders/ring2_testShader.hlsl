@@ -512,11 +512,12 @@ half rand2XX(half2 p)
 						finalStrength = layer.outHeightIntensity;
 						finalColor = layer.color;
 						finalNormal = layer.normal;
-						if( controlValue[i] < 0.1){
-							finalAlpha = strength * controlValue[i];
-						} else{
-							finalAlpha = 1;
-						}
+						finalAlpha = layer.outAlpha * layerPriorities[i] * controlValue[i];
+						//if( controlValue[i] < 0.1){
+						//	finalAlpha = strength * controlValue[i];
+						//} else{
+						//	finalAlpha = 1;
+						//}
 					}
 				}
 				return new_TextureLayerOutput(finalColor, finalNormal, finalStrength, finalAlpha);

@@ -30,7 +30,7 @@ namespace Assets.Ring2
                         Multiplier = sliceMultiplier
                     });
                 }
-                sliceMultiplier *= 0.5f;
+                sliceMultiplier *= 1f; //ONCE WAS 1
             }
 
             // now, summing multipliers

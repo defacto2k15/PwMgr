@@ -10,12 +10,14 @@ namespace Assets.Ring2.PatchTemplateToPatch
         private readonly ShaderKeywordSet _keywords;
         private readonly Ring2SlicePalette _slicePalette;
         private readonly Vector4 _layerPriorities;
+        private Vector4 _randomSeeds;
 
-        public Ring2Slice(ShaderKeywordSet keywords, Ring2SlicePalette slicePalette, Vector4 layerPriorities)
+        public Ring2Slice(ShaderKeywordSet keywords, Ring2SlicePalette slicePalette, Vector4 layerPriorities, Vector4 randomSeeds)
         {
             _keywords = keywords;
             _slicePalette = slicePalette;
             _layerPriorities = layerPriorities;
+            _randomSeeds = randomSeeds;
         }
 
         public Ring2PatchSliceIntensityPattern IntensityPattern
@@ -25,22 +27,15 @@ namespace Assets.Ring2.PatchTemplateToPatch
                 Preconditions.Assert(_intensityPattern != null, "Intensity pattern is not set");
                 return _intensityPattern;
             }
-            set { _intensityPattern = value; }
+            set => _intensityPattern = value;
         }
 
-        public ShaderKeywordSet Keywords
-        {
-            get { return _keywords; }
-        }
+        public ShaderKeywordSet Keywords => _keywords;
 
-        public Ring2SlicePalette SlicePalette
-        {
-            get { return _slicePalette; }
-        }
+        public Ring2SlicePalette SlicePalette => _slicePalette;
 
-        public Vector4 LayerPriorities
-        {
-            get { return _layerPriorities; }
-        }
+        public Vector4 LayerPriorities => _layerPriorities;
+
+        public Vector4 RandomSeeds => _randomSeeds;
     }
 }

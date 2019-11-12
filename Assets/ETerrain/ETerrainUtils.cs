@@ -40,7 +40,6 @@ namespace Assets.ETerrain
         public static MyRectangle SegmentAlignedPositionToWorldSpaceArea(HeightPyramidLevel level, HeightPyramidPerLevelConfiguration perLevelConfiguration,
             IntVector2 segmentAlignedPosition)
         {
-
             var segmentLength = perLevelConfiguration.BiggestShapeObjectInGroupLength;
             if (level == HeightPyramidLevel.Mid)
             {
@@ -51,8 +50,8 @@ namespace Assets.ETerrain
                 segmentAlignedPosition = segmentAlignedPosition + new IntVector2(-8, -4);
             }
 
-            var surfaceWorldSpaceRectangle = new MyRectangle(segmentAlignedPosition.X * segmentLength, segmentAlignedPosition.Y * segmentLength, segmentLength,
-                segmentLength);
+            var surfaceWorldSpaceRectangle = new MyRectangle(segmentAlignedPosition.X * segmentLength, segmentAlignedPosition.Y * segmentLength
+                , segmentLength, segmentLength);
             return surfaceWorldSpaceRectangle;
         }
 

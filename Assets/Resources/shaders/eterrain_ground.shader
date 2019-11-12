@@ -221,7 +221,7 @@
 					finalColor = float4(1, 1, 1, 1);
 				}
 
-				//finalColor = calculateESurfaceColor(i.inSegmentSpaceUv, levelAndRingIndexes, parameters);
+				finalColor = calculateESurfaceColor(i.inSegmentSpaceUv, levelAndRingIndexes, parameters);
 
 				return finalColor;
 			} 

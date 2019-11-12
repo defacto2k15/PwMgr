@@ -34,6 +34,7 @@ namespace Assets.ESurface
                 return null;
             }
 
+            Preconditions.Assert(devisedPatches.Count==1, "There are more than one devised patch. Exacly "+devisedPatches.Count);
             var onlyPatch = devisedPatches.First();
             var stampedSlice = _patchStamper.FinalizeGPatchCreation(onlyPatch, flatLod.ScalarValue).Result;
             if (stampedSlice != null)

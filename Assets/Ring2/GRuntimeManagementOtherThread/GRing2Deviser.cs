@@ -37,6 +37,7 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
                     (float) sliceArea.CalculatedHeight()));
             pack.SetTexture("_ControlTex", slice.IntensityPattern.Texture); //todo texture garbage collector
             pack.SetUniform("_LayerPriorities", slice.LayerPriorities);
+            pack.SetUniform("_RandomSeeds", slice.RandomSeeds);
 
             return new UniformsWithKeywords()
             {

@@ -21,6 +21,7 @@ using Assets.Ring2.RuntimeManagementOtherThread;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
 using Assets.Ring2.Stamping;
 using Assets.Scheduling;
+using Assets.Utils;
 using Assets.Utils.MT;
 using Assets.Utils.Services;
 using Assets.Utils.TextureRendering;
@@ -61,6 +62,7 @@ namespace Assets.ESurface
             {
                 {1, 5 }
             };
+            _updatableContainer = new UltraUpdatableContainer(new MyUtSchedulerConfiguration(), new GlobalServicesProfileInfo(), new UltraUpdatableContainerConfiguration());
             _provider = ESurfaceProviderInitializationHelper.ConstructProvider(
                 _updatableContainer, intensityPatternPixelsPerUnit, shaderContainerGO, mipmapLevelToExtract, plateStampPixelsPerUnit);
 
@@ -73,25 +75,34 @@ namespace Assets.ESurface
         {
             if (GenerateDebugGrid)
             {
+                var root = new GameObject("rootGrid");
                 var segmentLength = 90;
                 for (int x = -3; x < 3; x++)
                 {
                     for (int y = -3; y < 3; y++)
                     {
+                        //if (!(x == 0 && y == 1))
+                        //{
+                        //    continue;
+                        //}
                         var inGamePosition = new MyRectangle(x*segmentLength, y*segmentLength, segmentLength, segmentLength);
                         var flatLod = new FlatLod(1, 0);
                         var detailPack = _provider.ProvideSurfaceDetail(inGamePosition, flatLod);
 
                         var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                        //StandardMaterialUtils.SetMaterialRenderingModeToAlphablend(quad.GetComponent<MeshRenderer>().material);
+                        quad.name = $"Plate {x} : {y}";
                         quad.transform.rotation = Quaternion.Euler(90,0,0);
                         quad.transform.localScale = new Vector3(segmentLength,segmentLength,1);
                         quad.transform.localPosition = new Vector3(inGamePosition.X + inGamePosition.Width / 2,1, inGamePosition.Y + inGamePosition.Height / 2);
-                        var a = quad.GetComponent<MeshRenderer>();
-                        var b = a.GetComponent<MeshRenderer>();
-                        var c = b.material;
+                        quad.transform.SetParent(root.transform);
                         if (detailPack != null)
                         {
-                            c.mainTexture = detailPack.MainTexture;
+                            quad.GetComponent<MeshRenderer>().GetComponent<MeshRenderer>().material.mainTexture = detailPack.MainTexture;
+                        }
+                        else
+                        {
+                            GameObject.Destroy(quad);
                         }
                     }
                 }

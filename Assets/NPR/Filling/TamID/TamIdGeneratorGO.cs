@@ -102,23 +102,11 @@ namespace Assets.NPR.TamID
             }
         }
 
-        public static void SetMaterialRenderingModeToAlphablend(Material m)
-        {
-            m.SetFloat("_Mode", 2);
-            m.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.SrcAlpha);
-            m.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            m.SetInt("_ZWrite", 0);
-            m.DisableKeyword("_ALPHATEST_ON");
-            m.EnableKeyword("_ALPHABLEND_ON");
-            m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            m.renderQueue = 3000;
-        }
-
         public static void CreateTexturedPlate(Texture tex, Vector2 position, string name)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Plane);
             go.GetComponent<MeshRenderer>().material.mainTexture = tex;
-            SetMaterialRenderingModeToAlphablend(go.GetComponent<MeshRenderer>().material);
+            StandardMaterialUtils.SetMaterialRenderingModeToAlphablend(go.GetComponent<MeshRenderer>().material);
             go.transform.position = new Vector3(position.x, 0, position.y);
             go.name = name;
         }

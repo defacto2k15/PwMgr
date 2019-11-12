@@ -1,5 +1,5 @@
-﻿#ifndef RING2_TEST_SHADER_INC
-#define RING2_TEST_SHADER_
+﻿#ifndef ERING2_TEST_SHADER_INC
+#define ERING2_TEST_SHADER_
 
 			struct TextureLayerInput{
 				float3 colors[4];
@@ -512,11 +512,11 @@ half rand2XX(half2 p)
 						finalStrength = layer.outHeightIntensity;
 						finalColor = layer.color;
 						finalNormal = layer.normal;
-						if( controlValue[i] < 0.1){
-							finalAlpha = strength * controlValue[i];
-						} else{
+						//if( controlValue[i] < 0.1){
+						//	finalAlpha = strength * controlValue[i];
+						//} else{
 							finalAlpha = 1;
-						}
+						//}
 					}
 				}
 				return new_TextureLayerOutput(finalColor, finalNormal, finalStrength, finalAlpha);
@@ -546,14 +546,9 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 //			#undef OT_DOTS
 
 			//Our Fragment Shader
-			TextureLayerOutput ring2_surf(in float3 globalPos, float2 uv) {
+			TextureLayerOutput ering2_surf(in float3 globalPos, float2 uv, int layerIndex) {
 				float2 flatPos = globalPos.xz;
-				half cameraDistance = length(globalPos);
 
-				float amountOfDots = 1.0;
-				float sizeFactor = 0;// smoothstep(50, 40, cameraDistance) * 0.4; //tym można sterować kiedy będą zmikać punkty
-
-#define  INLINE_PALETTE_COLORS
 #ifdef INLINE_PALETTE_COLORS
 				float3 colors[16];
 				colors[0] = fixed3(1,0,0);
@@ -583,19 +578,17 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 
 				float2 controlUv = float2( (globalFlatPosition.x -_Dimensions[0]) / _Dimensions[2], (globalFlatPosition.y -_Dimensions[1]) / _Dimensions[3]); 
 				float4 controlValue = tex2D( _ControlTex, controlUv);
-				controlValue = float4(0, 0, 0, 1);
 
+				float randomSeed = _RandomSeeds[layerIndex];
+				flatPos += + float2(fmod(randomSeed, 2231.312), fmod(randomSeed, 5212.42123));
 				float strength = 0;
 
-				int layerIndex = 0;
 #define MAX_LAYER_COUNT (4)
 				float3 palette[MAX_LAYER_COUNT]; 
 
-				TextureLayerOutput layerOutput[MAX_LAYER_COUNT];
-				for (int i = 0; i < MAX_LAYER_COUNT; i++) {
-					layerOutput[i] = null_TextureLayerOutput();
-				}
+				TextureLayerOutput layerOutput = null_TextureLayerOutput();
 
+				float2 turncatedInputPos = fmod(flatPos, 1000);
 
 				#ifdef OT_BASE
 					palette[0] = JitterColor(colors[ layerIndex*4 + 0],  0 + 0*10, flatPos);
@@ -603,8 +596,7 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 					palette[2] = JitterColor(colors[ layerIndex*4 + 2], 2 + 0*10, flatPos);
 					palette[3] = JitterColor(colors[ layerIndex*4 + 3], 3 + 0*10, flatPos);
 					strength = JitterControlValue(controlValue[layerIndex], 0, flatPos);	
-					layerOutput[layerIndex] = getBaseFlatTerrain(new_TextureLayerInput(palette, strength, _DetailComplexity, flatPos, float3(0,0,1)));
-					layerIndex++;
+					layerOutput = getBaseFlatTerrain(new_TextureLayerInput(palette, strength, _DetailComplexity, turncatedInputPos, float3(0,0,1)));
 				#endif
 
 				#ifdef OT_DRY_SAND
@@ -614,8 +606,7 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 					palette[3] = JitterColor(colors[ layerIndex*4 + 3], 3 + 1*10, flatPos);
 
 					strength = JitterControlValue(controlValue[layerIndex],1, flatPos);	
-					layerOutput[layerIndex] = getDrySand( new_TextureLayerInput( palette, strength, _DetailComplexity, flatPos, float3(0,0,1)));
-					layerIndex++;
+					layerOutput = getDrySand( new_TextureLayerInput( palette, strength, _DetailComplexity, turncatedInputPos , float3(0,0,1)));
 				#endif
 				#ifdef OT_GRASS
 					palette[0] = JitterColor(colors[ layerIndex*4 + 0],  0 + 2*10, flatPos);
@@ -624,8 +615,7 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 					palette[3] = JitterColor(colors[ layerIndex*4 + 3], 3 + 2*10, flatPos);
 
 					strength = JitterControlValue(controlValue[layerIndex], 2, flatPos);	
-					layerOutput[layerIndex] = getGrassyField( new_TextureLayerInput( palette, strength, _DetailComplexity, flatPos, float3(0,0,1)));
-					layerIndex++;
+					layerOutput = getGrassyField( new_TextureLayerInput( palette, strength, _DetailComplexity,  turncatedInputPos, float3(0,0,1)));
 				#endif
 				#ifdef OT_DOTS
 					palette[0] = JitterColor(colors[ layerIndex*4 + 0],  0 + 3*10, flatPos);
@@ -634,12 +624,12 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 					palette[3] = JitterColor(colors[ layerIndex*4 + 3], 3 + 3*10, flatPos);
 
 					strength = JitterControlValue(controlValue[layerIndex], 3, flatPos);	
-					layerOutput[layerIndex] = getDottedTerrain( new_TextureLayerInput( palette, strength, _DetailComplexity, flatPos, float3(0,0,1)));
-					layerIndex++;
+					layerOutput = getDottedTerrain( new_TextureLayerInput( palette, strength, _DetailComplexity, turncatedInputPos, float3(0,0,1)));
 				#endif
 
-				TextureLayerOutput output = SumLayers( layerOutput, _LayerPriorities, controlValue, layerIndex); 
-				return output;
+				float layerPriority = _LayerPriorities[layerIndex];
+				layerOutput.outAlpha *=  layerOutput.outHeightIntensity*layerPriority * controlValue;
+				return layerOutput;
 			} 
 
 #endif

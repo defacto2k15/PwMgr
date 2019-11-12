@@ -174,7 +174,7 @@ namespace Assets.Ring2.Stamping
 
         private Material CreateRenderMaterial(Ring2PlateStampTemplate template)
         {
-            var renderMaterial = new Material(Shader.Find("Custom/Terrain/Ring2Stamper"));
+            var renderMaterial = new Material(Shader.Find("Custom/ETerrain/Ring2Stamper"));
             foreach (var keyword in template.MaterialTemplate.KeywordSet.Keywords)
             {
                 renderMaterial.EnableKeyword(keyword);

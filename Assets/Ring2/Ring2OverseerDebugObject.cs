@@ -394,7 +394,7 @@ namespace Assets.Ring2
                 new Color(0.5f, 0, 0),
                 new Color(0.7f, 0, 0),
                 new Color(1, 0, 0),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.7f);
 
 
             var region1Area = RegionSpaceUtils.Create(MyNetTopologySuiteUtils.ToPolygon(new[]
@@ -410,7 +410,7 @@ namespace Assets.Ring2
                 groundFabric,
             });
 
-            var region1 = new Ring2Region(region1Area, region1Substance, 2);
+            var region1 = new Ring2Region(region1Area, region1Substance, 1);
 
 
             var groundFabric2 = new Ring2Fabric(Ring2Fiber.BaseGroundFiber, new Ring2FabricColors(new List<Color>()
@@ -419,7 +419,7 @@ namespace Assets.Ring2
                 new Color(0, 0, 0.5f),
                 new Color(0, 0, 0.7f),
                 new Color(0, 0, 1),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.7f);
 
             var region2Substance = new Ring2Substance(new List<Ring2Fabric>()
             {
@@ -432,7 +432,7 @@ namespace Assets.Ring2
                 new Vector2(100, 200),
                 new Vector2(100, 0),
                 new Vector2(50, 50),
-            })), region2Substance, 3);
+            })), region2Substance, 1);
 
             /// //// REGION 3
             var region3Area = RegionSpaceUtils.ToFatLineString(3.5f, new[]
@@ -455,7 +455,7 @@ namespace Assets.Ring2
                 new IntensityJittererFromRandomField(
                     new ValuesFromRandomFieldProvider(RandomFieldNature.FractalSimpleValueNoise3, 0,
                         randomFieldFigureRepository),
-                    new Vector2(0.1f, 1.2f), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase)),
+                    new Vector2(0.6f, 1.2f), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase)),
                 1);
 
             var region3Substance = new Ring2Substance(new List<Ring2Fabric>()
@@ -468,7 +468,7 @@ namespace Assets.Ring2
             Quadtree<Ring2Region> regionsTree = new Quadtree<Ring2Region>();
             regionsTree.Insert(region1.RegionEnvelope, region1);
             regionsTree.Insert(region2.RegionEnvelope, region2);
-            regionsTree.Insert(region3.RegionEnvelope, region3);
+            //regionsTree.Insert(region3.RegionEnvelope, region3);
             return regionsTree;
         }
     }

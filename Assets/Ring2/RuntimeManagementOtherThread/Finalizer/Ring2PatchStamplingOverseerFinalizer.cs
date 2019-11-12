@@ -36,7 +36,7 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
             _textureRenderer = textureRenderer;
         }
 
-        public async Task<List<Ring2PatchDevised>> FinalizePatchesCreation(List<Ring2PatchDevised> devisedPatches)
+        public async Task<List<Ring2PatchDevised>> FinalizePatchesCreation(List<Ring2PatchDevised> devisedPatches) //TODO REMOVE
         {
             var slicesTextures = await TaskUtils.WhenAll(
                 devisedPatches.Select(
@@ -83,11 +83,9 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
                         Ring2ShaderNames.RuntimeTerrainTexture, sliceInfo.Keywords, propertyBlock), _repositioner.Move(patch.SliceArea), flatLod));
             }
 
-            var slicedTextures = await TaskUtils.WhenAll(
-                templates.Select(
-                    (c) => _stamper.GeneratePlateStampAsync(c)
-                )
-            );
+            templates = CreateOnePerKeywordTemplate(templates);
+
+            var slicedTextures = await TaskUtils.WhenAll( templates.Select( (c) => _stamper.GeneratePlateStampAsync(c) ) );
 
             if (!slicedTextures.Any())
             {
@@ -104,15 +102,30 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
 
             var fusedSlices = await FuseSliceStampsAsync(slicedTextures);
 
-            //_commonExecutor.AddAction(() =>
-            //{
-            //    foreach (var stamp in slicedTextures)
-            //    {
-            //        GameObject.Destroy(stamp.ColorStamp);
-            //        GameObject.Destroy(stamp.NormalStamp);
-            //    }
-            //});
             return fusedSlices;
+        }
+
+        private List<Ring2PlateStampTemplate> CreateOnePerKeywordTemplate(List<Ring2PlateStampTemplate> templates)
+        {
+            List<Ring2PlateStampTemplate> outList = new List<Ring2PlateStampTemplate>();
+            foreach (var aTemplate in templates)
+            {
+                var oldMaterialTemplate = aTemplate.MaterialTemplate;
+                int layerIndex = 0;
+                foreach (var aKeyword in oldMaterialTemplate.KeywordSet.Keywords)
+                {
+                    Preconditions.Assert(aKeyword.StartsWith("OT_"),
+                        "This is hack to use eterrain_Ring2Stampler instead of normal stamper. Each keyword should have start with OT_ and this one starts with " +
+                        aKeyword);
+                    var propertyBlockTemplate = oldMaterialTemplate.PropertyBlock.Clone();
+                    propertyBlockTemplate.SetInt("_LayerIndex", layerIndex);
+
+                    var newTemplate = new MaterialTemplate(oldMaterialTemplate.ShaderName, new ShaderKeywordSet(new List<string>(){aKeyword}), propertyBlockTemplate);
+                    outList.Add(new Ring2PlateStampTemplate(newTemplate, aTemplate.PlateCoords, aTemplate.StampLod));
+                    layerIndex++;
+                }
+            }
+            return outList;
         }
 
         private async Task<Ring2PlateStamp> FuseSliceStampsAsync(List<Ring2PlateStamp> slices)
@@ -122,23 +135,12 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
 
             UniformsPack pack = new UniformsPack();
 
-            //Ring2PlateStamp arrayedStamp = await _commonExecutor.AddAction(() =>
-            //{
-            //    return new Ring2PlateStamp(
-            //        CreateTextureArary(slices.Select(c => c.ColorStamp).Cast<Texture2D>().ToList(), size),
-            //        CreateTextureArary(slices.Select(c => c.NormalStamp).Cast<Texture2D>().ToList(), size),
-            //        size
-            //    );
-            //});
-
             for (int i = 0; i < slices.Count; i++)
             {
                 pack.SetTexture("_Texture" + i, slices[i].ColorStamp);
             }
 
-            //pack.SetTexture("_TexturesArray", arrayedStamp.ColorStamp);
             pack.SetUniform("_TexturesCount", slices.Count);
-
             var fusedColorTexture = await _textureRenderer.AddOrder(new TextureRenderingTemplate()
             {
                 CanMultistep = true,
