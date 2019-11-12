@@ -89,107 +89,13 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             dbInitialization.Start();
             var dbProxy = _gameInitializationFields.Retrive<TerrainShapeDbProxy>();
 
-            var surfaceTextureFormat = RenderTextureFormat.ARGB32;
-            int mipmapLevelToExtract = 0;
-
-            var feRing2PatchConfiguration = new FeRing2PatchConfiguration(_configuration);
-            feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
-            {
-                [0] = 3f,
-                [1] = 3 /8f,
-                [2] = 3 / 64f
-            };
-            feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit= new Dictionary<int, float>()
-            {
-                [0] = 1/3f,
-                [1] = 1 /(3*8f),
-                [2] = 1 /(3f*64f)
-            }; 
-
-            var patchInitializer = new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, feRing2PatchConfiguration);
-            patchInitializer.Start();
-
-            MipmapExtractor mipmapExtractor = new MipmapExtractor(_gameInitializationFields.Retrive<UTTextureRendererProxy>());
-            var patchesCreatorProxy = _gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
-            var  patchStamperOverseerFinalizer= _gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
-            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
-
-            var commonExecutor = _gameInitializationFields.Retrive<CommonExecutorUTProxy>();
-            var cachedSurfacePatchProvider =
-                new CachedESurfacePatchProvider(surfacePatchProvider
-                    , new InMemoryAssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack>(
-                        FETerrainShapeDbInitialization.CreateLevel2AssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack>(
-                            cachingConfiguration: new CachingConfiguration()
-                            {
-                                SaveAssetsToFile =true,
-                                UseFileCaching = true,
-                            }
-                            , new InMemoryCacheConfiguration()
-                            , new ESurfaceTexturesPackEntityActionsPerformer(commonExecutor)
-                            , new ESurfaceTexturesPackFileManager(commonExecutor, _configuration.FilePathsConfiguration.SurfacePatchCachePath))));
-            cachedSurfacePatchProvider.Initialize().Wait();
-
-
-            UTTextureRendererProxy textureRendererProxy = _gameInitializationFields.Retrive<UTTextureRendererProxy>();
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                 {
                     [EGroundTextureType.HeightMap] = ETerrainIntegrationUsingTerrainDatabaseDEO.GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(
                         startConfiguration, dbProxy, repositioner, _gameInitializationFields),
-                    [EGroundTextureType.SurfaceTexture] = new OneGroundTypeLevelTextureEntitiesGenerator()
-                    {
-                        LambdaSegmentFillingListenerGenerator =
-                            (level, segmentModificationManager) => new LambdaSegmentFillingListener(
-                                (c) =>
-                                {
-                                    var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
-                                        startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
-                                    if (level == HeightPyramidLevel.Top)
-                                    {
-
-                                        var pack = cachedSurfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                            new FlatLod(0, 1)).Result;
-
-                                        if (pack != null)
-                                        {
-                                            var mainTexture = pack.MainTexture;
-                                            //Debug.Log("Resolution is "+mainTexture.width+"x"+mainTexture.height+" query size is "+surfaceWorldSpaceRectangle.Width+"x"+surfaceWorldSpaceRectangle.Height);
-                                            segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
-                                            GameObject.Destroy(mainTexture);
-                                        }
-                                    }
-                                    else if (level == HeightPyramidLevel.Mid)
-                                    {
-                                        ESurfaceTexturesPack pack = cachedSurfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                                new FlatLod(1, 1)).Result;
-                                        if (pack != null)
-                                        {
-                                            var mainTexture = pack.MainTexture;
-                                            segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
-                                            GameObject.Destroy(mainTexture);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        ESurfaceTexturesPack pack = cachedSurfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                                new FlatLod(2, 1)).Result;
-                                        if (pack != null)
-                                        {
-                                            var mainTexture = pack.MainTexture;
-                                            segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
-                                            GameObject.Destroy(mainTexture);
-                                        }
-
-                                    }
-                                },
-                                (c) => { },
-                                (c) => { }),
-                        CeilTextureGenerator = () =>
-                            EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
-                                surfaceTextureFormat),
-                        SegmentPlacerGenerator = (ceilTexture) => new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture,
-                            startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize)
-                    }
+                    [EGroundTextureType.SurfaceTexture] = GenerateSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+                        _configuration,startConfiguration,_gameInitializationFields,_ultraUpdatableContainer,repositioner)
                 }
             );
 
@@ -211,5 +117,80 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             }
         }
 
+        public static OneGroundTypeLevelTextureEntitiesGenerator GenerateSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+            FEConfiguration configuration, ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields gameInitializationFields
+            , UltraUpdatableContainer ultraUpdatableContainer, Repositioner repositioner)
+        {
+
+            var surfaceTextureFormat = RenderTextureFormat.ARGB32;
+            int mipmapLevelToExtract = 0;
+
+            var feRing2PatchConfiguration = new FeRing2PatchConfiguration(configuration);
+            feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
+            {
+                [0] = 3f,
+                [1] = 3 /8f,
+                [2] = 3 / 64f
+            };
+            feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit= new Dictionary<int, float>()
+            {
+                [0] = 1/3f,
+                [1] = 1 /(3*8f),
+                [2] = 1 /(3f*64f)
+            }; 
+
+            var patchInitializer = new Ring2PatchInitialization(gameInitializationFields, ultraUpdatableContainer, feRing2PatchConfiguration);
+            patchInitializer.Start();
+
+            MipmapExtractor mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
+            var patchesCreatorProxy = gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
+            var  patchStamperOverseerFinalizer= gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
+            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
+
+            var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
+            var cachedSurfacePatchProvider =
+                new CachedESurfacePatchProvider(surfacePatchProvider
+                    , new InMemoryAssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack>(
+                        FETerrainShapeDbInitialization.CreateLevel2AssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack>(
+                            cachingConfiguration: new CachingConfiguration()
+                            {
+                                SaveAssetsToFile =true,
+                                UseFileCaching = true,
+                            }
+                            , new InMemoryCacheConfiguration()
+                            , new ESurfaceTexturesPackEntityActionsPerformer(commonExecutor)
+                            , new ESurfaceTexturesPackFileManager(commonExecutor, configuration.FilePathsConfiguration.SurfacePatchCachePath))));
+            cachedSurfacePatchProvider.Initialize().Wait();
+
+
+            UTTextureRendererProxy textureRendererProxy = gameInitializationFields.Retrive<UTTextureRendererProxy>();
+
+            return new OneGroundTypeLevelTextureEntitiesGenerator()
+            {
+                LambdaSegmentFillingListenerGenerator =
+                    (level, segmentModificationManager) => new LambdaSegmentFillingListener(
+                        (c) =>
+                        {
+                            var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
+                                startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
+                            var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
+                            var pack = cachedSurfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
+                                lod).Result;
+                            if (pack != null)
+                            {
+                                var mainTexture = pack.MainTexture;
+                                segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
+                                GameObject.Destroy(mainTexture);
+                            }
+                        },
+                        (c) => { },
+                        (c) => { }),
+                CeilTextureGenerator = () =>
+                    EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                        surfaceTextureFormat),
+                SegmentPlacerGenerator = (ceilTexture) => new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture,
+                    startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize)
+            };
+        }
     }
 }

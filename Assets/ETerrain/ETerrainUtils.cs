@@ -7,6 +7,7 @@ using Assets.ComputeShaders;
 using Assets.ETerrain.ETerrainIntegration;
 using Assets.ETerrain.Pyramid.Map;
 using Assets.FinalExecution;
+using Assets.Heightmaps.GRing;
 using Assets.Heightmaps.Ring1.MeshGeneration;
 using Assets.Heightmaps.Ring1.TerrainDescription;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
@@ -35,6 +36,21 @@ namespace Assets.ETerrain
             }
             Preconditions.Fail($"Unsupported HeightPyramidLevel {level}");
             return null;
+        }
+
+        public static FlatLod HeightPyramidLevelToSurfaceTextureFlatLod(HeightPyramidLevel level)
+        {
+            switch (level)
+            {
+                case HeightPyramidLevel.Top:
+                    return new FlatLod(0,0);
+                case HeightPyramidLevel.Mid:
+                    return new FlatLod(1,0);
+                case HeightPyramidLevel.Bottom:
+                    return new FlatLod(2,0);
+            }
+            Preconditions.Fail($"Unsupported HeightPyramidLevel {level}");
+            return new FlatLod(-1,-1);
         }
 
         public static MyRectangle TerrainShapeSegmentAlignedPositionToWorldSpaceArea(HeightPyramidLevel level, HeightPyramidPerLevelConfiguration perLevelConfiguration,
