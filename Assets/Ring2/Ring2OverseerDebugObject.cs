@@ -419,7 +419,7 @@ namespace Assets.Ring2
                 new Color(0, 0, 0.5f),
                 new Color(0, 0, 0.7f),
                 new Color(0, 0, 1),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.7f);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 0.35f);
 
             var region2Substance = new Ring2Substance(new List<Ring2Fabric>()
             {
@@ -468,7 +468,7 @@ namespace Assets.Ring2
             Quadtree<Ring2Region> regionsTree = new Quadtree<Ring2Region>();
             regionsTree.Insert(region1.RegionEnvelope, region1);
             regionsTree.Insert(region2.RegionEnvelope, region2);
-            //regionsTree.Insert(region3.RegionEnvelope, region3);
+            regionsTree.Insert(region3.RegionEnvelope, region3);
             return regionsTree;
         }
     }

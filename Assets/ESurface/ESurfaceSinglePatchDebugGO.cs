@@ -81,10 +81,6 @@ namespace Assets.ESurface
                 {
                     for (int y = -3; y < 3; y++)
                     {
-                        //if (!(x == 0 && y == 1))
-                        //{
-                        //    continue;
-                        //}
                         var inGamePosition = new MyRectangle(x*segmentLength, y*segmentLength, segmentLength, segmentLength);
                         var flatLod = new FlatLod(1, 0);
                         var detailPack = _provider.ProvideSurfaceDetail(inGamePosition, flatLod);
