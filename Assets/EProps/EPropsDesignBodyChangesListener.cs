@@ -66,16 +66,16 @@ namespace Assets.EProps
 
         public Task RegisterDesignBodiesGroupAsync(SpotId id, List<Vector2> bodiesPositions)
         {
-            //var pointers = bodiesPositions.Select(c => _repositioner.Move(c)).Select(c => _elevationManager.RegisterProp(c)).ToList();
-            //_spotIdToGroupElevationIdDict[id] = pointers;
-            //_changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<DesignBodySpotModification>>()
-            //{
-            //    [id] = pointers.Select(c => new DesignBodySpotModification() { Uniforms = CreatePackWithPointerUniform(c) }).ToList()
-            //});
+            var pointers = _elevationManager.RegisterPropsGroup(bodiesPositions.Select(c => _repositioner.Move(c)).ToList());
+            _spotIdToGroupElevationIdDict[id] = pointers;
             _changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<DesignBodySpotModification>>()
             {
-                [id] = bodiesPositions.Select(c => new DesignBodySpotModification(){Uniforms = new UniformsPack()}).ToList()
+                [id] = pointers.Select(c => new DesignBodySpotModification() { Uniforms = CreatePackWithPointerUniform(c) }).ToList()
             });
+            //_changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<DesignBodySpotModification>>()
+            //{
+            //    [id] = bodiesPositions.Select(c => new DesignBodySpotModification(){Uniforms = new UniformsPack()}).ToList()
+            //});
             return TaskUtils.EmptyCompleted();
         }
 

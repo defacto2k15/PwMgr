@@ -12,11 +12,11 @@ namespace Assets.Utils
         private Queue<uint> _freeIndexes; //TODO much more optimal solution possible
         private Queue<uint> _takenIndexes;
 
-        public ConstantSizeClaimableContainer(int size)
+        private ConstantSizeClaimableContainer(T[] internalArray, Queue<uint> freeIndexes, Queue<uint> takenIndexes)
         {
-            _internalArray = new T[size];
-            _freeIndexes = new Queue<uint>(Enumerable.Range(0, size).Select(c => (uint)c).ToList());
-            _takenIndexes = new Queue<uint>();
+            _internalArray = internalArray;
+            _freeIndexes = freeIndexes;
+            _takenIndexes = takenIndexes;
         }
 
         public bool HasFreeSpace()
@@ -41,6 +41,24 @@ namespace Assets.Utils
         {
             return _takenIndexes.Select(i => new ElementWithIndex<T>() {Index = i, Element = _internalArray[i]}).ToList();
         }
+
+        public static ConstantSizeClaimableContainer<T> CreateEmpty(int size)
+        {
+            return new ConstantSizeClaimableContainer<T>(
+                new T[size],
+                new Queue<uint>(Enumerable.Range(0, size).Select(c => (uint) c).ToList()),
+                new Queue<uint>()
+            );
+        } 
+
+        public static ConstantSizeClaimableContainer<T> CreateFull(int size)
+        {
+            return new ConstantSizeClaimableContainer<T>(
+                new T[size],
+                new Queue<uint>(),
+                new Queue<uint>(Enumerable.Range(0, size).Select(c => (uint) c).ToList())
+            );
+        } 
     }
 
     public class ElementWithIndex<T>

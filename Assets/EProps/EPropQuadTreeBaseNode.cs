@@ -30,6 +30,11 @@ namespace Assets.EProps
             return _node.RegisterProp(flatPosition);
         }
 
+        public List<EPropElevationId> RegisterPropGroup(List<Vector2> positions, Vector2 center)
+        {
+            return _node.RegisterPropGroup(positions, center);
+        }
+
         public List<EPropSectorSoleChange> RetriveAndClearUpdateOrders()
         {
             return _node.RetriveAndClearUpdateOrders();
@@ -122,6 +127,7 @@ namespace Assets.EProps
                 SectorState = EPropSectorState.Cold
             };
         }
+
     }
 
 
@@ -133,6 +139,7 @@ namespace Assets.EProps
     public interface IEPropQuadTreeNode
     {
         EPropElevationId RegisterProp(Vector2 flatPosition);
+        List<EPropElevationId> RegisterPropGroup(List<Vector2> positions, Vector2 center);
         List<EPropSectorSoleChange> RetriveAndClearUpdateOrders();
         List<SectorWithStateAndRectangle> RetriveSectorsWithState(EPropHotAreaSelectorWithParameters selectorWithParameters);
         EPropQuadTreeNodeType NodeType { get; }
@@ -155,6 +162,12 @@ namespace Assets.EProps
         {
             Preconditions.Assert(MyRectangle.IsInside(_rectangle.RealSpaceRectangle,flatPosition), $"Prop of position {flatPosition} is not inside rectangle of node {_rectangle}");
             return _leafSector.RegisterProp(flatPosition);
+        }
+
+        public List<EPropElevationId> RegisterPropGroup(List<Vector2> positions, Vector2 center)
+        {
+            Preconditions.Assert(MyRectangle.IsInside(_rectangle.RealSpaceRectangle,center), $"Prop group of center position {center} is not inside rectangle of node {_rectangle}");
+            return _leafSector.RegisterPropGroup(positions);
         }
 
         public List<EPropSectorSoleChange> RetriveAndClearUpdateOrders()
@@ -255,6 +268,12 @@ namespace Assets.EProps
         {
             var apex = FindApex(flatPosition);
             return _subNodes[apex].RegisterProp(flatPosition);
+        }
+
+        public List<EPropElevationId> RegisterPropGroup(List<Vector2> positions, Vector2 center)
+        {
+            var apex = FindApex(center);
+            return _subNodes[apex].RegisterPropGroup(positions, center);
         }
 
         private EPropQuadTreeApex FindApex(Vector2 position)

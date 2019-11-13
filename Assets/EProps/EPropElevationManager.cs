@@ -77,6 +77,16 @@ namespace Assets.EProps
             return _pointersOccupancyContainer.ClaimFreePointer(localeId);
         }
 
+        public List<EPropElevationPointer> RegisterPropsGroup(List<Vector2> positions)
+        {
+            // todo checking if group-positions are aligned to smallest quad
+            var center = positions.Aggregate((a, b) => a + b) / positions.Count;
+            var sectorRectangle = CalculateRootSectorAlignedRectangle(center);
+            var sector = GetFreeSector(sectorRectangle);
+            var localeIds = sector.RegisterPropGroup(positions,center);
+            return localeIds.Select(c => _pointersOccupancyContainer.ClaimFreePointer(c)).ToList();
+        }
+
         public EPropPointerWithId DebugRegisterPropWithElevationId(Vector2 flatPosition)
         {
             var pointer = RegisterProp(flatPosition);
@@ -213,7 +223,7 @@ namespace Assets.EProps
 
         public EPropElevationLocalePointersOccupancyContainer(EPropElevationConfiguration configuration)
         {
-            _pointersContainer = new ConstantSizeClaimableContainer<object>(configuration.MaxLocalePointersCount);
+            _pointersContainer = ConstantSizeClaimableContainer<object>.CreateEmpty(configuration.MaxLocalePointersCount);
             _pointerIdDict = new DoubleDictionary<EPropElevationId, EPropElevationPointer>();
         }
 
@@ -855,14 +865,30 @@ namespace Assets.EProps
             };
         }
 
+        public List<EPropElevationId> RegisterPropGroup(List<Vector2> positions)
+        {
+            var scope = AllocateNewScope();
+            var indexes =  scope.Registry.ClaimForGroup(positions);
+            return indexes.Select(c => new EPropElevationId()
+            {
+                InScopeIndex = c,
+                LocaleBufferScopeIndex = scope.ScopeIndex
+            }).ToList();
+        }
+
+        private EPropLocaleBufferScopeRegistryWithIndex AllocateNewScope()
+        {
+            var newScopeWithIndex = _localeBufferManager.CreateNewScope();
+            _scopes[newScopeWithIndex.ScopeIndex] = newScopeWithIndex.Registry;
+            return newScopeWithIndex;
+        }
+
         private EPropLocaleBufferScopeRegistryWithIndex GetFreeScope()
         {
             var firstFree = _scopes.Select(c => new {c.Key, c.Value}).FirstOrDefault(c => c.Value.HasFreeIndex());
             if (firstFree == null)
             {
-                var newScopeWithIndex = _localeBufferManager.CreateNewScope();
-                _scopes[newScopeWithIndex.ScopeIndex] = newScopeWithIndex.Registry;
-                return newScopeWithIndex;
+                return AllocateNewScope();
             }
             else
             {
@@ -897,6 +923,7 @@ namespace Assets.EProps
             Preconditions.Assert(!_scopes.Any(), "There are arleady scopes in sector");
             _scopes = scopes;
         }
+
     }
 
     public class EPropSectorSoleUpdateOrder
@@ -920,7 +947,7 @@ namespace Assets.EProps
         public EPropLocaleBufferScopeRegistry(EPropElevationConfiguration configuration)
         {
             _configuration = configuration;
-            _localeArray = new ConstantSizeClaimableContainer<Vector2>(_configuration.ScopeLength);
+            _localeArray = ConstantSizeClaimableContainer<Vector2>.CreateEmpty(configuration.ScopeLength);
             _updateOrders = new List<EPropLocaleBufferScopeUpdateOrder>();
         }
 
@@ -938,6 +965,27 @@ namespace Assets.EProps
                 Index = idx
             });
             return idx;
+        }
+
+        public List<uint> ClaimForGroup(List<Vector2> positions)
+        {
+            Preconditions.Assert(!IsDirty, "Cannot claim for group, registry is dirty");
+            Preconditions.Assert(IsEmpty, "Cannot claim for group, registry is not empty");
+            Preconditions.Assert(positions.Count != _configuration.ScopeLength, "Group count is not equal to scopeLength, count is " + positions.Count);
+
+            _localeArray = ConstantSizeClaimableContainer<Vector2>.CreateFull(_configuration.ScopeLength);
+            var outList = new List<uint>();
+            for (uint i = 0; i < positions.Count; i++)
+            {
+                _updateOrders.Add(new EPropLocaleBufferScopeUpdateOrder()
+                {
+                    Index = i,
+                    FlatPosition = positions[(int) i]
+                });
+                outList.Add(i);
+            }
+
+            return outList;
         }
 
         public List<EPropLocaleBufferScopeUpdateOrder> RetriveAndClearUpdateOrders()
@@ -958,6 +1006,7 @@ namespace Assets.EProps
                 InScopeIndex = c.Index
             }).ToList();
         }
+
     }
 
     public class EPropLocaleBufferScopeUpdateOrder // todo add removal data
