@@ -37,6 +37,7 @@ namespace Assets.ESurface
             Preconditions.Assert(devisedPatches.Count==1, "There are more than one devised patch. Exacly "+devisedPatches.Count);
             var onlyPatch = devisedPatches.First();
             var stampedSlice = _patchStamper.FinalizeGPatchCreation(onlyPatch, flatLod.ScalarValue).Result;
+            onlyPatch.Destroy();
             if (stampedSlice != null)
             {
                 if (_mipmapLevelToExtract != 0)

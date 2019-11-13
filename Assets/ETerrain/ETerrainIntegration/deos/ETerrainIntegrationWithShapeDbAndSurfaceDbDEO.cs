@@ -121,9 +121,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             FEConfiguration configuration, ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields gameInitializationFields
             , UltraUpdatableContainer ultraUpdatableContainer, Repositioner repositioner)
         {
-
             var surfaceTextureFormat = RenderTextureFormat.ARGB32;
-            int mipmapLevelToExtract = 0;
 
             var feRing2PatchConfiguration = new FeRing2PatchConfiguration(configuration);
             feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
@@ -139,10 +137,18 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 [2] = 1 /(3f*64f)
             }; 
 
+            int mipmapLevelToExtract = 2;
+            feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit =
+                feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit.ToDictionary(
+                    c => c.Key,
+                    c => c.Value * Mathf.Pow(2, mipmapLevelToExtract)
+                );
+
+
             var patchInitializer = new Ring2PatchInitialization(gameInitializationFields, ultraUpdatableContainer, feRing2PatchConfiguration);
             patchInitializer.Start();
 
-            MipmapExtractor mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
+            var mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
             var patchesCreatorProxy = gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
             var  patchStamperOverseerFinalizer= gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
             var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
@@ -162,8 +168,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                             , new ESurfaceTexturesPackFileManager(commonExecutor, configuration.FilePathsConfiguration.SurfacePatchCachePath))));
             cachedSurfacePatchProvider.Initialize().Wait();
 
-
-            UTTextureRendererProxy textureRendererProxy = gameInitializationFields.Retrive<UTTextureRendererProxy>();
+            var textureRendererProxy = gameInitializationFields.Retrive<UTTextureRendererProxy>();
 
             return new OneGroundTypeLevelTextureEntitiesGenerator()
             {
@@ -174,8 +179,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                             var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
                                 startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
                             var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
-                            var pack = cachedSurfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                lod).Result;
+                            var pack = cachedSurfacePatchProvider.ProvideSurfaceDetail(
+                                repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
                             if (pack != null)
                             {
                                 var mainTexture = pack.MainTexture;

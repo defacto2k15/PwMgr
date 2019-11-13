@@ -53,14 +53,13 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
             MyProfiler.BeginSample("GRing2PatchesCreation QueryRegions");
             var regions = _database.QueryRegions(lodValue, queryArea);
             MyProfiler.EndSample();
-            // regiony które !mo¿e! s¹ w queryArea
-            //Debug.Log($"R123333333333333333333 qaa:{queryArea} sIntresting ttrs: "+regions.Count(c => c.Space is FatLineString)+"  "+StringUtils.ToString(regions.Select(c => c.Space.GetType())));
+            // regiony które !może! są w queryArea
 
             MyProfiler.BeginSample("GRing2PatchesCreation PatchConventer");
             var patchTemplates = _toPatchConventer.Convert(regions, queryArea);
             MyProfiler.EndSample();
 
-            // dzielone s¹ na patche o patch size, ka¿dy patch sk³ada siê ze sliców
+            // dzielone są na patche o patch size, każdy patch składa się ze sliców
 
             //MyProfiler.BeginSample("GRing2PatchesCreation PatchCombiner"); //TODO remove, not not used as we use only stamped patches and even these only with rendering one slice per pass
             //patchTemplates = _templateCombiner.CombineTemplates(patchTemplates);

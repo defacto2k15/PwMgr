@@ -9,7 +9,24 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
 {
     public class GRing2PatchDevised
     {
-        public MyRectangle SliceArea;
-        public List<UniformsWithKeywords> SliceInfos;
+        private MyRectangle _sliceArea;
+        private List<UniformsWithKeywords> _sliceInfos;
+        private readonly Action _destructionAction;
+
+        public GRing2PatchDevised(MyRectangle sliceArea, List<UniformsWithKeywords> sliceInfos, Action destructionAction)
+        {
+            _sliceArea = sliceArea;
+            _sliceInfos = sliceInfos;
+            _destructionAction = destructionAction;
+        }
+
+        public MyRectangle SliceArea => _sliceArea;
+
+        public List<UniformsWithKeywords> SliceInfos => _sliceInfos;
+
+        public void Destroy()
+        {
+            _destructionAction();
+        }
     }
 }

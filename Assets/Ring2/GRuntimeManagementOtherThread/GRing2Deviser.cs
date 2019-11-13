@@ -18,11 +18,10 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
 
         public GRing2PatchDevised DevisePatch(Ring2Patch patch)
         {
-            return new GRing2PatchDevised()
-            {
-                SliceArea = patch.SliceArea.ToUnityCoordPositions2D(),
-                SliceInfos = patch.Slices.Select(slice => CreatePlate(slice, patch.SliceArea)).ToList()
-            };
+            return new GRing2PatchDevised(
+                patch.SliceArea.ToUnityCoordPositions2D()
+                , patch.Slices.Select(slice => CreatePlate(slice, patch.SliceArea)).ToList()
+                , () => patch.Slices.Select(c => c.IntensityPattern.Texture).ToList().ForEach(c => GameObject.Destroy(c)));
         }
 
         private UniformsWithKeywords CreatePlate(Ring2Slice slice, Envelope sliceArea)
@@ -35,7 +34,7 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
             pack.SetUniform("_Dimensions",
                 new Vector4((float) sliceArea.MinX, (float) sliceArea.MinY, (float) sliceArea.CalculatedWidth(),
                     (float) sliceArea.CalculatedHeight()));
-            pack.SetTexture("_ControlTex", slice.IntensityPattern.Texture); //todo texture garbage collector
+            pack.SetTexture("_ControlTex", slice.IntensityPattern.Texture); 
             pack.SetUniform("_LayerPriorities", slice.LayerPriorities);
             pack.SetUniform("_RandomSeeds", slice.RandomSeeds);
 
