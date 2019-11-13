@@ -79,13 +79,23 @@ namespace Assets.EProps
 
         public List<EPropElevationPointer> RegisterPropsGroup(List<Vector2> positions)
         {
+            var maxSubgroupLength = _configuration.ScopeLength;
+            var subgroupCount = Mathf.CeilToInt(positions.Count / ((float) maxSubgroupLength));
+            return Enumerable.Range(0, subgroupCount)
+                .SelectMany(c => RegisterOnePropsGroup(positions.Skip(c * maxSubgroupLength).Take(maxSubgroupLength).ToList())).ToList();
+        }
+
+        private List<EPropElevationPointer> RegisterOnePropsGroup(List<Vector2> positions)
+        {
             // todo checking if group-positions are aligned to smallest quad
+            Preconditions.Assert(positions.Count <= _configuration.ScopeLength, "Subgroup size is too big, as it equals "+positions.Count);
             var center = positions.Aggregate((a, b) => a + b) / positions.Count;
             var sectorRectangle = CalculateRootSectorAlignedRectangle(center);
             var sector = GetFreeSector(sectorRectangle);
             var localeIds = sector.RegisterPropGroup(positions,center);
             return localeIds.Select(c => _pointersOccupancyContainer.ClaimFreePointer(c)).ToList();
         }
+
 
         public EPropPointerWithId DebugRegisterPropWithElevationId(Vector2 flatPosition)
         {
@@ -971,7 +981,7 @@ namespace Assets.EProps
         {
             Preconditions.Assert(!IsDirty, "Cannot claim for group, registry is dirty");
             Preconditions.Assert(IsEmpty, "Cannot claim for group, registry is not empty");
-            Preconditions.Assert(positions.Count != _configuration.ScopeLength, "Group count is not equal to scopeLength, count is " + positions.Count);
+            Preconditions.Assert(positions.Count <= _configuration.ScopeLength, "Group count is bigger than  scopeLength, count is " + positions.Count);
 
             _localeArray = ConstantSizeClaimableContainer<Vector2>.CreateFull(_configuration.ScopeLength);
             var outList = new List<uint>();

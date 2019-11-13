@@ -373,6 +373,7 @@ namespace Assets.FinalExecution
                     new GpuInstancingUniformTemplate("_PlantBendingStiffness", GpuInstancingUniformType.Float),
                     new GpuInstancingUniformTemplate("_PlantDirection", GpuInstancingUniformType.Vector4),
                     new GpuInstancingUniformTemplate("_RandSeed", GpuInstancingUniformType.Float),
+                    new GpuInstancingUniformTemplate("_Pointer", GpuInstancingUniformType.Float),
                 })
             );
 
@@ -521,6 +522,7 @@ namespace Assets.FinalExecution
                     new GpuInstancingUniformTemplate("_PlantDirection", GpuInstancingUniformType.Vector4),
                     new GpuInstancingUniformTemplate("_RandSeed", GpuInstancingUniformType.Float),
                     new GpuInstancingUniformTemplate("_ArrayTextureIndex", GpuInstancingUniformType.Float),
+                    new GpuInstancingUniformTemplate("_Pointer", GpuInstancingUniformType.Float),
                 })
             );
 

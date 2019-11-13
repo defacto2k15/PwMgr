@@ -345,6 +345,8 @@ namespace Assets.Grass2
             _configuration = configuration;
         }
 
+        private int gcount = 1;
+
         public List<VegetationSubjectEntity> GetEntiesFrom(IGeometry area, VegetationDetailLevel level)
         {
             var outPositions = new List<Vector2>();
