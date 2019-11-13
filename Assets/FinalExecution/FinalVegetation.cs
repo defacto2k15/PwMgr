@@ -128,7 +128,7 @@ namespace Assets.FinalExecution
             var rootMediator = _initializationFields.Retrive<RootMediatorSpotPositionsUpdater>();
             rootMediator.AddListener(mediatorSpotUpdater);
 
-            var repositioner = _initializationFields .Retrive<Repositioner >(); 
+            var repositioner = _veConfiguration.VegetationRepositioner;
             var forgingContainerProxy = new ForgingVegetationSubjectInstanceContainerProxy(
                 new ForgingVegetationSubjectInstanceContainer(
                     new DesignBodyPortrayalForger(
@@ -179,9 +179,9 @@ namespace Assets.FinalExecution
                         }
                     }
 
-                    var stagnantVegetationRuntimaManagement = new StagnantVegetationRuntimeManagement(forgingContainerProxy,
+                    var stagnantVegetationRuntimeManagement = new StagnantVegetationRuntimeManagement(forgingContainerProxy,
                         stagnantEntities, _veConfiguration.StagnantVegetationRuntimeManagementConfiguration);
-                    var stagnantVegetationRuntimaManagementProxy = new StagnantVegetationRuntimeManagementProxy(stagnantVegetationRuntimaManagement);
+                    var stagnantVegetationRuntimaManagementProxy = new StagnantVegetationRuntimeManagementProxy(stagnantVegetationRuntimeManagement);
 
                     _ultraUpdatableContainer.AddUpdatableElement(new FieldBasedUltraUpdatable()
                     {
@@ -232,7 +232,7 @@ namespace Assets.FinalExecution
 
         private void InitializeBushObjectsDb(List<VegetationSubjectEntity> smallDb, ForgingVegetationSubjectInstanceContainerProxy forgingContainerProxy)
         {
-            var repositioner = _initializationFields.Retrive<Repositioner>();
+            var repositioner = _veConfiguration.VegetationRepositioner;
 
             var supportedSpecies = _veConfiguration.SupportedLeadingBushSpecies;
 
@@ -300,7 +300,7 @@ namespace Assets.FinalExecution
 
             var vegetationRuntimeManagementProxy = new VegetationRuntimeManagementProxy(runtimeManagement);
 
-            var repositioner = _initializationFields.Retrive<Repositioner>();
+            var repositioner = _veConfiguration.VegetationRepositioner;
             _ultraUpdatableContainer.AddUpdatableElement(new FieldBasedUltraUpdatable()
             {
                 StartCameraField = (camera) =>
@@ -403,7 +403,7 @@ namespace Assets.FinalExecution
                 mediatorSpotUpdater,
                 grassAspectGenerator,
                 _veConfiguration.GrassTemplates,
-                _initializationFields.Retrive<Repositioner>());
+                _veConfiguration.VegetationRepositioner);
 
             mediatorSpotUpdater.SetTargetChangesListener(new LambdaSpotPositionChangesListener(null, dict =>
             {
@@ -466,7 +466,7 @@ namespace Assets.FinalExecution
 
             var vegetationRuntimeManagementProxy = new VegetationRuntimeManagementProxy(runtimeManagement);
 
-            var repositioner = _initializationFields.Retrive<Repositioner>();
+            var repositioner = _veConfiguration.VegetationRepositioner;
             _ultraUpdatableContainer.AddUpdatableElement(new FieldBasedUltraUpdatable()
             {
                 StartCameraField = (camera) =>
@@ -539,7 +539,7 @@ namespace Assets.FinalExecution
             var grassGroupsPlanter = new GrassGroupsPlanter(
                 grassDetailInstancer, grassPositionResolver, grassGroupsContainer, mediatorSpotUpdater,
                 new Grass2BushAspectsGenerator(bakedClan), //todo! 
-                _veConfiguration.BushTemplatesConfiguration, _initializationFields.Retrive<Repositioner>());
+                _veConfiguration.BushTemplatesConfiguration, _veConfiguration.VegetationRepositioner);
 
             mediatorSpotUpdater.SetTargetChangesListener(new LambdaSpotPositionChangesListener(null, dict =>
             {

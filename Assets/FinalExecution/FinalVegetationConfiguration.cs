@@ -7,6 +7,7 @@ using Assets.Grass2.Types;
 using Assets.Habitat;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Random;
+using Assets.Repositioning;
 using Assets.Trees.DesignBodyDetails;
 using Assets.Trees.Placement;
 using Assets.Trees.RuntimeManagement;
@@ -27,6 +28,7 @@ namespace Assets.FinalExecution
     public class FinalVegetationConfiguration
     {
         public FinalVegetationReferencedAssets ReferencedAssets;
+        public Repositioner VegetationRepositioner = Repositioner.Default;
 
         public VegetationMode Mode = VegetationMode.EVegetation;
         public bool GenerateTrees = true;
@@ -818,7 +820,6 @@ namespace Assets.FinalExecution
         public string TreeCompletedClanDirectiory => FeConfiguration.FilePathsConfiguration.TreeCompletedClanDirectiory;
         public ShadowCastingMode GrassCastShadows => ShadowCastingMode.Off;
     }
-
 
     [Serializable]
     public class FinalVegetationReferencedAssets

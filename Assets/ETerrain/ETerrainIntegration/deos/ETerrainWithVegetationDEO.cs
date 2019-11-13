@@ -58,6 +58,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
             ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
             VegetationConfiguration.FeConfiguration = _configuration;
+            VegetationConfiguration.VegetationRepositioner 
+                = Repositioner.MergeRepositioners(VegetationConfiguration.VegetationRepositioner, new Repositioner(new Vector2(720, 360)));
 
             _gameInitializationFields = new GameInitializationFields();
 
@@ -101,6 +103,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 {
                     [EGroundTextureType.HeightMap] = ETerrainIntegrationUsingTerrainDatabaseDEO.GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(
                         startConfiguration, dbProxy, repositioner, _gameInitializationFields),
+                    [EGroundTextureType.SurfaceTexture] = ETerrainIntegrationWithShapeDbAndSurfaceDbDEO.GenerateSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+                        _configuration,startConfiguration,_gameInitializationFields,_ultraUpdatableContainer,repositioner)
                 }
             );
 

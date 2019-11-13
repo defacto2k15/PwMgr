@@ -56,5 +56,10 @@ namespace Assets.Repositioning
         {
             return new MyRectangle(rect.X - _delta.x, rect.Y - _delta.y, rect.Width, rect.Height);
         }
+
+        public static Repositioner MergeRepositioners(Repositioner r1, Repositioner r2)
+        {
+            return new Repositioner(r1._delta+r2._delta);
+        }
     }
 }
