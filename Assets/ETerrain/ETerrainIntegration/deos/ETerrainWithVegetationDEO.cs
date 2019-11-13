@@ -58,8 +58,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
             ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
             VegetationConfiguration.FeConfiguration = _configuration;
-            //VegetationConfiguration.VegetationRepositioner; 
-                //= Repositioner.MergeRepositioners(VegetationConfiguration.VegetationRepositioner, new Repositioner(new Vector2(720, 360)));
 
             _gameInitializationFields = new GameInitializationFields();
 
@@ -144,8 +142,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
 
-            var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
-            _elevationManager.Update(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters);
+            if (Time.frameCount < 20)
+            {
+                var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
+                    _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
+                _elevationManager.Update(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters);
+            }
 
             //if (Time.frameCount % 100 == 0)
             //{
@@ -181,7 +183,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 c => c.Value.LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
             _ePropHotAreaSelector = new EPropHotAreaSelector(levelWorldSizes, ringMergeRanges);
 
-            var spotUpdater = new EPropsDesignBodyChangesListener(_elevationManager, Repositioner.Default ); // todo get repositioner from other place
+            var spotUpdater = new EPropsDesignBodyChangesListener(_elevationManager, VegetationConfiguration.VegetationRepositioner ); // todo get repositioner from other place
             var designBodySpotUpdaterProxy = new DesignBodySpotUpdaterProxy(spotUpdater);
             _gameInitializationFields.SetField(designBodySpotUpdaterProxy);
             _ultraUpdatableContainer.AddOtherThreadProxy(designBodySpotUpdaterProxy);

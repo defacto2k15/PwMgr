@@ -28,7 +28,8 @@ namespace Assets.FinalExecution
     public class FinalVegetationConfiguration
     {
         public FinalVegetationReferencedAssets ReferencedAssets;
-        public Repositioner VegetationRepositioner = Repositioner.Default;
+        public Repositioner VegetationRepositioner => Repositioner.MergeRepositioners(Repositioner.Default, VegetationCorrectionRepositioner);
+        public Repositioner VegetationCorrectionRepositioner = new Repositioner(new Vector2(720,460));
 
         public VegetationMode Mode = VegetationMode.EVegetation;
         public bool GenerateTrees = true;

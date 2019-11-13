@@ -209,19 +209,17 @@ namespace Assets.EProps
     public class EPropElevationLocalePointersOccupancyContainer
     {
         private DoubleDictionary<EPropElevationId, EPropElevationPointer> _pointerIdDict;
-        private Queue<int> _freePointers; //todo use some better data structure
-        private Queue<int> _takenPointers; //todo use some better data structure
+        private ConstantSizeClaimableContainer<object> _pointersContainer; //todo possible much less space taking data structure
 
         public EPropElevationLocalePointersOccupancyContainer(EPropElevationConfiguration configuration)
         {
-            _freePointers = new Queue<int>(Enumerable.Range(0, configuration.MaxLocalePointersCount).ToList());
-            _takenPointers = new Queue<int>();
+            _pointersContainer = new ConstantSizeClaimableContainer<object>(configuration.MaxLocalePointersCount);
             _pointerIdDict = new DoubleDictionary<EPropElevationId, EPropElevationPointer>();
         }
 
         public EPropElevationPointer ClaimFreePointer(EPropElevationId id)
         {
-            uint freeIndex = (uint) _freePointers.Dequeue();
+            uint freeIndex = _pointersContainer.AddElement(null);
             var pointer = new EPropElevationPointer()
             {
                 Value = freeIndex
@@ -916,39 +914,30 @@ namespace Assets.EProps
     public class EPropLocaleBufferScopeRegistry
     {
         private EPropElevationConfiguration _configuration;
-        private Vector2?[] _localeArray;
+        private ConstantSizeClaimableContainer<Vector2> _localeArray;
         private List<EPropLocaleBufferScopeUpdateOrder> _updateOrders;
 
         public EPropLocaleBufferScopeRegistry(EPropElevationConfiguration configuration)
         {
             _configuration = configuration;
-            _localeArray = new Vector2?[_configuration.ScopeLength];
+            _localeArray = new ConstantSizeClaimableContainer<Vector2>(_configuration.ScopeLength);
             _updateOrders = new List<EPropLocaleBufferScopeUpdateOrder>();
         }
 
         public bool HasFreeIndex()
         {
-            return _localeArray.Any(c => !c.HasValue);
+            return _localeArray.HasFreeSpace();
         }
 
         public uint ClaimFreeLocale(Vector2 flatPosition)
         {
-            for (uint i = 0; i < _localeArray.Length; i++)
+            uint idx = _localeArray.AddElement(flatPosition);
+            _updateOrders.Add(new EPropLocaleBufferScopeUpdateOrder()
             {
-                if (!_localeArray[i].HasValue)
-                {
-                    _localeArray[i] = flatPosition;
-                    _updateOrders.Add(new EPropLocaleBufferScopeUpdateOrder()
-                    {
-                        FlatPosition = flatPosition,
-                        Index = i
-                    });
-                    return i;
-                }
-            }
-
-            Preconditions.Fail("There is no free locale is scope");
-            return 0;
+                FlatPosition = flatPosition,
+                Index = idx
+            });
+            return idx;
         }
 
         public List<EPropLocaleBufferScopeUpdateOrder> RetriveAndClearUpdateOrders()
@@ -959,17 +948,15 @@ namespace Assets.EProps
         }
 
         public bool IsDirty => _updateOrders.Any();
-        public bool IsEmpty => _localeArray.All(c => !c.HasValue);
+        public bool IsEmpty => _localeArray.IsEmpty();
 
         public List<InScopeIndexTypeWithFlatPosition> RetriveAllLocales()
         {
-            return _localeArray.Where(c => c.HasValue).Select((c, i) => new InScopeIndexTypeWithFlatPosition()
-                {
-                    FlatPosition = c.Value,
-                    InScopeIndex = (uint)i
-
-                }
-            ).ToList();
+            return _localeArray.RetriveAllElements().Select(c => new InScopeIndexTypeWithFlatPosition()
+            {
+                FlatPosition = c.Element,
+                InScopeIndex = c.Index
+            }).ToList();
         }
     }
 
