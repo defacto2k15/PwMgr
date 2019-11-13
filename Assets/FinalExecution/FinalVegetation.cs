@@ -240,7 +240,8 @@ namespace Assets.FinalExecution
 
             var filteredEntities = smallDb
                 .Where(c => supportedSpecies.Contains(c.Detail.SpeciesEnum))
-                .Select(c => speciesChanger.ChangeSpecies(c));
+                .Select(c => speciesChanger.ChangeSpecies(c))
+                .Where(c => _veConfiguration.SupportedBushSpecies.Contains(c.Detail.SpeciesEnum));
             var quadtree = new Quadtree<VegetationSubjectEntity>();
             foreach (var entity in filteredEntities)
             {

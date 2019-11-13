@@ -136,7 +136,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var msw = new MyStopWatch();
             msw.StartSegment("FIRST UPDATE");
 
-            _updaterUntilException.Execute(() => { _ultraUpdatableContainer.Update(FindObjectOfType<Camera>()); });
+            var camera = FindObjectOfType<Camera>();
+            camera.transform.position = Traveller.transform.position;
+            _updaterUntilException.Execute(() => { _ultraUpdatableContainer.Update(camera); });
             var position3D = Traveller.transform.position;
             var travellerFlatPosition = new Vector2(position3D.x, position3D.z);
 

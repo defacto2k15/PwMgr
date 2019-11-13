@@ -34,6 +34,7 @@ Shader "Custom/EVegetation/GenericBillboardLocaledInstanced" {
 			int _ScopeLength;    
 #include "eterrain_EPropLocaleHeightAccessing.hlsl"
 
+
 		//Our Vertex Shader 
 		void vert (inout appdata_base v, out Input o){
 			generic_billboard_vert(v, o); 

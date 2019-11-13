@@ -100,6 +100,7 @@ namespace Assets.Trees.DesignBodyDetails.MyRandom
         CombinationIdx,
         ColorIndex,
         HSV_H,
-        HSV_S
+        HSV_S,
+        BaseScale
     }
 }

@@ -71,6 +71,10 @@ namespace Assets.Trees.RuntimeManagement.SubjectsInstancesContainer
 
         public void ProcessOrder(VegetationSubjectsInstancingOrder order)
         {
+            if (order.CreationList.Any(c => c.Detail.SpeciesEnum == VegetationSpeciesEnum.SmallBush2))
+            {
+                int todo = 1;
+            }
             if (_spotUpdater == null)
             {
                 foreach (var entity in order.CreationList)

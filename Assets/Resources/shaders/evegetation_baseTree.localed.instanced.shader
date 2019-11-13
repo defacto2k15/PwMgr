@@ -7,11 +7,10 @@
 	}
 		SubShader
 	{
-		Pass
-		{
 			CGPROGRAM
 			#pragma vertex vert
-			#pragma fragment frag
+			#pragma surface surf NoLighting addshadow vertex:vert 
+			#pragma target 3.0
 			#pragma multi_compile_instancing
 			#include "UnityCG.cginc" // for UnityObjectToWorldNormal
 
@@ -21,44 +20,32 @@
 			UNITY_INSTANCING_BUFFER_END(Props)
 
 			int _ScopeLength;  
+
 			#include "eterrain_EPropLocaleHeightAccessing.hlsl"
 
-            // vertex shader inputs
-            struct appdata
-            {
-                float4 vertex : POSITION; 
-                float2 uv : TEXCOORD0;
-				float3 normal : NORMAL;
-            };
+			struct Input {
+				float2 uv_MainTex;
+			};
 
-            struct v2f
-            {
-                float2 uv : TEXCOORD0;
-                float4 vertex : SV_POSITION; 
-				float3 worldNormal : ANY_NORMAL;
-            };
-
-            // vertex shader
-            v2f vert (appdata v)
-            {
-                v2f o;
-
-				float4 vertexWorldPos =  mul(unity_ObjectToWorld , v.vertex);
-				vertexWorldPos.y += RetriveHeight();
-				o.vertex =  mul(UNITY_MATRIX_VP, float4(vertexWorldPos.xyz, 1.0));
-
-                o.uv = v.uv;
-				o.worldNormal = UnityObjectToWorldNormal(v.normal);
-                return o;
-            }
-            
+			void vert (inout appdata_base v ){
+				float heightOffset =  RetriveHeight();
+				float3 objectOffset = mul((float3x3)unity_WorldToObject, float3(0,heightOffset,0));
+				v.vertex.xyz += objectOffset;
+			} 
+			
+			fixed4 LightingNoLighting(SurfaceOutput s, fixed3 lightDir, fixed atten)
+			{
+				fixed4 c;
+				c.rgb = s.Albedo; 
+				c.a = s.Alpha; 
+				return c;
+			}  
+           
             sampler2D _MainTex;
 
-            fixed4 frag (v2f i) : SV_Target
-            {
-				return tex2Dlod(_MainTex, float4(i.uv,0,0));
-            }
+			void surf(in Input i, inout SurfaceOutput o) {
+				o.Albedo =  tex2Dlod(_MainTex, float4(i.uv_MainTex, 0, 0));
+			}
             ENDCG
-        }
     }
 }

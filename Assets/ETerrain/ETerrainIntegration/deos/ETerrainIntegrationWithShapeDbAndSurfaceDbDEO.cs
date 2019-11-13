@@ -105,6 +105,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public void Update()
         {
+            var camera = FindObjectOfType<Camera>();
+            camera.transform.position = Traveller.transform.position;
             _updaterUntilException.Execute(() => { _ultraUpdatableContainer.Update(FindObjectOfType<Camera>()); });
             var position3D = Traveller.transform.position;
             var flatPosition = new Vector2(position3D.x, position3D.z);

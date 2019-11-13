@@ -54,15 +54,17 @@ namespace Assets.Trees.DesignBodyDetails.DetailProvider
 
             var rotation = randomGenerator.FloatValueRange(StringSeed.YRotation, 0, 2 * Mathf.PI);
             //var finalRotation = RotationUtils.AlignRotationToNormal(spotNormal, rotation); //todo set rotation from data!!
+            Debug.Log(rotation);
             var finalRotation = new Vector3(0, rotation * Mathf.Rad2Deg, 0);
 
-            var heightScale = randomGenerator.FloatValueRange(StringSeed.HeightScale, 2, 4);
+            var heightScale = randomGenerator.FloatValueRange(StringSeed.HeightScale, 2, 4); //TODO we should configure it
 
             var firstPosition = new Vector3(level1Detail.Pos2D.x,0, level1Detail.Pos2D.y);
             var finalPosition = DesignBodyUtils.MoveToFoundation(heightScale, 0, spotNormal, firstPosition);
             finalPosition = firstPosition;
 
             var scale = new Vector3(1, heightScale, 1);
+            scale *= randomGenerator.FloatValueRange(StringSeed.BaseScale, 0.6f, 1.5f);
 
             scale = VectorUtils.MemberwiseMultiply(scale, _disposition.SizeMultiplier);
             scale *= level1Detail.Size;
@@ -70,7 +72,7 @@ namespace Assets.Trees.DesignBodyDetails.DetailProvider
             return new DesignBodyLevel2Detail()
             {
                 Position = finalPosition,
-                Rotation = Quaternion.Euler(finalRotation * Mathf.Deg2Rad),
+                Rotation = Quaternion.Euler(finalRotation ),
                 Scale = scale,
             };
         }

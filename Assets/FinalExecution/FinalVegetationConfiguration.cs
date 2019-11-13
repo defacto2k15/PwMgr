@@ -330,7 +330,7 @@ namespace Assets.FinalExecution
                                 {
                                     VegetationDetailLevel.FULL, new SingleDetailDisposition()
                                     {
-                                        SizeMultiplier = new Vector3(2, 1, 2) * 0.15f,
+                                        SizeMultiplier = new Vector3(2, 1, 2) *0.3f,
                                         ColorGroups =
                                             FeConfiguration.ColorsConfiguration.ColorPaletteFile.RetrivePack(ColorPaletteLines
                                                 .Trees_Bush1)
@@ -352,7 +352,7 @@ namespace Assets.FinalExecution
                                 {
                                     VegetationDetailLevel.FULL, new SingleDetailDisposition()
                                     {
-                                        SizeMultiplier = new Vector3(2, 1, 2) * 0.15f,
+                                        SizeMultiplier = new Vector3(2, 1, 2) * 0.2f,
                                         ColorGroups =
                                             FeConfiguration.ColorsConfiguration.ColorPaletteFile.RetrivePack(ColorPaletteLines
                                                 .Trees_Bush1)
@@ -374,7 +374,7 @@ namespace Assets.FinalExecution
                                 {
                                     VegetationDetailLevel.FULL, new SingleDetailDisposition()
                                     {
-                                        SizeMultiplier = new Vector3(2, 1, 2) * 0.15f,
+                                        SizeMultiplier = new Vector3(2, 1, 2) * 0.2f,
                                         ColorGroups =
                                             FeConfiguration.ColorsConfiguration.ColorPaletteFile.RetrivePack(ColorPaletteLines
                                                 .Trees_Bush1)
@@ -396,7 +396,7 @@ namespace Assets.FinalExecution
                                 {
                                     VegetationDetailLevel.FULL, new SingleDetailDisposition()
                                     {
-                                        SizeMultiplier = new Vector3(2, 1, 2) * 0.15f,
+                                        SizeMultiplier = new Vector3(2, 1, 2) * 1f,
                                         ColorGroups =
                                             FeConfiguration.ColorsConfiguration.ColorPaletteFile.RetrivePack(ColorPaletteLines
                                                 .Trees_Bush2)
@@ -418,7 +418,7 @@ namespace Assets.FinalExecution
                                 {
                                     VegetationDetailLevel.FULL, new SingleDetailDisposition()
                                     {
-                                        SizeMultiplier = new Vector3(2, 1, 2) * 0.15f,
+                                        SizeMultiplier = new Vector3(2, 1, 2) * 1f,
                                         ColorGroups =
                                             FeConfiguration.ColorsConfiguration.ColorPaletteFile.RetrivePack(ColorPaletteLines
                                                 .Trees_Bush2)
@@ -453,7 +453,7 @@ namespace Assets.FinalExecution
         public VegetationRuntimeManagementConfiguration BushObjectsVegetationRuntimeManagementConfiguration => new
             VegetationRuntimeManagementConfiguration()
             {
-                DetailFieldsTemplate = new SingleSquareDetailFieldsTemplate(100, VegetationDetailLevel.FULL)
+                DetailFieldsTemplate = new SingleSquareDetailFieldsTemplate(500, VegetationDetailLevel.FULL)
             };
 
         public List<VegetationSpeciesEnum> SupportedTreeSpecies =>
@@ -470,11 +470,11 @@ namespace Assets.FinalExecution
 
         public List<VegetationSpeciesEnum> SupportedBushSpecies => new List<VegetationSpeciesEnum>()
         {
-            VegetationSpeciesEnum.SmallBush1,
-            VegetationSpeciesEnum.SmallBush2,
+            //VegetationSpeciesEnum.SmallBush1,
+            //VegetationSpeciesEnum.SmallBush2,
             VegetationSpeciesEnum.SmallBush3,
-            VegetationSpeciesEnum.SmallBush4,
-            VegetationSpeciesEnum.SmallBush5
+            //VegetationSpeciesEnum.SmallBush4,
+            //VegetationSpeciesEnum.SmallBush5
         };
 
         public List<VegetationSpeciesEnum> SupportedVegetationSpecies => SupportedTreeSpecies.Union(SupportedBushSpecies).ToList();
