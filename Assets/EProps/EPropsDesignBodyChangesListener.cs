@@ -46,6 +46,11 @@ namespace Assets.EProps
                 {
                     Uniforms = CreatePackWithPointerUniform(elevationId)
                 };
+
+                //modifications[pair.SpotId] = new DesignBodySpotModification()
+                //{
+                //    Uniforms = new UniformsPack()
+                //};
             }
 
             _changesListener.SpotsWereChanged(modifications);
@@ -61,11 +66,15 @@ namespace Assets.EProps
 
         public Task RegisterDesignBodiesGroupAsync(SpotId id, List<Vector2> bodiesPositions)
         {
-            var pointers = bodiesPositions.Select(c => _repositioner.Move(c)).Select(c => _elevationManager.RegisterProp(c)).ToList();
-            _spotIdToGroupElevationIdDict[id] = pointers;
+            //var pointers = bodiesPositions.Select(c => _repositioner.Move(c)).Select(c => _elevationManager.RegisterProp(c)).ToList();
+            //_spotIdToGroupElevationIdDict[id] = pointers;
+            //_changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<DesignBodySpotModification>>()
+            //{
+            //    [id] = pointers.Select(c => new DesignBodySpotModification() { Uniforms = CreatePackWithPointerUniform(c) }).ToList()
+            //});
             _changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<DesignBodySpotModification>>()
             {
-                [id] = pointers.Select(c => new DesignBodySpotModification() { Uniforms = CreatePackWithPointerUniform(c) }).ToList()
+                [id] = bodiesPositions.Select(c => new DesignBodySpotModification(){Uniforms = new UniformsPack()}).ToList()
             });
             return TaskUtils.EmptyCompleted();
         }

@@ -161,7 +161,7 @@ namespace Assets.FinalExecution
 
                     var supportedSpecies = _veConfiguration.SupportedTreeSpecies;
 
-                    var filteredEntities = baseRankedDb.Where(c => supportedSpecies.Contains(c.Detail.SpeciesEnum));
+                    var filteredEntities = baseRankedDb.Where(c => supportedSpecies.Contains(c.Detail.SpeciesEnum)).ToList();
 
                     var stagnantEntities = new List<VegetationSubjectEntity>();
                     var nonStagnantEntities = new List<VegetationSubjectEntity>();

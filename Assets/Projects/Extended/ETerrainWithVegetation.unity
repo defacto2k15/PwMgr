@@ -304,7 +304,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 34.010002, y: -30.000002, z: 0}
 --- !u!1 &641582739
 GameObject:
@@ -350,9 +350,10 @@ MonoBehaviour:
       - {fileID: 193400, guid: 3addedb4ce9735b44b416709f5bf528e, type: 3}
     Mode: 1
     GenerateTrees: 0
-    GenerateBigBushes: 1
-    GenerateGrass: 0
+    GenerateBigBushes: 0
+    GenerateGrass: 1
     GenerateSmallBushes: 0
+    BigTreesSupportedDetailLevels: 000000000100000002000000
     ShaderNames:
       TreeBillboardShader: Custom/EVegetation/GenericBillboardLocaledInstanced
       BaseTreeShader: Custom/EVegetation/BaseTreeLocaledInstanced
@@ -515,7 +516,7 @@ PrefabInstance:
     - target: {fileID: 5521815812647811855, guid: b8fded7a043124c46af191efe4891900,
         type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5521815812647811855, guid: b8fded7a043124c46af191efe4891900,
         type: 3}

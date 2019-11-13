@@ -58,8 +58,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
             ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
             VegetationConfiguration.FeConfiguration = _configuration;
-            VegetationConfiguration.VegetationRepositioner 
-                = Repositioner.MergeRepositioners(VegetationConfiguration.VegetationRepositioner, new Repositioner(new Vector2(720, 360)));
+            //VegetationConfiguration.VegetationRepositioner; 
+                //= Repositioner.MergeRepositioners(VegetationConfiguration.VegetationRepositioner, new Repositioner(new Vector2(720, 360)));
 
             _gameInitializationFields = new GameInitializationFields();
 
@@ -69,7 +69,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var startConfiguration = ETerrainHeightPyramidFacadeStartConfiguration.DefaultConfiguration;
             startConfiguration.CommonConfiguration.YScale = _gameInitializationFields.Retrive<HeightDenormalizer>().DenormalizationMultiplier;
             startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/6.0f;
-            startConfiguration.InitialTravellerPosition = new Vector2(490, -21) + new Vector2(90f*8, 90f*4);
+            startConfiguration.InitialTravellerPosition = new Vector2(440, 100) + new Vector2(90f*8, 90f*4);
             //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
             startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
 

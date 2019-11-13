@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Assets.Trees.RuntimeManagement.Management
 {
     public class VegetationRuntimeManagementConfiguration

@@ -31,8 +31,12 @@ namespace Assets.Trees.RuntimeManagement.Management
         public void Start()
         {
             MyProfiler.BeginSample("StagnantVegetationRuntimeManagement Start");
-            _vegetationSubjectsChangesListener.AddInstancingOrder(_configuration.DetailLevel, _gainedEntities,
-                new List<VegetationSubjectEntity>());
+            if (_configuration.IsEnabled)
+            {
+                _vegetationSubjectsChangesListener.AddInstancingOrder(_configuration.DetailLevel, _gainedEntities,
+                    new List<VegetationSubjectEntity>());
+            }
+
             MyProfiler.EndSample();
         }
     }
@@ -40,6 +44,7 @@ namespace Assets.Trees.RuntimeManagement.Management
     public class StagnantVegetationRuntimeManagementConfiguration
     {
         public VegetationDetailLevel DetailLevel  = VegetationDetailLevel.BILLBOARD;
+        public bool IsEnabled = true;
     }
 
     public class StagnantVegetationRuntimeManagementProxy : IOtherThreadProxy//todo add baseotherThradProxy

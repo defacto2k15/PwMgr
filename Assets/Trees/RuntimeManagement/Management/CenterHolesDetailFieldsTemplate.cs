@@ -69,7 +69,7 @@ namespace Assets.Trees.RuntimeManagement.Management
 
             Dictionary<VegetationDetailLevel, IGeometry> gainedAreas =
                 new Dictionary<VegetationDetailLevel, IGeometry>();
-            foreach (var level in VegetationDetailLevelUtils.AllFromSmallToBig())
+            foreach (var level in VegetationDetailLevelUtils.AllFromSmallToBig().Where(c => _baseShapes.ContainsKey(c)))
             {
                 var baseShape = _baseShapes[level];
                 var newShape = centerTransformation.Transform(baseShape.Clone() as IGeometry);

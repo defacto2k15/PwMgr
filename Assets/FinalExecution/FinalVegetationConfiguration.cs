@@ -35,6 +35,7 @@ namespace Assets.FinalExecution
         public bool GenerateBigBushes = false;
         public bool GenerateGrass = false;
         public bool GenerateSmallBushes = false;
+        public List<VegetationDetailLevel> BigTreesSupportedDetailLevels = new List<VegetationDetailLevel>(){VegetationDetailLevel.FULL,VegetationDetailLevel.BILLBOARD,VegetationDetailLevel.REDUCED};
 
         public FEConfiguration FeConfiguration { get; set; }
 
@@ -55,7 +56,7 @@ namespace Assets.FinalExecution
                                 {
                                     VegetationDetailLevel.FULL, new SingleDetailDisposition()
                                     {
-                                        SizeMultiplier = new Vector3(1.2f, 0.5f, 1.2f) * 0.5f,
+                                        SizeMultiplier = new Vector3(1.2f, 0.5f, 1.2f) * 1f,
                                         ColorGroups =
                                             FeConfiguration.ColorsConfiguration.ColorPaletteFile.RetrivePack(ColorPaletteLines.Trees_Beech)
                                     }
@@ -63,7 +64,7 @@ namespace Assets.FinalExecution
                                 {
                                     VegetationDetailLevel.REDUCED, new SingleDetailDisposition()
                                     {
-                                        SizeMultiplier = new Vector3(1.2f, 0.5f, 1.2f) * 0.5f,
+                                        SizeMultiplier = new Vector3(1.2f, 0.5f, 1.2f) * 1f,
                                         ColorGroups =
                                             FeConfiguration.ColorsConfiguration.ColorPaletteFile.RetrivePack(ColorPaletteLines
                                                 .Trees_Beech)
@@ -72,7 +73,7 @@ namespace Assets.FinalExecution
                                 {
                                     VegetationDetailLevel.BILLBOARD, new SingleDetailDisposition()
                                     {
-                                        SizeMultiplier = new Vector3(1.2f, 0.5f, 1.2f) * 0.5f,
+                                        SizeMultiplier = new Vector3(1.2f, 0.5f, 1.2f) * 1f,
                                         ColorGroups =
                                             FeConfiguration.ColorsConfiguration.ColorPaletteFile.RetrivePack(ColorPaletteLines
                                                 .Trees_Beech)
@@ -525,7 +526,7 @@ namespace Assets.FinalExecution
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.FULL, 0, 35),
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.REDUCED, 25, 70),
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.BILLBOARD, 60, 10000),
-                            }),
+                            }.Where(c=> BigTreesSupportedDetailLevels.Contains(c.Level)).ToList()),
                         UpdateMinDistance = 10
                     }
                 },
@@ -540,7 +541,7 @@ namespace Assets.FinalExecution
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.FULL, 0, 30),
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.REDUCED, 25, 60),
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.BILLBOARD, 50, 280),
-                            }),
+                            }.Where(c=> BigTreesSupportedDetailLevels.Contains(c.Level)).ToList()),
                         UpdateMinDistance = 10
                     }
                 },
@@ -554,7 +555,7 @@ namespace Assets.FinalExecution
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.FULL, 0, 25),
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.REDUCED, 20, 35),
                                 new DetailFieldsTemplateOneLine(VegetationDetailLevel.BILLBOARD, 32, 280),
-                            }),
+                            }.Where(c=> BigTreesSupportedDetailLevels.Contains(c.Level)).ToList()),
                         UpdateMinDistance = 10
                     }
                 }
@@ -563,10 +564,11 @@ namespace Assets.FinalExecution
         public MyRectangle NonStagnantVegetationArea => FeConfiguration.Repositioner.InvMove(MyRectangle.CenteredAt(
             new Vector2(FeConfiguration.CameraStartPosition.x, FeConfiguration.CameraStartPosition.z), new Vector2(600, 600)));
 
-        public StagnantVegetationRuntimeManagementConfiguration StagnantVegetationRuntimeManagementConfiguration =
+        public StagnantVegetationRuntimeManagementConfiguration StagnantVegetationRuntimeManagementConfiguration =>
             new StagnantVegetationRuntimeManagementConfiguration()
             {
-                DetailLevel = VegetationDetailLevel.BILLBOARD
+                DetailLevel = VegetationDetailLevel.BILLBOARD,
+                IsEnabled = BigTreesSupportedDetailLevels.Contains(VegetationDetailLevel.BILLBOARD)
             };
 
 
