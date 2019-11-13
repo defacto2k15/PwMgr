@@ -16,6 +16,7 @@ namespace Assets.MeshGeneration
             newMesh.triangles = inputMesh.triangles.ToArray();
             newMesh.normals = inputMesh.normals.ToArray();
             newMesh.tangents = inputMesh.tangents.ToArray();
+            newMesh.uv = inputMesh.uv.ToArray();
             newMesh.RecalculateBounds();
             return newMesh;
         }
@@ -118,6 +119,11 @@ namespace Assets.MeshGeneration
         {
             var oldBounds = mesh.bounds;
             mesh.bounds = new Bounds(oldBounds.center, new Vector3(oldBounds.size.x, 100000000, oldBounds.size.z));
+        }
+
+        public static void OffsetVertices(Mesh mesh, Vector3 offset)
+        {
+            mesh.vertices = mesh.vertices.Select(c => c + offset).ToArray();
         }
     }
 }

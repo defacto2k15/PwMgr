@@ -42,7 +42,6 @@ namespace Assets.Trees.RuntimeManagement.Management
                 var gainedArea = managementArea.GainedArea;
                 var level = managementArea.Level;
                 var gainedEntities = _positionsProvider.GetEntiesFrom(gainedArea, level);
-                Debug.Log("GAINERD "+gainedEntities.Count);
                 if (gainedEntities.Any())
                 {
                     _vegetationSubjectsChangesListener.AddInstancingOrder(level, (gainedEntities),

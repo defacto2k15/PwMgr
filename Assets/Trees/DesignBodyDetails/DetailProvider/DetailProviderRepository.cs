@@ -54,7 +54,6 @@ namespace Assets.Trees.DesignBodyDetails.DetailProvider
 
             var rotation = randomGenerator.FloatValueRange(StringSeed.YRotation, 0, 2 * Mathf.PI);
             //var finalRotation = RotationUtils.AlignRotationToNormal(spotNormal, rotation); //todo set rotation from data!!
-            Debug.Log(rotation);
             var finalRotation = new Vector3(0, rotation * Mathf.Rad2Deg, 0);
 
             var heightScale = randomGenerator.FloatValueRange(StringSeed.HeightScale, 2, 4); //TODO we should configure it

@@ -73,13 +73,15 @@ namespace Assets.Trees.DesignBodyDetails
             uniformsPack.SetTexture("_MainTex", _referencedAssets.EVegetationMainTexture);
             foreach (var mesh in allMeshes)
             {
-                MeshGenerationUtils.SetYBoundsToInfinity(mesh);
+                var clonedMesh = MeshGenerationUtils.CloneMesh(mesh);
+                MeshGenerationUtils.OffsetVertices(clonedMesh, new Vector3(0, dispositionPerDetailDisposition.MeshHeightOffset, 0));
+                MeshGenerationUtils.SetYBoundsToInfinity(clonedMesh);
                 var containerTemplates = new List<GpuInstancerContainerTemplate>
                 {
                     new GpuInstancerContainerTemplate(
                         commonData: new GpuInstancerCommonData()
                         {
-                            Mesh = mesh,
+                            Mesh =clonedMesh,
                             CastShadows = ShadowCastingMode.On,
                             Material = material,
                             SubmeshIndex = 0,
