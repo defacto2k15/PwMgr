@@ -25,10 +25,11 @@ namespace Assets.Ring2.PatchTemplateToPatch
         {
             var keywords = sliceTemplate.Substance.RetriveShaderKeywordSet();
             var slicePalette = CreateSlicePalette(sliceTemplate.Substance);
-            Vector4 layerPriorities = sliceTemplate.Substance.GetProperLayerFabricsPriorities;
+            var layerPriorities = sliceTemplate.Substance.GetProperLayerFabricsPriorities;
+            var layerPatternScales = sliceTemplate.Substance.GetLayerFabricsPatternScales;
             var randomSeeds = CreateRandomSeeds(sliceTemplate.Substance);
 
-            var ring2Slice = new Ring2Slice(keywords, slicePalette, layerPriorities, randomSeeds);
+            var ring2Slice = new Ring2Slice(keywords, slicePalette, layerPriorities, layerPatternScales, randomSeeds);
             return ring2Slice;
         }
 

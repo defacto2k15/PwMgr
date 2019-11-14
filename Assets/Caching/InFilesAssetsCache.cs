@@ -42,12 +42,13 @@ namespace Assets.Caching
             return _fileManager.RetriveAssetAsync(filename, query);
         }
 
-        public Task AddAsset( TQuery query, TAsset asset)
+        public async Task<bool> AddAsset( TQuery query, TAsset asset)
         {
             var filename = query.ProvideFilename();
             Preconditions.Assert(!_filesOnDisk.Contains(filename), "There is arleady file "+filename+" listed in cache");
             _filesOnDisk.Add(filename);
-            return _fileManager.SaveAssetAsync(filename, query, asset);
+            await _fileManager.SaveAssetAsync(filename, query, asset);
+            return true;
         }
 
         public Task RemoveAssetElementAsync(TQuery queryArea)

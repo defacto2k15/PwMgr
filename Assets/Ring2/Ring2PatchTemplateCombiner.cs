@@ -63,7 +63,8 @@ namespace Assets.Ring2
                         new MaxValueCollectionIntensityProvider(
                             summed.Fabrics.Select(c => c.Fabric.IntensityProvider).ToList()
                         ),
-                        summed.Fabrics.Select(c => c.Multiplier * c.Fabric.LayerPriority).Sum()
+                        summed.Fabrics.Select(c => c.Multiplier * c.Fabric.LayerPriority).Sum(), 
+                        1 // TODO pattern scale is not supported in TemplateCombining for now
                     ));
             }
 

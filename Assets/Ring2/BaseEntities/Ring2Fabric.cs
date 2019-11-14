@@ -9,14 +9,16 @@ namespace Assets.Ring2.BaseEntities
         private Ring2FabricColors _paletteColors;
         private IFabricRing2IntensityProvider _intensityProvider;
         private float _layerPriority;
+        private float _patternScale;
 
         public Ring2Fabric(Ring2Fiber fiber, Ring2FabricColors paletteColors,
-            IFabricRing2IntensityProvider intensityProvider, float layerPriority)
+            IFabricRing2IntensityProvider intensityProvider, float layerPriority, float patternScale)
         {
             _fiber = fiber;
             _paletteColors = paletteColors;
             _intensityProvider = intensityProvider;
             _layerPriority = layerPriority;
+            _patternScale = patternScale;
             Preconditions.Assert(layerPriority<=1, "Layer priority should not be > than 0, but it is "+layerPriority);
         }
 
@@ -44,5 +46,7 @@ namespace Assets.Ring2.BaseEntities
         {
             get { return _fiber.IsFirm; }
         }
+
+        public float PatternScale => _patternScale;
     }
 }

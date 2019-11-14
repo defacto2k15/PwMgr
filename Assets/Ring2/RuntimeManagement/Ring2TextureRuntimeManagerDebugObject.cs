@@ -134,7 +134,7 @@ namespace Assets.Ring2.RuntimeManagement
                 new Color(0.5f, 0, 0),
                 new Color(0.7f, 0, 0),
                 new Color(1, 0, 0),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1,1);
 
             var dotFabric = new Ring2Fabric(Ring2Fiber.DottedTerrainFiber, new Ring2FabricColors(new List<Color>()
             {
@@ -142,7 +142,7 @@ namespace Assets.Ring2.RuntimeManagement
                 new Color(0, 0.5f, 0),
                 new Color(0, 0.7f, 0),
                 new Color(0, 1, 0),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(2.03f, distanceDatabase), 1);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(2.03f, distanceDatabase), 1,1);
 
             var grassFabric = new Ring2Fabric(Ring2Fiber.GrassyFieldFiber, new Ring2FabricColors(new List<Color>()
             {
@@ -150,7 +150,7 @@ namespace Assets.Ring2.RuntimeManagement
                 new Color(0, 0, 0.5f),
                 new Color(0, 0, 0.7f),
                 new Color(0, 0, 1),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase), 1);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase), 1,1);
 
             var drySandFabric = new Ring2Fabric(Ring2Fiber.DrySandFiber, new Ring2FabricColors(new List<Color>()
             {
@@ -158,7 +158,7 @@ namespace Assets.Ring2.RuntimeManagement
                 new Color(1, 0, 0.5f),
                 new Color(1, 0, 0.7f),
                 new Color(1, 0, 1),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase), 1);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase), 1,1);
 
 
             var region1Area = RegionSpaceUtils.Create(MyNetTopologySuiteUtils.ToPolygon(new[]
@@ -202,7 +202,7 @@ namespace Assets.Ring2.RuntimeManagement
                     new Color(1, 0, 1),
                 }),
                 new ContantRing2IntensityProvider(),
-                1);
+                1,1);
 
             //////REGION 3
             var region3Area = RegionSpaceUtils.Create(MyNetTopologySuiteUtils.ToPolygon(new[]
@@ -225,7 +225,7 @@ namespace Assets.Ring2.RuntimeManagement
                     new Color(1, 1, 0.7f),
                     new Color(1, 0.8f, 0.8f),
                 }), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase),
-                1);
+                1,1);
 
             var region3Substance = new Ring2Substance(new List<Ring2Fabric>()
             {
@@ -257,7 +257,7 @@ namespace Assets.Ring2.RuntimeManagement
                 new Color(0.5f, 0, 0),
                 new Color(0.7f, 0, 0),
                 new Color(1, 0, 0),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1,1);
 
 
             var region1Area = RegionSpaceUtils.Create(MyNetTopologySuiteUtils.ToPolygon(new[]
@@ -282,7 +282,7 @@ namespace Assets.Ring2.RuntimeManagement
                 new Color(0, 0, 0.5f),
                 new Color(0, 0, 0.7f),
                 new Color(0, 0, 1),
-            }), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase), 1);
+            }), new FromAreaEdgeDistanceRing2IntensityProvider(0.3f, distanceDatabase), 1,1);
 
             var region2Substance = new Ring2Substance(new List<Ring2Fabric>()
             {

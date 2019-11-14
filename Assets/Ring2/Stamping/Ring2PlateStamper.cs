@@ -194,16 +194,27 @@ namespace Assets.Ring2.Stamping
 
     public class Ring2PlateStamp
     {
+        private Texture _colorStamp;
+        private Texture _normalStamp;
         public Ring2PlateStamp(Texture colorStamp, Texture normalStamp, IntVector2 resolution)
         {
-            ColorStamp = colorStamp;
-            NormalStamp = normalStamp;
+            _colorStamp = colorStamp;
+            _normalStamp = normalStamp;
             Resolution = resolution;
         }
 
-        public Texture ColorStamp;
-        public Texture NormalStamp;
+        public Texture ColorStamp => _colorStamp;
+        public Texture NormalStamp => _normalStamp;
         public IntVector2 Resolution;
+
+        public void Destroy()
+        {
+            Preconditions.Assert(_colorStamp!=null, "Ayy is null");
+            GameObject.Destroy(ColorStamp);
+            GameObject.Destroy(NormalStamp);
+            _colorStamp = null;
+            _normalStamp = null;
+        }
     }
 
     public class Ring2PlateStampTemplate

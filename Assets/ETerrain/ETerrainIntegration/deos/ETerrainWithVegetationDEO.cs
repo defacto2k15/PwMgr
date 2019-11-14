@@ -120,7 +120,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             Debug.Log(VegetationConfiguration.ShaderNames.BaseTreeShader);
             var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
-                , new UniformsAndComputeBuffersPack(commonUniforms,computeBuffersPack));
+                , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
             finalVegetation.Start();
 
             Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
@@ -140,7 +140,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var position3D = Traveller.transform.position;
             var travellerFlatPosition = new Vector2(position3D.x, position3D.z);
 
-            _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
+                _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
 
             if (Time.frameCount < 20)
             {
@@ -149,13 +149,13 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 _elevationManager.Update(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters);
             }
 
-            //if (Time.frameCount % 100 == 0)
-            //{
-            //    if (false)
-            //    {
-            //        var propLocaleChanges = _elevationManager.RecalculateSectorsDivision(travellerFlatPosition);
-            //    }
-            //}
+            if (Time.frameCount % 100 == 0)
+            {
+                if (false)
+                {
+                    var propLocaleChanges = _elevationManager.RecalculateSectorsDivision(travellerFlatPosition);
+                }
+            }
             if (!_wasFirstUpdateDone)
             {
                 Debug.Log("FIRST UPDATE RESULT " + msw.CollectResults());

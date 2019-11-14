@@ -67,6 +67,7 @@ namespace Assets.EProps
         public Task RegisterDesignBodiesGroupAsync(SpotId id, List<Vector2> bodiesPositions)
         {
             var pointers = _elevationManager.RegisterPropsGroup(bodiesPositions.Select(c => _repositioner.Move(c)).ToList());
+            //var pointers = bodiesPositions.Select(c => _elevationManager.RegisterProp(_repositioner.Move(c))).ToList();
             _spotIdToGroupElevationIdDict[id] = pointers;
             _changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<DesignBodySpotModification>>()
             {

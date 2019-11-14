@@ -99,6 +99,7 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
                     return template.RenderTextureToModify;
                 }
             }
+            //GameObject.Destroy(material);
             return outTexture;
         }
 

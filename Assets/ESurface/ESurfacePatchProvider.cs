@@ -47,8 +47,7 @@ namespace Assets.ESurface
                         Size = stampedSlice.Resolution,
                         Texture = stampedSlice.ColorStamp
                     }, RenderTextureFormat.ARGB32, _mipmapLevelToExtract);
-                    GameObject.Destroy(stampedSlice.ColorStamp);
-                    GameObject.Destroy(stampedSlice.NormalStamp);
+                    stampedSlice.Destroy();
 
                     return new ESurfaceTexturesPack()
                     {

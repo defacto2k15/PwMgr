@@ -24,6 +24,8 @@ namespace Assets.ETerrain.ETerrainIntegration
         private Dictionary<HeightPyramidLevel, Vector2> _pyramidCenterWorldSpacePerLevel;
         private GameObject _pyramidRootGo;
 
+        private RunOnceBox _fillingInitializationBox;
+
         public ETerrainHeightPyramidFacade(ETerrainHeightBuffersManager buffersManager,
             MeshGeneratorUTProxy meshGeneratorUtProxy, UTTextureRendererProxy textureRendererProxy,
             ETerrainHeightPyramidFacadeStartConfiguration startConfiguration )
@@ -146,12 +148,19 @@ namespace Assets.ETerrain.ETerrainIntegration
                 heightmapUniformsSetter.InitializePyramidUniforms( shapeGroup, heightPyramidLevel, pyramidLevelsWorldSizes, heightPyramidMapConfiguration, levelTextures, heightLevels.Count, ringsPerLevelCount);
                 heightmapUniformsSetter.InitializePerRingUniforms(shapeGroup, heightPyramidLevel, levelTextures, pyramidLevelsWorldSizes);
                 heightmapUniformsSetter.PassPyramidBuffers(shapeGroup, configurationBuffer, bufferReloaderRootGo, ePyramidPerFrameParametersBuffer);
-
-                foreach (var perGroundEntities in pair.Value.PerGroundEntities)
-                {
-                    perGroundEntities.Filler.InitializeField(_startConfiguration.InitialTravellerPosition);
-                }
             }
+
+            _fillingInitializationBox = new RunOnceBox(() =>
+            {
+                foreach (var pair in _perLevelEntites)
+                {
+                    foreach (var perGroundEntities in pair.Value.PerGroundEntities)
+                    {
+                        perGroundEntities.Filler.InitializeField(_startConfiguration.InitialTravellerPosition);
+                    }
+                }
+            });
+            _fillingInitializationBox.Update(); // REMOVE IF WANT TO INITIALIZE SEGMENTS @ UPDATE
 
             _pyramidCommonEntites = new HeightPyramidCommonEntites()
             {
@@ -163,6 +172,7 @@ namespace Assets.ETerrain.ETerrainIntegration
 
         public void Update(Vector2 flatPosition)
         {
+            _fillingInitializationBox.Update();
             var transitionsDict = _perLevelEntites.ToDictionary(c => c.Key, c => c.Value.TransitionResolver.ResolveTransition(flatPosition));
             var uniformsDict = _perLevelEntites.ToDictionary(c => c.Key, c => c.Value.LocationUniformsGenerator.GenerateUniforms(transitionsDict[c.Key]));
             foreach (var pair in _perLevelEntites)

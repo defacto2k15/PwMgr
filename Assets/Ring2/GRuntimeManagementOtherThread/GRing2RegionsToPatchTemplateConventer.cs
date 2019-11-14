@@ -33,7 +33,7 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
             {
                 return new Ring2Fabric(ring2Fabric.Fiber, ring2Fabric.PaletteColors,
                     new RegionPinnedFabricRing2IntensityProvider(ring2Fabric.IntensityProvider, region.Space),
-                    ring2Fabric.LayerPriority);
+                    ring2Fabric.LayerPriority, ring2Fabric.PatternScale);
             }
             else
             {

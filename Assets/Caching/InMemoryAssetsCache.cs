@@ -18,7 +18,7 @@ namespace Assets.Caching
 
         Task<CacheQueryOutput<TAsset>> TryRetriveAsync(TQuery query);
 
-        Task<InternalTokenizedAsset<TQuery,TAsset>> AddAssetAsync(int creationObligationToken, TQuery query, TAsset asset);
+        Task<bool> AddAssetAsync(int creationObligationToken, TQuery query, TAsset asset);
 
         Task RemoveAssetAsync(TQuery query);
     }
@@ -94,19 +94,15 @@ namespace Assets.Caching
             };
         }
 
-        public async Task<InternalTokenizedAsset<TQuery,TAsset>> AddAssetAsync(int creationObligationToken, TQuery query, TAsset asset)
+        public async Task<bool> AddAssetAsync(int creationObligationToken, TQuery query, TAsset asset)
         {
-            await _level2Cache.AddAsset( query, asset); 
+            var wasAddedToCache = await _level2Cache.AddAsset( query, asset); 
 
+            // TODO different behaviour should be done if element was not added to cache( cache was full)
             var semaphore = _creationObligationDictionary[creationObligationToken];
             _creationObligationDictionary.Remove(creationObligationToken);
             semaphore.Semaphore.Set();
-
-            return new InternalTokenizedAsset<TQuery,TAsset>()
-            {
-                Asset = asset,
-                Query = query
-            };
+            return wasAddedToCache;
         }
 
         public Task RemoveAssetAsync(TQuery query)
@@ -162,7 +158,7 @@ namespace Assets.Caching
         Task InitializeAsync();
         bool IsInCache(TQuery query);
         Task<TAsset> TryRetrive(TQuery queryArea);
-        Task AddAsset( TQuery query, TAsset asset);
+        Task<bool> AddAsset( TQuery query, TAsset asset);
         Task RemoveAssetElementAsync(TQuery queryArea);
     }
 
@@ -209,13 +205,15 @@ namespace Assets.Caching
             return null;
         }
 
-        public async Task AddAsset( TQuery query,  TAsset asset)
+        public async Task<bool> AddAsset( TQuery query,  TAsset asset)
         {
-            await _inMemoryCache.AddAsset(query, asset);
+            var addedToMemoryCache = await _inMemoryCache.AddAsset(query, asset);
             if (!_inFilesCache.IsInCache(query) && _saveToFiles)
             {
                 await _inFilesCache.AddAsset(query, asset);
             }
+
+            return addedToMemoryCache;
         }
 
         public Task RemoveAssetElementAsync(TQuery queryArea)
@@ -253,6 +251,7 @@ namespace Assets.Caching
 
         public Task<TAsset> TryRetrive(TQuery queryArea)
         {
+            LogUsedMemory();
             ReferenceCountedAsset foundElement = null;
 
             foundElement = TryRetriveAssetFromTree(queryArea);
@@ -305,8 +304,9 @@ namespace Assets.Caching
         }
 
 
-        public Task AddAsset(TQuery query, TAsset asset)
+        public async Task<bool> AddAsset(TQuery query, TAsset asset)
         {
+            LogUsedMemory();
             var activeTreeElement = TryRetriveAssetFromTree(query);
             Preconditions.Assert(activeTreeElement == null,
                 "There arleady is one detailElement of given description: qa: " + query);
@@ -316,8 +316,17 @@ namespace Assets.Caching
                 Element = asset,
                 ReferenceCount = 1
             };
-            AddElementToActiveTree(query, newElement);
-            return ClearNonReferencedElements();
+            await ClearNonReferencedElements();
+            if (ThereIsPlaceForNewAsset(asset))
+            {
+                AddElementToActiveTree(query, newElement);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
         }
 
         private void AddElementToActiveTree(TQuery queryArea, ReferenceCountedAsset newElement)
@@ -326,9 +335,9 @@ namespace Assets.Caching
             _elementsLength += _entityActionsPerformer.CalculateMemoryUsage(newElement.Element);
         }
 
- 
         public async Task RemoveAssetElementAsync(TQuery queryArea)
         {
+            LogUsedMemory();
             var foundElement = TryRetriveAssetFromTree(queryArea);
             Preconditions.Assert(foundElement != null, "There is no element of given description");
             foundElement.ReferenceCount--;
@@ -337,11 +346,11 @@ namespace Assets.Caching
                 if (ThereIsPlaceForNewAsset(foundElement.Element))
                 {
                     _nonReferencedElementsList.Add(queryArea);
-                    //Debug.Log("T97 min ref count. Adding to non-ref list");
+                    //Debug.Log($"T97 min ref count. Adding to non-ref list. CurrentSize {_elementsLength} max size {_configuration.MaxTextureMemoryUsed}.");
                 }
                 else
                 {
-                    Debug.Log("T97 min ref count. Removing");
+                    //Debug.Log($"T98 min ref count. CurrentSize {_elementsLength} max size {_configuration.MaxTextureMemoryUsed}. Removing");
                     await DeleteElement(queryArea, foundElement);
                 }
             }
@@ -377,6 +386,12 @@ namespace Assets.Caching
             }
         }
 
+        private void LogUsedMemory()
+        {
+            var usedPercent = (_elementsLength / ((float) _configuration.MaxTextureMemoryUsed))*100;
+            //Debug.Log($"T84 Memory used: {usedPercent}%");
+        }
+
         private class ReferenceCountedAsset
         {
             public TAsset Element;
@@ -389,7 +404,7 @@ namespace Assets.Caching
         public long MaxTextureMemoryUsed = 1024 * 1024 * 512 * 2;
     }
 
-    public class InternalTokenizedAsset<TQuery, TAsset>
+    public class TokenizedAsset<TQuery, TAsset>
     {
         public TAsset Asset;
         public TQuery Query;

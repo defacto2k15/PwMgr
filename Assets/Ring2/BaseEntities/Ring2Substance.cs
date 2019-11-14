@@ -32,6 +32,19 @@ namespace Assets.Ring2.BaseEntities
             }
         }
 
+        public Vector4 GetLayerFabricsPatternScales
+        {
+            get
+            {
+                Vector4 outValue = new Vector4(0, 0, 0, 0);
+                for (int i = 0; i < GetProperLayerFabrics.Count; i++)
+                {
+                    outValue[i] = GetProperLayerFabrics[i].PatternScale;
+                }
+                return outValue;
+            }
+        }
+
         public ShaderKeywordSet RetriveShaderKeywordSet()
         {
             List<string> keywords = new List<string>();

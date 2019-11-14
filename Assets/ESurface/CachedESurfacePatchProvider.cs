@@ -10,6 +10,7 @@ using Assets.Heightmaps.Ring1.Creator;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Ring2;
 using Assets.Utils;
+using Assets.Utils.MT;
 using Assets.Utils.Services;
 using Assets.Utils.TextureRendering;
 using UnityEngine;
@@ -19,11 +20,10 @@ namespace Assets.ESurface
 {
     public class CachedESurfacePatchProvider
     {
-        //TODO: implement removing thigns from cache
         private ESurfacePatchProvider _provider;
-        private IAssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack> _cache;
+        private IAssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack> _cache;
 
-        public CachedESurfacePatchProvider(ESurfacePatchProvider provider, IAssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack> cache)
+        public CachedESurfacePatchProvider(ESurfacePatchProvider provider, IAssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack> cache)
         {
             _provider = provider;
             _cache = cache;
@@ -34,41 +34,73 @@ namespace Assets.ESurface
             return _cache.InitializeAsync();
         }
 
-        public async Task<ESurfaceTexturesPack> ProvideSurfaceDetail(MyRectangle inGamePosition, FlatLod flatLod)
+        public async Task<TokenizedESurfaceTexturesPackToken> ProvideSurfaceDetail(MyRectangle inGamePosition, FlatLod flatLod)
         {
             var internalToken = GenerateInternalToken(inGamePosition, flatLod);
             var queryOutput = await _cache.TryRetriveAsync(internalToken);
 
             if (queryOutput.Asset != null)
             {
-                return queryOutput.Asset.Pack;
+                return new TokenizedESurfaceTexturesPackToken()
+                {
+                    Pack = queryOutput.Asset.Pack,
+                    Token = internalToken
+                };
             }
             else
             {
                 var detailElement = _provider.ProvideSurfaceDetail(inGamePosition, flatLod);
                 var queryOutputCreationObligationToken = queryOutput.CreationObligationToken.Value;
-                var tokenizedElement = await _cache.AddAssetAsync( queryOutputCreationObligationToken, internalToken, new NullableESurfaceTexturesPack(){Pack = detailElement});
-                return detailElement;
+                bool wasAdded = await _cache.AddAssetAsync( queryOutputCreationObligationToken, internalToken, new NullableESurfaceTexturesPack(){Pack = detailElement});
+
+                var tokenToPassOut = internalToken;
+                if (!wasAdded)
+                {
+                    tokenToPassOut = null;
+                }
+                return new TokenizedESurfaceTexturesPackToken()
+                {
+                    Pack = detailElement,
+                    Token = tokenToPassOut
+                };
             }
         }
 
-        private ESurfaceTexturesPackInternalToken GenerateInternalToken(MyRectangle inGamePosition, FlatLod flatLod)
+        private ESurfaceTexturesPackToken GenerateInternalToken(MyRectangle inGamePosition, FlatLod flatLod)
         {
-            return new ESurfaceTexturesPackInternalToken(
+            return new ESurfaceTexturesPackToken(
                 new IntRectangle(Mathf.RoundToInt(inGamePosition.X), Mathf.RoundToInt(inGamePosition.Y)
                     , Mathf.RoundToInt(inGamePosition.Width), Mathf.RoundToInt(inGamePosition.Height))
                 , flatLod.ScalarValue);
         }
 
+        public Task RemoveSurfaceDetailAsync(ESurfaceTexturesPack pack, ESurfaceTexturesPackToken token)
+        {
+            if (token != null)
+            {
+                return _cache.RemoveAssetAsync(token);
+            }
+            else
+            {
+                GameObject.Destroy(pack.MainTexture);
+                GameObject.Destroy(pack.NormalTexture);
+                return TaskUtils.EmptyCompleted();
+            }
+        }
     }
 
+    public class TokenizedESurfaceTexturesPackToken
+    {
+        public ESurfaceTexturesPack Pack;
+        public ESurfaceTexturesPackToken Token;
+    }
 
-    public class ESurfaceTexturesPackInternalToken : IFromQueryFilenameProvider
+    public class ESurfaceTexturesPackToken : IFromQueryFilenameProvider
     {
         private IntRectangle _queryArea;
         private int _lodScalarValue;
 
-        public ESurfaceTexturesPackInternalToken(IntRectangle queryArea, int lodScalarValue)
+        public ESurfaceTexturesPackToken(IntRectangle queryArea, int lodScalarValue)
         {
             _queryArea = queryArea;
             _lodScalarValue = lodScalarValue;
@@ -96,7 +128,7 @@ namespace Assets.ESurface
             {
                 return 0;
             }
-            return (entity.Pack.MainTexture.width + entity.Pack.MainTexture.height) * 4*2;
+            return (entity.Pack.MainTexture.width * entity.Pack.MainTexture.height) * 4*2;
         }
 
         public Task DestroyAsset(NullableESurfaceTexturesPack entity)
@@ -117,7 +149,7 @@ namespace Assets.ESurface
         public ESurfaceTexturesPack Pack;
     }
 
-    public class ESurfaceTexturesPackFileManager : IAssetCachingFileManager<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack>
+    public class ESurfaceTexturesPackFileManager : IAssetCachingFileManager<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>
     {
         private CommonExecutorUTProxy _commonExecutor;
         private string _mainDictionaryPath;
@@ -132,7 +164,7 @@ namespace Assets.ESurface
             _mainDictionaryPath = mainDictionaryPath;
         }
 
-        public async Task<NullableESurfaceTexturesPack> RetriveAssetAsync(string filename, ESurfaceTexturesPackInternalToken query)
+        public async Task<NullableESurfaceTexturesPack> RetriveAssetAsync(string filename, ESurfaceTexturesPackToken query)
         {
             var isNullFilePresent = await _commonExecutor.AddAction(() => File.Exists(_mainDictionaryPath + filename + _extensionForNullFile));
             if (isNullFilePresent)
@@ -156,7 +188,7 @@ namespace Assets.ESurface
             return await _commonExecutor.AddAction(() => SavingFileManager.LoadPngTextureFromFile(path, true, true));
         }
 
-        public async Task SaveAssetAsync(string filename, ESurfaceTexturesPackInternalToken query, NullableESurfaceTexturesPack asset)
+        public async Task SaveAssetAsync(string filename, ESurfaceTexturesPackToken query, NullableESurfaceTexturesPack asset)
         {
             if (asset.Pack == null)
             {

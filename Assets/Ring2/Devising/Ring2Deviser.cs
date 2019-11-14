@@ -58,6 +58,7 @@ namespace Assets.Ring2.Devising
                     (float) sliceArea.CalculatedHeight()));
             propertyBlock.SetTexture("_ControlTex", slice.IntensityPattern.Texture); //todo texture garbage collector
             propertyBlock.SetVector("_LayerPriorities", slice.LayerPriorities);
+            propertyBlock.SetVector("_LayerPatternScales", slice.LayerPatternScales);
             var materialTemplate = new MaterialTemplate(Ring2ShaderNames.RuntimeTerrainTexture, slice.Keywords,
                 propertyBlock);
 

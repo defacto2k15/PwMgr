@@ -104,13 +104,13 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.Cache
             {
                 var detailElement = await detailElementGenerator(alignedArea, resolution, statusWeTarget);
                 var queryOutputCreationObligationToken = queryOutput.CreationObligationToken.Value;
-                var tokenizedElement = await _memoryTerrainCaches[statusWeTarget][elementType].AddAssetAsync(
+                await _memoryTerrainCaches[statusWeTarget][elementType].AddAssetAsync(
                     queryOutputCreationObligationToken, internalToken, detailElement.Texture);
                 return new TokenizedTerrainDetailElement()
                 {
                     DetailElement = new TerrainDetailElement()
                     {
-                        Texture = tokenizedElement.Asset,
+                        Texture = detailElement.Texture,
                         Resolution = resolution,
                         DetailArea = alignedArea,
                         CornersMergeStatus =  statusWeTarget

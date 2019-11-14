@@ -98,6 +98,10 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
             }
 
             var fusedSlices = await FuseSliceStampsAsync(slicedTextures);
+            slicedTextures.ForEach(c =>
+            {
+                c.Destroy();
+            });
 
             return fusedSlices;
         }
@@ -130,6 +134,10 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
         private async Task<Ring2PlateStamp> FuseSliceStampsAsync(List<Ring2PlateStamp> slices)
         {
             Preconditions.Assert(slices.Any(), "There was no slices stamps to create");
+            if (slices.Count == 1)
+            {
+                return slices[0];
+            }
             var passCount = Mathf.CeilToInt((float) slices.Count / MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS);
             if (passCount == 1)
             {
@@ -139,15 +147,27 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
             {
                 var firstPassSlices = slices.Take(MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS).ToList();
                 var secondPassSlices = slices.Skip(MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS).ToList();
+                Preconditions.Assert(firstPassSlices.Count == MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS, "First pass must have max element count, but it have "+firstPassSlices.Count);
 
                 var firstStamp = await SinglePassFuseSliceStampsAsync(firstPassSlices);
                 var secondStamp = await FuseSliceStampsAsync(secondPassSlices);
-                return await SinglePassFuseSliceStampsAsync(new List<Ring2PlateStamp>() {firstStamp, secondStamp});// todo more optimal solution. We can merge not 2 but 5
+
+                var finalStamp = await SinglePassFuseSliceStampsAsync(new List<Ring2PlateStamp>() {firstStamp, secondStamp});// todo more optimal solution. We can merge not 2 but 5
+
+                firstStamp.Destroy();
+                bool shouldDestroySecondStamp = secondPassSlices.Count > 1; //we check if FuseSliceStampsAsync call will create new texture
+                if (shouldDestroySecondStamp)
+                {
+                    secondStamp.Destroy();
+                }
+
+                return finalStamp;
             }
         }
 
         private async Task<Ring2PlateStamp> SinglePassFuseSliceStampsAsync(List<Ring2PlateStamp> slices)
         {
+            Preconditions.Assert(slices.Count>1, $"You should give me at least two slice to merge, but gave {slices.Count}");
             Preconditions.Assert(slices.Count <= MAX_SUPPORTED_TEXTURE_ARRAY_ELEMENTS_PER_PASS, "Too much elements in slice");
 
             Preconditions.Assert(slices.Any(), "There was no slices stampes created");

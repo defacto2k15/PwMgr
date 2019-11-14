@@ -165,7 +165,7 @@ namespace Assets.Ring2.Db
                                 new Color(0.5f, 0, 0),
                                 new Color(0.7f, 0, 0),
                                 new Color(1, 0, 0),
-                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1)
+                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1,1)
                         },
                         Magnitude = 1,
                         BufferLength = 3
@@ -182,7 +182,7 @@ namespace Assets.Ring2.Db
                                 new Color(0, 0.5f, 0),
                                 new Color(0, 0.7f, 0),
                                 new Color(0, 1, 0),
-                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1)
+                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1,1)
                         },
                         Magnitude = 2,
                         BufferLength = 3
@@ -199,7 +199,7 @@ namespace Assets.Ring2.Db
                                 new Color(0, 0, 0.5f),
                                 new Color(0, 0, 0.7f),
                                 new Color(0, 0, 1),
-                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1)
+                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1,1)
                         },
                         Magnitude = 3,
                         BufferLength = 3
@@ -216,7 +216,7 @@ namespace Assets.Ring2.Db
                                 new Color(0.5f, 0, 0.5f),
                                 new Color(0.7f, 0, 0.7f),
                                 new Color(1, 0, 1),
-                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1)
+                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1,1)
                         },
                         Magnitude = 3,
                         BufferLength = 3
@@ -233,7 +233,7 @@ namespace Assets.Ring2.Db
                                 new Color(0.5f, 0.5f, 0.5f),
                                 new Color(0.7f, 0.7f, 0.7f),
                                 new Color(1, 1, 1),
-                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1)
+                            }), new FromAreaEdgeDistanceRing2IntensityProvider(1.3f, distanceDatabase), 1,1)
                         },
                         Magnitude = 3,
                         BufferLength = 3

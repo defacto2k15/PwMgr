@@ -550,8 +550,9 @@ GEN_fractalNoise( colorNoise, 3, simplePerlinNoise2D, 0.3, 0.55)
 				float4 controlValue = tex2D( _ControlTex, controlUv);
 
 				float randomSeed = _RandomSeeds[layerIndex];
-				flatPos += + float2(fmod(randomSeed, 2231.312), fmod(randomSeed, 5212.42123));
+				flatPos += float2(fmod(randomSeed, 2231.312), fmod(randomSeed, 5212.42123));
 				flatPos /= 20.0;
+				flatPos *= _LayerPatternScales[layerIndex];
 				float strength = 0;
 
 #define MAX_LAYER_COUNT (4)

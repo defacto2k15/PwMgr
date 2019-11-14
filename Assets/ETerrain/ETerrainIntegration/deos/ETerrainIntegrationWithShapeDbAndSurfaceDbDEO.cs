@@ -25,6 +25,7 @@ using Assets.Utils;
 using Assets.Utils.Services;
 using Assets.Utils.UTUpdating;
 using UnityEngine;
+using UnityEngine.Profiling;
 using Debug = UnityEngine.Debug;
 
 namespace Assets.ETerrain.ETerrainIntegration.deos
@@ -139,7 +140,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 [2] = 1 /(3f*64f)
             }; 
 
-            int mipmapLevelToExtract = 2;
+            int mipmapLevelToExtract = 0;
             feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit =
                 feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit.ToDictionary(
                     c => c.Key,
@@ -158,14 +159,14 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
             var cachedSurfacePatchProvider =
                 new CachedESurfacePatchProvider(surfacePatchProvider
-                    , new InMemoryAssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack>(
-                        FETerrainShapeDbInitialization.CreateLevel2AssetsCache<ESurfaceTexturesPackInternalToken, NullableESurfaceTexturesPack>(
+                    , new InMemoryAssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>(
+                        FETerrainShapeDbInitialization.CreateLevel2AssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>(
                             cachingConfiguration: new CachingConfiguration()
                             {
                                 SaveAssetsToFile =true,
-                                UseFileCaching = true,
+                                UseFileCaching =true,
                             }
-                            , new InMemoryCacheConfiguration()
+                            , new InMemoryCacheConfiguration() /*{ MaxTextureMemoryUsed = 0}*/
                             , new ESurfaceTexturesPackEntityActionsPerformer(commonExecutor)
                             , new ESurfaceTexturesPackFileManager(commonExecutor, configuration.FilePathsConfiguration.SurfacePatchCachePath))));
             cachedSurfacePatchProvider.Initialize().Wait();
@@ -178,16 +179,21 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     (level, segmentModificationManager) => new LambdaSegmentFillingListener(
                         (c) =>
                         {
-                            var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
-                                startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
-                            var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
-                            var pack = cachedSurfacePatchProvider.ProvideSurfaceDetail(
-                                repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
-                            if (pack != null)
                             {
-                                var mainTexture = pack.MainTexture;
-                                segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
-                                GameObject.Destroy(mainTexture);
+                                var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
+                                    startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
+                                var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
+                                var packAndToken = cachedSurfacePatchProvider.ProvideSurfaceDetail(
+                                    repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
+                                var pack = packAndToken.Pack;
+                                if (pack != null)
+                                {
+                                    var mainTexture = pack.MainTexture;
+                                    segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
+                                    cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
+                                }
+
+                                var totalMemory = System.GC.GetTotalMemory(false) / (1024 * 1024f);
                             }
                         },
                         (c) => { },

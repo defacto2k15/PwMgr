@@ -10,13 +10,15 @@ namespace Assets.Ring2.PatchTemplateToPatch
         private readonly ShaderKeywordSet _keywords;
         private readonly Ring2SlicePalette _slicePalette;
         private readonly Vector4 _layerPriorities;
+        private readonly Vector4 _layerPatternScales;
         private Vector4 _randomSeeds;
 
-        public Ring2Slice(ShaderKeywordSet keywords, Ring2SlicePalette slicePalette, Vector4 layerPriorities, Vector4 randomSeeds)
+        public Ring2Slice(ShaderKeywordSet keywords, Ring2SlicePalette slicePalette, Vector4 layerPriorities, Vector4 layerPatternScales, Vector4 randomSeeds)
         {
             _keywords = keywords;
             _slicePalette = slicePalette;
             _layerPriorities = layerPriorities;
+            _layerPatternScales = layerPatternScales;
             _randomSeeds = randomSeeds;
         }
 
@@ -35,6 +37,8 @@ namespace Assets.Ring2.PatchTemplateToPatch
         public Ring2SlicePalette SlicePalette => _slicePalette;
 
         public Vector4 LayerPriorities => _layerPriorities;
+
+        public Vector4 LayerPatternScales => _layerPatternScales;
 
         public Vector4 RandomSeeds => _randomSeeds;
     }

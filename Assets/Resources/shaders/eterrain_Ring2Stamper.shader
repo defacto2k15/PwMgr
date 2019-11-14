@@ -39,6 +39,7 @@
 			sampler2D _ControlTex;
 			float4 _Dimensions;
 			float4 _LayerPriorities;
+			float4 _LayerPatternScales;
 			float4 _RandomSeeds;
 
 			#include "esurface_ring2_testShader.hlsl" 
