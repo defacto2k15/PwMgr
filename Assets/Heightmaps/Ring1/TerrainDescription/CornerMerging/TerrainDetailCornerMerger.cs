@@ -22,16 +22,18 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
         private TerrainDetailAlignmentCalculator _alignmentCalculator;
         private UTTextureRendererProxy _renderer;
         private TextureConcieverUTProxy _textureConciever;
+        private TerrainDetailCornerMergerConfiguration _configuration;
 
         private RenderTexture _scratchTexture;
 
         public TerrainDetailCornerMerger(LateAssignFactory<BaseTerrainDetailProvider> terrainDetailProviderFactory,
-            TerrainDetailAlignmentCalculator alignmentCalculator, UTTextureRendererProxy renderer, TextureConcieverUTProxy textureConciever)
+            TerrainDetailAlignmentCalculator alignmentCalculator, UTTextureRendererProxy renderer, TextureConcieverUTProxy textureConciever, TerrainDetailCornerMergerConfiguration configuration)
         {
             _terrainDetailProviderFactory = terrainDetailProviderFactory;
             _alignmentCalculator = alignmentCalculator;
             _renderer = renderer;
             _textureConciever = textureConciever;
+            _configuration = configuration;
         }
 
         private void RetriveTerrainDetailProvider()
@@ -169,7 +171,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
             uniforms.SetUniform("_ActiveCornerIndex", activeCornerIndex);
             uniforms.SetUniform("_CornersMerged", cornersMerged);
             uniforms.SetTexture("_ScratchTex", _scratchTexture);
-            uniforms.SetUniform("_MergeMargin", 0.2f); // todo
+            uniforms.SetUniform("_MergeMargin", _configuration.MergeMarginSize); // todo
 
             await _renderer.AddOrder(new TextureRenderingTemplate()
             {
@@ -240,5 +242,11 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
                 return null;
             }
         }
+    }
+
+    public class TerrainDetailCornerMergerConfiguration
+    {
+        public float MergeMarginSize=0.2f;
+
     }
 }

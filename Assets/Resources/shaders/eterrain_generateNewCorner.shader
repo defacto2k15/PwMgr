@@ -92,13 +92,14 @@
 					horizontalMasterWeight = invLerp(_MarginSize, 0, uv.y);
 					verticalMasterWeight = invLerp(_MarginSize, 0, uv.x);
 				}
-
+				horizontalMasterWeight = saturate(horizontalMasterWeight);
+				verticalMasterWeight= saturate(verticalMasterWeight);
 
 				float horizontalMasterHeight = tex2D(_FloorHeightTexture, horizontalMasterUv);
 				float verticalMasterHeight =  tex2D(_FloorHeightTexture, verticalMasterUv);
 
 				float slaveSegmentHeight = tex2D(_FloorHeightTexture, globalUv);
-				float slaveWeight = 1 - max(horizontalMasterWeight, verticalMasterWeight);
+				float slaveWeight =  1 - max(horizontalMasterWeight, verticalMasterWeight);
 
 				float outHeight = slaveSegmentHeight*slaveWeight + horizontalMasterHeight*horizontalMasterWeight + verticalMasterHeight*verticalMasterWeight;
 				outHeight /= (slaveWeight + horizontalMasterWeight + verticalMasterWeight);

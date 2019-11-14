@@ -154,16 +154,19 @@ namespace Assets.FinalExecution
             UnityThreadComputeShaderExecutorObject computeShaderExecutorObject,
             ComputeShaderContainerGameObject containerGameObject)
         {
-            RoadEngravingTerrainFeatureApplier engravingTerrainFeatureApplier = null;
+
+            var featureAppliers =new List<RankedTerrainFeatureApplier>();
+
+            if (_configuration.EngraveTerrainFeatures)
+            {
+                featureAppliers.AddRange(FinalTerrainFeatureAppliers.CreateFeatureAppliers(
+                    utTextureRendererProxy, containerGameObject, commonExecutorUtProxy, computeShaderExecutorObject
+                ));
+            }
             if (_configuration.EngraveRoadsInTerrain)
             {
-                engravingTerrainFeatureApplier = CreateRoadEngravingFeatureApplier();
+                featureAppliers.Add(FinalTerrainFeatureAppliers.CreateRoadEngravingApplier( CreateRoadEngravingFeatureApplier()));
             }
-
-            var featureAppliers =
-                FinalTerrainFeatureAppliers.CreateFeatureAppliers(
-                    utTextureRendererProxy, containerGameObject, commonExecutorUtProxy, computeShaderExecutorObject,
-                    engravingTerrainFeatureApplier);
 
             TerrainDetailGeneratorConfiguration generatorConfiguration =
                 _configuration.TerrainDetailGeneratorConfiguration;
@@ -186,7 +189,8 @@ namespace Assets.FinalExecution
                 new LateAssignFactory<BaseTerrainDetailProvider>(() => _gameInitializationFields.Retrive<BaseTerrainDetailProvider>()), 
                 _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>(),
                 _gameInitializationFields.Retrive<UTTextureRendererProxy>(),
-                _gameInitializationFields.Retrive<TextureConcieverUTProxy>());
+                _gameInitializationFields.Retrive<TextureConcieverUTProxy>(),
+                _configuration.TerrainMergerConfiguration);
 
             var provider = new TerrainDetailProvider( generator, cornerMerger, _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
 

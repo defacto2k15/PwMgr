@@ -44,7 +44,7 @@ namespace Assets.ETerrain.TestUtils
             LateAssignFactory<BaseTerrainDetailProvider> detailProviderFactory = new LateAssignFactory<BaseTerrainDetailProvider>();
             if (useCornerMerging)
             {
-                merger = new TerrainDetailCornerMerger(detailProviderFactory, new TerrainDetailAlignmentCalculator(240),textureRendererProxy,new TextureConcieverUTProxy() );
+                merger = new TerrainDetailCornerMerger(detailProviderFactory, new TerrainDetailAlignmentCalculator(240),textureRendererProxy,new TextureConcieverUTProxy(), new TerrainDetailCornerMergerConfiguration() );
             }
 
             var terrainDetailProvider = Ring1DebugObjectV2.CreateTerrainDetailProvider(terrainDetailGenerator, merger);

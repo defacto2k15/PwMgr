@@ -55,7 +55,7 @@
 				}
 				else {
 					float leftMarginHeight = tex2D(_CornerBottomLeftTex, half2(1, uv.y / 2.0 + 0.5)).r;
-					float mergingStrength = 1 - invLerp(0, _MergeMargin, uv.x);
+					float mergingStrength = saturate(1 - invLerp(0, _MergeMargin, uv.x));
 					return lerp(ourHeight, leftMarginHeight, mergingStrength);
 				}
 			}
@@ -67,7 +67,7 @@
 				}
 				else {
 					float bottomMarginHeight = tex2D(_CornerBottomLeftTex, half2(uv.x / 2.0 + 0.5, 1)).r;
-					float mergingStrength = 1 - invLerp(0, _MergeMargin, uv.y);
+					float mergingStrength = saturate(1 - invLerp(0, _MergeMargin, uv.y));
 					return lerp(ourHeight2, bottomMarginHeight, mergingStrength);
 				}
 			}
@@ -81,8 +81,8 @@
 					float bottomMarginHeight = MergedHeightOfBottomRight(half2(uv.x, 1));
 					float leftMarginHeight = MergedHeightOfTopLeft(half2(1, uv.y));
 
-					float leftMergingStrength = 1 - invLerp(0, _MergeMargin, uv.x);
-					float bottomMergingStrength = 1 - invLerp(0, _MergeMargin, uv.y);
+					float leftMergingStrength = saturate(1 - invLerp(0, _MergeMargin, uv.x));
+					float bottomMergingStrength = saturate(1 - invLerp(0, _MergeMargin, uv.y));
 					if (leftMergingStrength <= 0 && bottomMergingStrength <= 0) {
 						return ourHeight;
 					}

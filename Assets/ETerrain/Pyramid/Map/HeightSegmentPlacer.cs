@@ -13,6 +13,7 @@ namespace Assets.ETerrain.Pyramid.Map
         private UTTextureRendererProxy _renderer;
         private RenderTexture _floorHeightTexture;
         private RenderTexture _modifiedCornerBuffer;
+        private readonly bool _modifyCorners;
         private IntVector2 _floorSlotsCount;
         private IntVector2 _floorTextureSize;
         private float _interSegmentMarginSize;
@@ -51,7 +52,7 @@ namespace Assets.ETerrain.Pyramid.Map
             };
 
         public HeightSegmentPlacer(UTTextureRendererProxy renderer, RenderTexture floorHeightTexture,
-            IntVector2 floorSlotsCount, IntVector2 floorTextureSize, float interSegmentMarginSize, RenderTexture modifiedCornerBuffer)
+            IntVector2 floorSlotsCount, IntVector2 floorTextureSize, float interSegmentMarginSize, RenderTexture modifiedCornerBuffer, bool modifyCorners = true)
         {
             _renderer = renderer;
             _floorHeightTexture = floorHeightTexture;
@@ -59,6 +60,7 @@ namespace Assets.ETerrain.Pyramid.Map
             _floorTextureSize = floorTextureSize;
             _interSegmentMarginSize = interSegmentMarginSize;
             _modifiedCornerBuffer = modifiedCornerBuffer;
+            _modifyCorners = modifyCorners;
         }
 
         public void PlaceSegment(Texture segmentTexture, PlacementDetails placementDetails)
@@ -79,45 +81,48 @@ namespace Assets.ETerrain.Pyramid.Map
                 RenderTargetSize = _floorTextureSize
             }).Result; //todo async
 
-            foreach (var cornerModification in placementDetails.CornersToModify)
+            if (_modifyCorners)
             {
-                var cornerMask = _cornerMaskInformations[cornerModification.Corner];
-                var segmentPlacement1 = CalculateSegmentPlacement(cornerModification.ModuledPositionOfSegment);
-
-                var uniforms1 = new UniformsPack();
-                uniforms1.SetTexture("_FloorHeightTexture", _floorHeightTexture);
-                uniforms1.SetUniform("_WeldingAreaCoords",
-                    RectangleUtils.CalculateSubPosition(segmentPlacement1.Uvs, cornerMask.SegmentSubPositionUv)
-                        .ToVector4());
-                uniforms1.SetUniform("_MarginSize", _interSegmentMarginSize);
-                uniforms1.SetUniform("_CornerToWeld", cornerMask.CornerToWeldVector);
-                uniforms1.SetUniform("_PixelSizeInUv", 1f / _floorTextureSize.X);
-
-                var texAfter1 = _renderer.AddOrder(new TextureRenderingTemplate()
+                foreach (var cornerModification in placementDetails.CornersToModify)
                 {
-                    CanMultistep = false,
-                    CreateTexture2D = false,
-                    RenderTextureToModify = _modifiedCornerBuffer,
-                    ShaderName = "Custom/ETerrain/GenerateNewCorner",
-                    UniformPack = uniforms1,
-                    RenderingRectangle = new IntRectangle(0, 0, segmentPlacement1.Pixels.Width, segmentPlacement1.Pixels.Height),
-                    RenderTargetSize = new IntVector2(segmentPlacement1.Pixels.Width, segmentPlacement1.Pixels.Height)
-                }).Result; //todo async
+                    var cornerMask = _cornerMaskInformations[cornerModification.Corner];
+                    var segmentPlacement1 = CalculateSegmentPlacement(cornerModification.ModuledPositionOfSegment);
 
-                var uniforms2 = new UniformsPack();
-                uniforms2.SetTexture("_ModifiedCornerBuffer", _modifiedCornerBuffer);
+                    var uniforms1 = new UniformsPack();
+                    uniforms1.SetTexture("_FloorHeightTexture", _floorHeightTexture);
+                    uniforms1.SetUniform("_WeldingAreaCoords",
+                        RectangleUtils.CalculateSubPosition(segmentPlacement1.Uvs, cornerMask.SegmentSubPositionUv)
+                            .ToVector4());
+                    uniforms1.SetUniform("_MarginSize", _interSegmentMarginSize);
+                    uniforms1.SetUniform("_CornerToWeld", cornerMask.CornerToWeldVector);
+                    uniforms1.SetUniform("_PixelSizeInUv", 1f / _floorTextureSize.X);
 
-                var texAfter2 = _renderer.AddOrder(new TextureRenderingTemplate()
-                {
-                    CanMultistep = false,
-                    CreateTexture2D = false,
-                    RenderTextureToModify = _floorHeightTexture,
-                    ShaderName = "Custom/ETerrain/CornerPlacer",
-                    UniformPack = uniforms2,
-                    RenderingRectangle = RectangleUtils.CalculateSubPosition(segmentPlacement1.Pixels.ToFloatRectangle(),
-                        cornerMask.SegmentSubPositionUv).ToIntRectange(),
-                    RenderTargetSize = _floorTextureSize
-                }).Result; //todo async
+                    var texAfter1 = _renderer.AddOrder(new TextureRenderingTemplate()
+                    {
+                        CanMultistep = false,
+                        CreateTexture2D = false,
+                        RenderTextureToModify = _modifiedCornerBuffer,
+                        ShaderName = "Custom/ETerrain/GenerateNewCorner",
+                        UniformPack = uniforms1,
+                        RenderingRectangle = new IntRectangle(0, 0, segmentPlacement1.Pixels.Width, segmentPlacement1.Pixels.Height),
+                        RenderTargetSize = new IntVector2(segmentPlacement1.Pixels.Width, segmentPlacement1.Pixels.Height)
+                    }).Result; //todo async
+
+                    var uniforms2 = new UniformsPack();
+                    uniforms2.SetTexture("_ModifiedCornerBuffer", _modifiedCornerBuffer);
+
+                    var texAfter2 = _renderer.AddOrder(new TextureRenderingTemplate()
+                    {
+                        CanMultistep = false,
+                        CreateTexture2D = false,
+                        RenderTextureToModify = _floorHeightTexture,
+                        ShaderName = "Custom/ETerrain/CornerPlacer",
+                        UniformPack = uniforms2,
+                        RenderingRectangle = RectangleUtils.CalculateSubPosition(segmentPlacement1.Pixels.ToFloatRectangle(),
+                            cornerMask.SegmentSubPositionUv).ToIntRectange(),
+                        RenderTargetSize = _floorTextureSize
+                    }).Result; //todo async
+                }
             }
         }
 

@@ -37,7 +37,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
             TextureConcieverUTProxy utTextureConciever = new TextureConcieverUTProxy();
 
             LateAssignFactory<BaseTerrainDetailProvider> terrainDetailProviderFactory = new LateAssignFactory<BaseTerrainDetailProvider>(() => _mockProvider);
-            _merger = new TerrainDetailCornerMerger(terrainDetailProviderFactory, new TerrainDetailAlignmentCalculator(240), utTextureRenderer, utTextureConciever );
+            _merger = new TerrainDetailCornerMerger(terrainDetailProviderFactory, new TerrainDetailAlignmentCalculator(240), utTextureRenderer, utTextureConciever, new TerrainDetailCornerMergerConfiguration() );
 
             //TaskUtils.DebuggerAwareWait(Test1());
             //TaskUtils.DebuggerAwareWait(Test2());

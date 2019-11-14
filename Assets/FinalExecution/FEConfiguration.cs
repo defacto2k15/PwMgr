@@ -7,6 +7,7 @@ using Assets.Heightmaps;
 using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.TerrainDescription;
 using Assets.Heightmaps.Ring1.TerrainDescription.Cache;
+using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.PreComputation;
 using Assets.PreComputation.Configurations;
@@ -264,6 +265,7 @@ namespace Assets.FinalExecution
         };
 
         public bool EngraveRoadsInTerrain = true;
+        public bool EngraveTerrainFeatures = true;
 
 
         public RoadEngravingTerrainFeatureApplierConfiguration RoadEngravingTerrainFetureApplierConfiguration =
@@ -321,6 +323,11 @@ namespace Assets.FinalExecution
         public UltraUpdatableContainerConfiguration UpdatableContainerConfiguration => new UltraUpdatableContainerConfiguration()
         {
             ServicesProfilingEnabled = true
+        };
+
+        public TerrainDetailCornerMergerConfiguration TerrainMergerConfiguration => new TerrainDetailCornerMergerConfiguration()
+        {
+            MergeMarginSize = 0.1f
         };
     }
 

@@ -31,18 +31,17 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public void Start()
         {
             _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = false};
-            _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
-            _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
-            _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
+            _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk =true;
+            _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk =true;
+            _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail =true;
             ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
             _gameInitializationFields = new GameInitializationFields();
             _ultraUpdatableContainer = ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields);
 
             var startConfiguration = ETerrainHeightPyramidFacadeStartConfiguration.DefaultConfiguration;
             startConfiguration.CommonConfiguration.YScale = _gameInitializationFields.Retrive<HeightDenormalizer>().DenormalizationMultiplier;
-            startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/6.0f;
-            //startConfiguration.InitialTravellerPosition = new Vector2(490, -21);
-            startConfiguration.InitialTravellerPosition = new Vector2(0,0);
+            startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/8.0f;
+            startConfiguration.InitialTravellerPosition = new Vector2(490, -21) + new Vector2(90f*8, 90f*4);
             startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
 
             ETerrainHeightBuffersManager buffersManager = new ETerrainHeightBuffersManager();
@@ -72,7 +71,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                 {
                     {
-                        EGroundTextureType.HeightMap, GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(startConfiguration, dbProxy, repositioner, _gameInitializationFields)
+                        EGroundTextureType.HeightMap, GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(startConfiguration, dbProxy, repositioner, _gameInitializationFields,true)
                     }
                 }
             );
@@ -84,7 +83,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         }
 
         public static OneGroundTypeLevelTextureEntitiesGenerator GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-            ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, TerrainShapeDbProxy dbProxy, Repositioner repositioner, GameInitializationFields initializationFields)
+            ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, TerrainShapeDbProxy dbProxy, Repositioner repositioner,
+            GameInitializationFields initializationFields, bool modifyCorners=true)
         {
             return new OneGroundTypeLevelTextureEntitiesGenerator
             {
@@ -112,7 +112,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                 }).Result.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
                                 var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
                                 dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
-                                //segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
+                                segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
                             },
                             c => { },
                             c => { });
@@ -125,10 +125,13 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                         EGroundTextureGenerator.GenerateModifiedCornerBuffer(startConfiguration.CommonConfiguration.SegmentTextureResolution,
                             startConfiguration.CommonConfiguration.HeightTextureFormat);
 
-                    return new HeightSegmentPlacer(initializationFields.Retrive<UTTextureRendererProxy>(), ceilTexture
+                    return new HeightSegmentPlacer(
+                        initializationFields.Retrive<UTTextureRendererProxy>(),
+                        ceilTexture
                         , startConfiguration.CommonConfiguration.SlotMapSize
-                        , startConfiguration.CommonConfiguration.CeilTextureSize, startConfiguration.CommonConfiguration.InterSegmentMarginSize
-                        , modifiedCornerBuffer);
+                        , startConfiguration.CommonConfiguration.CeilTextureSize
+                        , startConfiguration.CommonConfiguration.InterSegmentMarginSize
+                        , modifiedCornerBuffer, modifyCorners);
                 }
             };
         }
