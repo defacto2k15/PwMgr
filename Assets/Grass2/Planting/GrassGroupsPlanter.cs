@@ -70,8 +70,7 @@ namespace Assets.Grass2.Planting
                 Type = type
             };
 
-            _groupsWaitingToBePlanted[spotId] =
-                groupWaitingToBePlantedInfo;
+            _groupsWaitingToBePlanted[spotId] = groupWaitingToBePlantedInfo;
 
             return grassGroupId;
         }

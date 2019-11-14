@@ -30,6 +30,7 @@ namespace Assets.FinalExecution
         public FinalVegetationReferencedAssets ReferencedAssets;
         public Repositioner VegetationRepositioner => Repositioner.MergeRepositioners(Repositioner.Default, VegetationCorrectionRepositioner);
         public Repositioner VegetationCorrectionRepositioner = new Repositioner(new Vector2(720,460));
+        public Repositioner GrassPlantingCorrectionRepositioner = new Repositioner(new Vector2(0,90+11.25f));
 
         public VegetationMode Mode = VegetationMode.EVegetation;
         public bool GenerateTrees = true;
@@ -495,7 +496,7 @@ namespace Assets.FinalExecution
         public VegetationRuntimeManagementConfiguration Grass2VegetationRuntimeManagementConfiguration =
             new VegetationRuntimeManagementConfiguration()
             {
-                DetailFieldsTemplate = new SingleSquareDetailFieldsTemplate(22.5f * 2, VegetationDetailLevel.FULL),
+                DetailFieldsTemplate = new SingleSquareDetailFieldsTemplate(11.25f * 8, VegetationDetailLevel.FULL),
                 UpdateMinDistance = 10
             };
 
@@ -503,8 +504,10 @@ namespace Assets.FinalExecution
             GrassVegetationSubjectsPositionsGeneratorConfiguration =
                 new GrassVegetationSubjectsPositionsGenerator.GrassVegetationSubjectsPositionsGeneratorConfiguration()
                 {
-                    PositionsGridSize = new Vector2(11.25f, 11.25f)
+                    PositionsGridSize = new Vector2(11.25f, 11.25f),
                 };
+
+        public List<GrassType> SupportedGrassTypes = new List<GrassType>() {GrassType.Debug1 , GrassType.Debug2};
 
         public Grass2RuntimeManager.Grass2RuntimeManagerConfiguration Grass2RuntimeManagerConfiguration =
             new Grass2RuntimeManager.Grass2RuntimeManagerConfiguration()
@@ -602,7 +605,7 @@ namespace Assets.FinalExecution
 
         public SpatialDbConfiguration Grass2IntensityDbConfiguration = new SpatialDbConfiguration()
         {
-            QueryingCellSize = new Vector2(22.5f, 22.5f)
+            QueryingCellSize = new Vector2(11.25f, 11.25f)
         };
 
         public Dictionary<GrassType, GrassTypeTemplate> GrassTemplates => new Dictionary<GrassType, GrassTypeTemplate>()

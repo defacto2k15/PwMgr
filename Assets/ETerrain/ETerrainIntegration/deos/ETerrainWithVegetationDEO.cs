@@ -118,7 +118,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             computeBuffersPack.SetBuffer("_EPropLocaleBuffer", _elevationManager.EPropLocaleBuffer);
             computeBuffersPack.SetBuffer("_EPropIdsBuffer", _elevationManager.EPropIdsBuffer);
 
-            Debug.Log(VegetationConfiguration.ShaderNames.BaseTreeShader);
             var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
                 , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
             finalVegetation.Start();

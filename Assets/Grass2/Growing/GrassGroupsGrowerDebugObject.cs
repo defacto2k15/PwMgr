@@ -9,6 +9,7 @@ using Assets.Grass2.Types;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Random.Fields;
+using Assets.Repositioning;
 using Assets.Utils;
 using Assets.Utils.MT;
 using Assets.Utils.TextureRendering;
@@ -94,7 +95,7 @@ namespace Assets.Grass2.Growing
             _planterUnderTest.Start(ComputeShaderContainer);
 
             GrassGroupsPlanter grassGroupsPlanter = _planterUnderTest.GrassGroupsPlanter;
-            _grower = new GrassGroupsGrower(grassGroupsPlanter, grassIntensityMapProvider);
+            _grower = new GrassGroupsGrower(grassGroupsPlanter, grassIntensityMapProvider,  new List<GrassType>(){GrassType.Debug1,GrassType.Debug2}, Repositioner.Identity);
         }
 
         public void FinalizeStart()

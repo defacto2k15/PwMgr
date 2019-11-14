@@ -277,16 +277,16 @@ namespace Assets.FinalExecution
 
         private void StartGrassRuntimeManagmentSource()
         {
-            var positionsGenerator = new GrassVegetationSubjectsPositionsGenerator( _veConfiguration.GrassVegetationSubjectsPositionsGeneratorConfiguration);
+            var positionsGenerator = new GrassVegetationSubjectsPositionsGenerator(_veConfiguration.GrassVegetationSubjectsPositionsGeneratorConfiguration);
 
             var grassIntensityDbProxy = _initializationFields.Retrive<Grass2IntensityDbProxy>();
 
             var otherThreadExecutingLocation = new OtherThreadExecutingLocation();
 
             var planter = CreateGrassGroupsPlanter(otherThreadExecutingLocation);
-            var grower = new GrassGroupsGrower(planter, grassIntensityDbProxy);
+            var grower = new GrassGroupsGrower(planter, grassIntensityDbProxy, _veConfiguration.SupportedGrassTypes, _veConfiguration.GrassPlantingCorrectionRepositioner);
 
-            Grass2RuntimeManager grass2RuntimeManager = new Grass2RuntimeManager(grower, _veConfiguration.Grass2RuntimeManagerConfiguration);
+            var grass2RuntimeManager = new Grass2RuntimeManager(grower, _veConfiguration.Grass2RuntimeManagerConfiguration);
 
             var grass2RuntimeManagerProxy = new Grass2RuntimeManagerProxy(grass2RuntimeManager);
             otherThreadExecutingLocation.SetExecutingTarget(grass2RuntimeManagerProxy);
@@ -301,20 +301,20 @@ namespace Assets.FinalExecution
 
             var vegetationRuntimeManagementProxy = new VegetationRuntimeManagementProxy(runtimeManagement);
 
-            var repositioner = _veConfiguration.VegetationRepositioner;
+            var queryRepositioner = _veConfiguration.VegetationRepositioner;
             _ultraUpdatableContainer.AddUpdatableElement(new FieldBasedUltraUpdatable()
             {
                 StartCameraField = (camera) =>
                 {
                     vegetationRuntimeManagementProxy.StartThreading();
                     var position = camera.transform.localPosition;
-                    vegetationRuntimeManagementProxy.Start(repositioner.InvMove(position));
+                    vegetationRuntimeManagementProxy.Start(queryRepositioner.InvMove(position));
                 },
                 UpdateCameraField = (camera) =>
                 {
                     var position = camera.transform.localPosition;
-                    vegetationRuntimeManagementProxy.AddUpdate(repositioner.InvMove(position));
-                    vegetationRuntimeManagementProxy.SynchronicUpdate(repositioner.InvMove(position));
+                    vegetationRuntimeManagementProxy.AddUpdate(queryRepositioner.InvMove(position));
+                    vegetationRuntimeManagementProxy.SynchronicUpdate(queryRepositioner.InvMove(position));
                 },
             });
         }
@@ -426,12 +426,6 @@ namespace Assets.FinalExecution
         }
 
 
-        public class VegetationManagementSource
-        {
-            public VegetationSubjectsInstancingChangeListenerWithFilter InstancingChangeListener;
-            public IVegetationSubjectsPositionsProvider PositionsProvider;
-        }
-
         private void StartBushVegetation()
         {
             var singleGenerationArea = _veConfiguration.BushSingleGenerationArea;
@@ -449,7 +443,7 @@ namespace Assets.FinalExecution
             OtherThreadExecutingLocation otherThreadExecutingLocation = new OtherThreadExecutingLocation();
             var planter = CreateBushGroupsPlanter(otherThreadExecutingLocation);
 
-            GrassGroupsGrower grassGroupsGrower = new GrassGroupsGrower(planter, grassIntensityDbProxy);
+            GrassGroupsGrower grassGroupsGrower = new GrassGroupsGrower(planter, grassIntensityDbProxy, _veConfiguration.SupportedGrassTypes, _veConfiguration.GrassPlantingCorrectionRepositioner );
             Grass2RuntimeManager grass2RuntimeManager = new Grass2RuntimeManager(grassGroupsGrower,
                 new Grass2RuntimeManager.Grass2RuntimeManagerConfiguration()
                 {

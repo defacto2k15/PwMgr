@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Assets.Grass2.Growing;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
+using Assets.Repositioning;
 using Assets.Trees.DesignBodyDetails;
 using Assets.Trees.DesignBodyDetails.BucketsContainer;
 using Assets.Trees.DesignBodyDetails.DetailProvider;

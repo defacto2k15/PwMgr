@@ -112,7 +112,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                 }).Result.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
                                 var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
                                 dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
-                                segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
+                                //segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
                             },
                             c => { },
                             c => { });
