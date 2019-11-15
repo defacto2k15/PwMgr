@@ -167,27 +167,27 @@
 				}
 			}
 
-			float4 sampleSurfaceTexture(int level, float2 uv) { //TODO VERY UNOPTIMAL
+			float4 sampleSurfaceTexture(int level, float4 uv) { //TODO VERY UNOPTIMAL
 				if (level == 0) {
-					return tex2D(_SurfaceTexture0, uv);
+					return tex2Dlod(_SurfaceTexture0, uv);
 				}
 				else if (level == 1) {
-					return tex2D(_SurfaceTexture1, uv);
+					return tex2Dlod(_SurfaceTexture1, uv);
 				}
 				else if (level == 2) {
-					return tex2D(_SurfaceTexture2, uv);
+					return tex2Dlod(_SurfaceTexture2, uv);
 				}
 				else {
 					return 1000;
 				}
 			}
 
-			float4 calculateESurfaceColor(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters ) {
+			float4 calculateESurfaceColor(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, float lod ) {
 				int mainHeightTextureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution;
 				float2 textureSamplingUv = frac(inSegmentSpaceUv + MainPyramidCenterUv(levelAndRingIndexes, terrainParameters));
 
 				float2 sampleCenteredHighQualityUv = textureSamplingUv + 1.0/ (mainHeightTextureResolution * 2.0); //This is to align UV to sample center of heightmap pixels
-				return sampleSurfaceTexture(levelAndRingIndexes.levelIndex, sampleCenteredHighQualityUv);
+				return sampleSurfaceTexture(levelAndRingIndexes.levelIndex, float4(sampleCenteredHighQualityUv,0,lod));
 			}
 
 
@@ -214,7 +214,6 @@
 				return p;
 			};
 
-
 			InTriangleGridPosition calculateInTriangleGridPosition(float2 uv, int gridResolution) {
 				float2 perVerticleUv = uv * gridResolution;
 				int2 verticleIndex = floor(perVerticleUv);
@@ -239,13 +238,15 @@
 
 			struct TriangulatedSurfaceInfo {
 				float3 worldNormal;
-				int2 squareIndex;
+				InTriangleGridPosition gridPosition;
+				float2 downLeftVerticleInSegmentSpaceUv;
 			};
 
-			TriangulatedSurfaceInfo make_TriangulatedSurfaceInfo(float3 worldNormal, int2 squareIndex) {
+			TriangulatedSurfaceInfo make_TriangulatedSurfaceInfo(float3 worldNormal, InTriangleGridPosition gridPosition, float2 downLeftVerticleInSegmentSpaceUv) {
 				TriangulatedSurfaceInfo o;
 				o.worldNormal = worldNormal;
-				o.squareIndex = squareIndex;
+				o.gridPosition = gridPosition;
+				o.downLeftVerticleInSegmentSpaceUv = downLeftVerticleInSegmentSpaceUv;
 				return o;
 			}
 
@@ -257,7 +258,7 @@
 				InTriangleGridPosition gridPosition = calculateInTriangleGridPosition(inSegmentSpaceUv, gridResolution);
 				int2  squareIndex= gridPosition.squareIndex;
 
-				float2 downLeftVerticlePlateUv = squareIndexToDownLeftVerticlePlateUv(squareIndex, gridResolution);
+				float2 downLeftVerticleInSegmentSpaceUv = squareIndexToDownLeftVerticlePlateUv(squareIndex, gridResolution);
 
 				float2 segmentSpaceUvOffsets[4] = { float2(0,0), float2(1.0f / gridResolution,0), float2(0,1.0f / gridResolution), float2(1.0f/gridResolution, 1.0/gridResolution) };
 				float2 worldSpaceOffsetsDelta[4] = { float2(0,0), float2(worldSpaceGridCellsLength,0), float2(0, worldSpaceGridCellsLength), float2(worldSpaceGridCellsLength, worldSpaceGridCellsLength) };
@@ -277,7 +278,7 @@
 				float3 sampledPositions[3];
 				for (int j = 0; j < 3; j++) {
 					int triangleIndex = triangleIndexes[j];
-					float2 sampleSegmentSpaceUv = (downLeftVerticlePlateUv+segmentSpaceUvOffsets[triangleIndex]);
+					float2 sampleSegmentSpaceUv = (downLeftVerticleInSegmentSpaceUv+segmentSpaceUvOffsets[triangleIndex]);
 					ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(sampleSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 					float height = terrainOut.finalHeight * 2385; //TODO 2385 should got to same parameter
 					sampledHeights[j] = height;
@@ -285,11 +286,7 @@
 				}
 				float3 worldNormal = -calculateNormal(sampledPositions);
 
-				if (gridPosition.isLowerTriangle) {
-					squareIndex.x += 100000;
-				}
-
-				return make_TriangulatedSurfaceInfo(worldNormal, squareIndex);
+				return make_TriangulatedSurfaceInfo(worldNormal, gridPosition, downLeftVerticleInSegmentSpaceUv);
 			}
 
 
@@ -318,17 +315,23 @@
 					finalColor = float4(1, 1, 1, 1);
 				}
 
-				finalColor = calculateESurfaceColor(i.inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
 				TriangulatedSurfaceInfo surfaceInfo = CalculateTriangulatedSurfaceInfo(i.inSegmentSpaceUv, levelAndRingIndexes, perRingParameters, terrainParameters);
 
-				int2 squareIndex = surfaceInfo.squareIndex;
-				float3 worldNormal = surfaceInfo.worldNormal;
+				InTriangleGridPosition gridPosition = surfaceInfo.gridPosition;
+				int2 squareIndex = gridPosition.squareIndex;
+				if (gridPosition.isLowerTriangle) {
+					squareIndex.x += 100000;
+				}
 
-				finalColor = float4(randomColor(squareIndex), 1);
-				finalColor = float4(worldNormal, 1);
+				float surfaceColorLod = levelAndRingIndexes.ringIndex + i.terrainMergingLerpParam;
+				finalColor = calculateESurfaceColor(surfaceInfo.downLeftVerticleInSegmentSpaceUv, levelAndRingIndexes, terrainParameters, surfaceColorLod);
+
+				float3 worldNormal = surfaceInfo.worldNormal;
+				//finalColor = float4(randomColor(squareIndex), 1);
+				//finalColor = float4(worldNormal, 1);
 
 				half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
-				finalColor = nl;
+				finalColor = nl*finalColor;
 
 				return finalColor;
 			} 
