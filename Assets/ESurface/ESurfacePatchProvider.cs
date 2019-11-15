@@ -47,12 +47,17 @@ namespace Assets.ESurface
                         Size = stampedSlice.Resolution,
                         Texture = stampedSlice.ColorStamp
                     }, RenderTextureFormat.ARGB32, _mipmapLevelToExtract);
+                    var mipMappedNormalTexture = _mipmapExtractor.ExtractMipmap(new TextureWithSize()
+                    {
+                        Size = stampedSlice.Resolution,
+                        Texture = stampedSlice.NormalStamp
+                    }, RenderTextureFormat.ARGB32, _mipmapLevelToExtract);
                     stampedSlice.Destroy();
 
                     return new ESurfaceTexturesPack()
                     {
                         MainTexture = mipMappedMainTexture.Texture,
-                        NormalTexture = stampedSlice.NormalStamp
+                        NormalTexture = mipMappedNormalTexture.Texture
                     };
                 }
                 else

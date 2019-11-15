@@ -217,6 +217,7 @@ namespace Assets.ESurface
 
         private async Task<Texture2D> ChangeTextureToTexture2DAsync(Texture inputTexture)
         {
+            Preconditions.Assert(inputTexture!= null, "Input texture is null");
             if (inputTexture is Texture2D)
             {
                 return inputTexture as Texture2D;
@@ -229,7 +230,7 @@ namespace Assets.ESurface
             }
             else
             {
-                Preconditions.Fail("Cannot change texture " + inputTexture + " to texture2D");
+                Preconditions.Fail("Cannot change texture " + inputTexture + " to texture2D. Type is "+inputTexture.GetType());
                 return null;
             }
         }

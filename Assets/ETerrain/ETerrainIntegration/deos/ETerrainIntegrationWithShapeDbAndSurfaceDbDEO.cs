@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Assets.Caching;
 using Assets.ESurface;
@@ -140,13 +142,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 [2] = 1 /(3f*64f)
             }; 
 
-            int mipmapLevelToExtract = 0;
+            int mipmapLevelToExtract = 1;
             feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit =
                 feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit.ToDictionary(
                     c => c.Key,
                     c => c.Value * Mathf.Pow(2, mipmapLevelToExtract)
                 );
-
 
             var patchInitializer = new Ring2PatchInitialization(gameInitializationFields, ultraUpdatableContainer, feRing2PatchConfiguration);
             patchInitializer.Start();
@@ -193,7 +194,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                     cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
                                 }
 
-                                var totalMemory = System.GC.GetTotalMemory(false) / (1024 * 1024f);
+                                Resources.UnloadUnusedAssets();
                             }
                         },
                         (c) => { },

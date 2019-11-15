@@ -69,7 +69,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/6.0f;
             startConfiguration.InitialTravellerPosition = new Vector2(440, 100) + new Vector2(90f*8, 90f*4);
             //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
-            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
+            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top};//, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
 
             var buffersManager = new ETerrainHeightBuffersManager();
             _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,

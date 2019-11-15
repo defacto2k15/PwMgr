@@ -148,7 +148,7 @@ float3 blendTwoColors(float3 baseColor, float3 additionalColor, float blendFacto
 			float3 finalColor = brownPattern;
 			if (mergedColorMarker == 0) {
 				float4 propColor = UNITY_ACCESS_INSTANCED_PROP(_Color_arr, _Color);
-				finalColor =  blendTwoColors(greenPattern, propColor,0.5);
+				finalColor = propColor; // blendTwoColors(greenPattern, propColor, 0.5);
 			}
 
 			o.Albedo = finalColor;
