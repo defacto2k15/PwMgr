@@ -1,6 +1,4 @@
-﻿// Upgrade NOTE: replaced '_World2Object' with 'unity_WorldToObject'
-
-Shader "Custom/EVegetation/GenericBillboardLocaledInstanced" {
+﻿Shader "Custom/EVegetation/GenericBillboardLocaledInstanced" {
 	Properties{
 		_CollageTextureArray("_CollageTextureArray", 2DArray) = "white" {}
 		_ImagesInArrayCount("_ImagesInArrayCount", int) = 4 
@@ -35,9 +33,23 @@ Shader "Custom/EVegetation/GenericBillboardLocaledInstanced" {
 #include "eterrain_EPropLocaleHeightAccessing.hlsl"
 
 
+void evegetation_billboard_vert (inout float4 vertex, out Input o){
+	fixed2 oldPos = vertex.xy + 0.5;
+	o.pos = oldPos;
+
+	half3 rot = mul(unity_ObjectToWorld, fixed4(0,0,0,1)).xyz - _WorldSpaceCameraPos;      //Calculate current rotation vector
+	   
+	half angle_radians = atan2(rot.x, rot.z);
+	half angle_degrees = degrees(angle_radians);   
+	//vertex = RotateAroundYInDegrees(vertex, 360-angle_degrees);
+	o.angle_degrees = fmod(angle_degrees, 360);
+	o.screenPos = ComputeScreenPos( UnityObjectToClipPos (vertex));   
+	o.flatDistanceToCamera =  Calculate2DDistanceFromCameraInVertShader(vertex);
+}
+
 		//Our Vertex Shader 
-		void vert (inout appdata_base v, out Input o){
-			generic_billboard_vert(v, o); 
+		void vert (inout appdata_full v, out Input o){
+			evegetation_billboard_vert(v.vertex, o); 
 
 			float heightOffset =  RetriveHeight();
 			float3 objectOffset = mul((float3x3)unity_WorldToObject, float3(0,heightOffset,0));
@@ -66,7 +78,6 @@ evegetation_decodedTexel  make_evegetation_decodedTexel ( float3 normal, int col
 	texel.alpha = alpha;
 	return texel;
 }
-
 
 #define PI 3.1415926536f
 half3 decodeNormal (half2 enc)
@@ -134,7 +145,7 @@ float3 blendTwoColors(float3 baseColor, float3 additionalColor, float blendFacto
 }
 
 		void surf(in Input i, inout SurfaceOutput o) {	//TODO add normals coloring
-			float baseYRotation = UNITY_ACCESS_INSTANCED_PROP(_BaseYRotation_arr, _BaseYRotation);
+			float baseYRotation = 0;// UNITY_ACCESS_INSTANCED_PROP(_BaseYRotation_arr, _BaseYRotation);
 			evegetation_samplingResult samplingResult =  evegetation_billboard_surf(i, _ImagesInArrayCount, baseYRotation);
 
 			float mergedAlpha = lerp(samplingResult.texels[0].alpha, samplingResult.texels[1].alpha, samplingResult.blendWeight);
@@ -151,11 +162,12 @@ float3 blendTwoColors(float3 baseColor, float3 additionalColor, float blendFacto
 				finalColor = propColor; // blendTwoColors(greenPattern, propColor, 0.5);
 			}
 
-			o.Albedo = finalColor;
+			//o.Albedo = finalColor;
+			//o.Albedo.xyz= samplingResult.texels[0].normal;
 
-//#ifdef UNITY_PASS_FORWARDADD // todo commented out
-//			MyDitherByDistance( RetriveDitheringMode(_DitheringMode), IN.flatDistanceToCamera, IN.screenPos);
-//#endif 
+			float4 enp = evegetation_getSubtextureValue(0 , i.pos);
+			o.Albedo = enp.a;
+
 		}
 		ENDCG 
 	} 

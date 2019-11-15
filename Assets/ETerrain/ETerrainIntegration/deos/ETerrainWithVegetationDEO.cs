@@ -139,9 +139,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var position3D = Traveller.transform.position;
             var travellerFlatPosition = new Vector2(position3D.x, position3D.z);
 
-                _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
+             _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
 
-            if (Time.frameCount < 20)
+            if (Time.frameCount < 10)
             {
                 var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
                     _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
