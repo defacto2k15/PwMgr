@@ -42,7 +42,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             startConfiguration.CommonConfiguration.YScale = _gameInitializationFields.Retrive<HeightDenormalizer>().DenormalizationMultiplier;
             startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/8.0f;
             startConfiguration.InitialTravellerPosition = new Vector2(490, -21) + new Vector2(90f*8, 90f*4);
-            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
+            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() {HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
 
             ETerrainHeightBuffersManager buffersManager = new ETerrainHeightBuffersManager();
             _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,

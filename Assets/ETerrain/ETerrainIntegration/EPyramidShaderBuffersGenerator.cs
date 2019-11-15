@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Assets.ETerrain.Pyramid.Map;
+using Assets.Utils;
 using UnityEngine;
 
 namespace Assets.ETerrain.ETerrainIntegration
@@ -78,6 +79,9 @@ namespace Assets.ETerrain.ETerrainIntegration
         private EPyramidConfiguration GenerateConfiguration(Dictionary<HeightPyramidLevel,  EPyramidShaderBuffersGeneratorPerRingInput> input)
         {
             var levels = input.Keys.OrderBy(c => c.GetIndex());
+            var worldSizes = input.Values.Select(c => c.PyramidLevelWorldSize).ToList();
+            var ceilTextureResolution = input.Values.Select(c => c.CeilTextureResolution).ToList();
+
             return new EPyramidConfiguration()
             {
                 LevelsConfiguration = levels.Select(i =>
