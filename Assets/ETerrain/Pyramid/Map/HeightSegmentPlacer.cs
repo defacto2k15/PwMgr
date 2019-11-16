@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Ring2;
@@ -63,14 +64,14 @@ namespace Assets.ETerrain.Pyramid.Map
             _modifyCorners = modifyCorners;
         }
 
-        public void PlaceSegment(Texture segmentTexture, PlacementDetails placementDetails)
+        public async Task PlaceSegmentAsync(Texture segmentTexture, PlacementDetails placementDetails)
         {
             var segmentPlacement0 = CalculateSegmentPlacement(placementDetails.ModuledPositionInGrid);
             UniformsPack uniforms0 = new UniformsPack();
             uniforms0.SetTexture("_SegmentHeightTexture", segmentTexture);
             uniforms0.SetUniform("_SegmentCoords", segmentPlacement0.Uvs.ToVector4());
 
-            var texAfter = _renderer.AddOrder(new TextureRenderingTemplate()
+            await _renderer.AddOrder(new TextureRenderingTemplate()
             {
                 CanMultistep = false,
                 CreateTexture2D = false,
@@ -79,7 +80,7 @@ namespace Assets.ETerrain.Pyramid.Map
                 UniformPack = uniforms0,
                 RenderingRectangle = segmentPlacement0.Pixels,
                 RenderTargetSize = _floorTextureSize
-            }).Result; //todo async
+            });
 
             if (_modifyCorners)
             {
@@ -97,7 +98,7 @@ namespace Assets.ETerrain.Pyramid.Map
                     uniforms1.SetUniform("_CornerToWeld", cornerMask.CornerToWeldVector);
                     uniforms1.SetUniform("_PixelSizeInUv", 1f / _floorTextureSize.X);
 
-                    var texAfter1 = _renderer.AddOrder(new TextureRenderingTemplate()
+                    await _renderer.AddOrder(new TextureRenderingTemplate()
                     {
                         CanMultistep = false,
                         CreateTexture2D = false,
@@ -106,12 +107,12 @@ namespace Assets.ETerrain.Pyramid.Map
                         UniformPack = uniforms1,
                         RenderingRectangle = new IntRectangle(0, 0, segmentPlacement1.Pixels.Width, segmentPlacement1.Pixels.Height),
                         RenderTargetSize = new IntVector2(segmentPlacement1.Pixels.Width, segmentPlacement1.Pixels.Height)
-                    }).Result; //todo async
+                    });
 
                     var uniforms2 = new UniformsPack();
                     uniforms2.SetTexture("_ModifiedCornerBuffer", _modifiedCornerBuffer);
 
-                    var texAfter2 = _renderer.AddOrder(new TextureRenderingTemplate()
+                    await _renderer.AddOrder(new TextureRenderingTemplate()
                     {
                         CanMultistep = false,
                         CreateTexture2D = false,
@@ -121,7 +122,7 @@ namespace Assets.ETerrain.Pyramid.Map
                         RenderingRectangle = RectangleUtils.CalculateSubPosition(segmentPlacement1.Pixels.ToFloatRectangle(),
                             cornerMask.SegmentSubPositionUv).ToIntRectange(),
                         RenderTargetSize = _floorTextureSize
-                    }).Result; //todo async
+                    });
                 }
             }
         }

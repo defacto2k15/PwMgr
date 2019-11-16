@@ -202,7 +202,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                             if (pack != null)
                                             {
                                                 var mainTexture = pack.MainTexture;
-                                                segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
+                                                segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
                                                 cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
                                             }
 

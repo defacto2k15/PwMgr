@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Assets.ETerrain.Pyramid.Map
 {
     public interface IGroundTextureSegmentPlacer
     {
-        void PlaceSegment(Texture segmentTexture, PlacementDetails placementDetails);
+        Task PlaceSegmentAsync(Texture segmentTexture, PlacementDetails placementDetails);
     }
 }

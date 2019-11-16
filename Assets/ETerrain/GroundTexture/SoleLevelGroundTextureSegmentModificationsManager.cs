@@ -1,4 +1,5 @@
-﻿using Assets.Utils;
+﻿using System.Threading.Tasks;
+using Assets.Utils;
 using UnityEngine;
 
 namespace Assets.ETerrain.Pyramid.Map
@@ -14,10 +15,10 @@ namespace Assets.ETerrain.Pyramid.Map
             _levelTexturesManager = levelTexturesManager;
         }
 
-        public void AddSegment(Texture segmentTexture, IntVector2 segmentAlignedPosition)
+        public Task AddSegmentAsync(Texture segmentTexture, IntVector2 segmentAlignedPosition)
         {
             var placementDetails = _levelTexturesManager.Place(segmentAlignedPosition);
-            _placer.PlaceSegment(segmentTexture, placementDetails);
+            return _placer.PlaceSegmentAsync(segmentTexture, placementDetails);
         }
     }
 }

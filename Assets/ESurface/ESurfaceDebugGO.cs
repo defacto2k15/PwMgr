@@ -130,7 +130,7 @@ namespace Assets.ESurface
                                                 if (texturesPack != null)
                                                 {
                                                     var mainTexture = texturesPack.MainTexture;
-                                                    segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
+                                                    segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
                                                     GameObject.Destroy(mainTexture);
                                                 }
 

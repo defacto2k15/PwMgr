@@ -1,4 +1,5 @@
-﻿using Assets.Heightmaps.Ring1.RenderingTex;
+﻿using System.Threading.Tasks;
+using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Ring2;
 using Assets.ShaderUtils;
@@ -22,14 +23,14 @@ namespace Assets.ETerrain.Pyramid.Map
             _floorTextureSize = floorTextureSize;
         }
 
-        public void PlaceSegment(Texture segmentTexture, PlacementDetails placementDetails)
+        public Task PlaceSegmentAsync(Texture segmentTexture, PlacementDetails placementDetails)
         {
             var segmentPlacement0 = CalculateSegmentPlacement(placementDetails.ModuledPositionInGrid);
             UniformsPack uniforms0 = new UniformsPack();
             uniforms0.SetTexture("_SegmentSurfaceTexture", segmentTexture);
             uniforms0.SetUniform("_SegmentCoords", segmentPlacement0.Uvs.ToVector4());
 
-            var texAfter = _renderer.AddOrder(new TextureRenderingTemplate()
+            return _renderer.AddOrder(new TextureRenderingTemplate()
             {
                 CanMultistep = false,
                 CreateTexture2D = false,
@@ -38,7 +39,7 @@ namespace Assets.ETerrain.Pyramid.Map
                 UniformPack = uniforms0,
                 RenderingRectangle = segmentPlacement0.Pixels,
                 RenderTargetSize = _floorTextureSize
-            }).Result; //todo async
+            });
         }
 
         private SegmentInTexturePlacement CalculateSegmentPlacement(IntVector2 newSegmentPositionInGrid)

@@ -23,7 +23,7 @@ namespace Assets.ETerrain.Pyramid.Map
         public void AddSegment(Texture segmentTexture, HeightPyramidLevel levelOf, IntVector2 segmentAlignedPosition)
         {
             var placementDetails = _levelManagers[levelOf].Place(segmentAlignedPosition);
-            _placer.PlaceSegment(segmentTexture, placementDetails);
+            _placer.PlaceSegmentAsync(segmentTexture, placementDetails);
         }
     }
 }

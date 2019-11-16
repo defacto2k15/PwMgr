@@ -105,7 +105,7 @@ namespace Assets.EProps
                                         (c) =>
                                         {
                                             var segmentTexture = ETerrainIntegrationMultipleSegmentsDEO.CreateDummySegmentTexture(c, level);
-                                            segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
+                                            segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
                                         },
                                         (c) => { },
                                         (c) => { }

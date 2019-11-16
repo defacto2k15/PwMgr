@@ -69,7 +69,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                             (c) =>
                                             {
                                                 var segmentTexture = CreateDummySegmentTexture(c, level);
-                                                segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
+                                                segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
                                             },
                                             (c) => { },
                                             (c) => { })

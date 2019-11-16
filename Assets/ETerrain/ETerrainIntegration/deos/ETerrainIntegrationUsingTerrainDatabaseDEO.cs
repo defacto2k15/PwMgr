@@ -90,7 +90,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 GeneratorFunc = (level) =>
                 {
-
                     var ceilTexture =
                         EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
                             startConfiguration.CommonConfiguration.HeightTextureFormat);
@@ -124,7 +123,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                     }).Result.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
                                     var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
                                     dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
-                                    segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
+                                    segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
                                 },
                                 c => { },
                                 c => { })
