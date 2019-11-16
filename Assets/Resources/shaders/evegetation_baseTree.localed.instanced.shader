@@ -46,25 +46,18 @@
            
             sampler2D _MainTex;
 
+			#include "evegetation_color_common.hlsl"
+
 			void surf(in Input i, inout SurfaceOutput o) {
 				float3 startColor = tex2Dlod(_MainTex, float4(i.uv_MainTex, 0, 0)).rgb;
 
-				float3 brownPattern = float3(132,77,16) / 255.0;
-				float3 greenPattern = float3(107,178,16) / 255.0;
-
-				bool isGreenElement = false;
-				if (length(brownPattern - startColor) > length(greenPattern - startColor)) {
-					isGreenElement = true;
+				bool colorMarker = false;
+				if (length(evegetation_brownPattern- startColor) > length(evegetation_greenPattern- startColor)) {
+					colorMarker = true;
 				}
 
-				float3 finalColor;
 				float4 propColor = UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
-				if (isGreenElement) {
-					finalColor = propColor; 
-				}
-				else {
-					finalColor = brownPattern* (0.5+((rand(propColor.r)*0.5)-0.25)); //TODO some intelligent implementation
-				}
+				float3 finalColor = EVegetationCalculateColor(colorMarker, propColor);
 
 				o.Albedo = finalColor;
 

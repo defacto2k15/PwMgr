@@ -539,6 +539,8 @@ MonoBehaviour:
     ClanName: pinus
   BillboardGenerator: {fileID: 1317109701}
   TreeMaterial: {fileID: 2100000, guid: 83c93a8d68367db42aef13e4d65ae3ae, type: 2}
+  BillboardsCount: 16
+  BillboardWidth: 256
 --- !u!1001 &945685693
 PrefabInstance:
   m_ObjectHideFlags: 0

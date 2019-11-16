@@ -141,7 +141,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
              _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
 
-            if (Time.frameCount < 10)
+            if (Time.frameCount < 5)
             {
                 var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
                     _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);

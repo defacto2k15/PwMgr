@@ -14,6 +14,8 @@ namespace Assets.Trees.Generation.ETree
         public List<ClanGenerationOrder> ClansToGenerate;
         public BillboardGenerator BillboardGenerator;
         public Material TreeMaterial;
+        public int BillboardsCount = 8;
+        public int BillboardWidth = 256;
 
         private void Start()
         {
@@ -24,8 +26,8 @@ namespace Assets.Trees.Generation.ETree
             var pyramidGenerator = new ETreeClanGenerator(BillboardGenerator, TreeMaterial, new ETreeClanGeneratorConfiguration()
             {
                 BillboardMarginMultiplier = 1,
-                BillboardsCount = 8,
-                BillboardWidth = 256
+                BillboardsCount = BillboardsCount,
+                BillboardWidth = BillboardWidth
             });
             foreach (var order in ClansToGenerate)
             {
