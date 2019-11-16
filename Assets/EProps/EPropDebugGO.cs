@@ -18,6 +18,7 @@ using Assets.Heightmaps.Ring1.valTypes;
 using Assets.MeshGeneration;
 using Assets.Utils;
 using Assets.Utils.MT;
+using Assets.Utils.Services;
 using Assets.Utils.ShaderBuffers;
 using Assets.Utils.TextureRendering;
 using TMPro;
@@ -130,11 +131,11 @@ namespace Assets.EProps
                 RingsPerLevelCount = startConfiguration.CommonConfiguration.MaxRingsPerLevelCount, //TODO parametrize
                 HeightScale =startConfiguration.CommonConfiguration.YScale
             };
-            _elevationManager = new EPropElevationManager( ePropLocationConfiguration, shaderExecutorObject, ePropConstantPyramidParameters);
-            _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
+            _elevationManager = new EPropElevationManager(new CommonExecutorUTProxy(), shaderExecutorObject, ePropLocationConfiguration, ePropConstantPyramidParameters);
+            var initializedBuffers =  _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
                 _eTerrainHeightPyramidFacade.CeilTextures.ToDictionary(c => c.Key, c => c.Value.First(r => r.TextureType == EGroundTextureType.HeightMap).Texture as Texture) );
-            var ePropLocaleBuffer = _elevationManager.EPropLocaleBuffer;
-            var ePropIdsBuffer = _elevationManager.EPropIdsBuffer;
+            var ePropLocaleBuffer = initializedBuffers.EPropLocaleBuffer;
+            var ePropIdsBuffer = initializedBuffers.EPropIdsBuffer;
 
             _dummyObjectsDisplayer = new EPropDummyObjectsDisplayer(ePropLocationConfiguration.ScopeLength, ePropLocaleBuffer, ePropIdsBuffer, FindObjectOfType<BufferReloaderRootGO>());
             _dummyObjectsDisplayer.Start();
@@ -164,13 +165,13 @@ namespace Assets.EProps
             DrawObjects();
 
             var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
-             _elevationManager.Update(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters);
+             _elevationManager.UpdateAsync(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters).Wait();
 
             if (Time.frameCount % 100 == 0)
             {
                 if (RecalculateSectorsDivision)
                 {
-                    var propLocaleChanges = _elevationManager.RecalculateSectorsDivision(travellerFlatPosition);
+                    var propLocaleChanges = _elevationManager.RecalculateSectorsDivisionAsync(travellerFlatPosition).Result;
                     _dummyObjectsDisplayer.ProcessLocaleChanges(propLocaleChanges);
                     _dummyObjectsInstancingDisplayer.ProcessLocaleChanges(propLocaleChanges);
                 }

@@ -108,15 +108,15 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
             EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
-            InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration, _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager,
-                perLevelTemplates);
+            var elevationBuffers = InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration
+                , _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager, perLevelTemplates);
 
             var reloader = FindObjectOfType<BufferReloaderRootGO>();
             var commonUniforms = new UniformsPack();
             commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
             ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
-            computeBuffersPack.SetBuffer("_EPropLocaleBuffer", _elevationManager.EPropLocaleBuffer);
-            computeBuffersPack.SetBuffer("_EPropIdsBuffer", _elevationManager.EPropIdsBuffer);
+            computeBuffersPack.SetBuffer("_EPropLocaleBuffer", elevationBuffers.EPropLocaleBuffer);
+            computeBuffersPack.SetBuffer("_EPropIdsBuffer", elevationBuffers.EPropIdsBuffer);
 
             var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
                 , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
@@ -143,14 +143,14 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
                     _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
-                _elevationManager.Update(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters);
+                _elevationManager.UpdateAsync(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters).Wait();
             }
 
             if (Time.frameCount % 100 == 0)
             {
                 if (false)
                 {
-                    var propLocaleChanges = _elevationManager.RecalculateSectorsDivision(travellerFlatPosition);
+                    var propLocaleChanges = _elevationManager.RecalculateSectorsDivisionAsync(travellerFlatPosition);
                 }
             }
             if (!_wasFirstUpdateDone)
@@ -160,7 +160,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             }
         }
 
-        public void InitializeDesignBodySpotUpdater(ETerrainHeightPyramidFacadeStartConfiguration startConfiguration,
+        public EPropLocaleBufferManagerInitializedBuffers InitializeDesignBodySpotUpdater(ETerrainHeightPyramidFacadeStartConfiguration startConfiguration,
             EPropElevationConfiguration ePropLocationConfiguration,
             UnityThreadComputeShaderExecutorObject shaderExecutorObject, ETerrainHeightBuffersManager buffersManager,
             Dictionary<HeightPyramidLevel, HeightPyramidLevelTemplateWithShapeConfiguration> perLevelTemplates)
@@ -168,11 +168,11 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var ePropConstantPyramidParameters = new EPropConstantPyramidParameters()
             {
                 LevelsCount = startConfiguration.HeightPyramidLevels.Count,
-                RingsPerLevelCount = startConfiguration.CommonConfiguration.MaxRingsPerLevelCount, //TODO parametrize
+                RingsPerLevelCount = startConfiguration.CommonConfiguration.MaxRingsPerLevelCount, 
                 HeightScale = startConfiguration.CommonConfiguration.YScale
             };
-            _elevationManager = new EPropElevationManager( ePropLocationConfiguration, shaderExecutorObject, ePropConstantPyramidParameters);
-            _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
+            _elevationManager = new EPropElevationManager(new CommonExecutorUTProxy(), shaderExecutorObject,ePropLocationConfiguration,ePropConstantPyramidParameters);
+            var elevationBuffers = _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
                 _eTerrainHeightPyramidFacade.CeilTextures.ToDictionary(c => c.Key, c => c.Value.First(r => r.TextureType == EGroundTextureType.HeightMap).Texture as Texture) );
 
             var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.PyramidLevelWorldSize.Size);
@@ -189,6 +189,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             spotUpdater.SetChangesListener(rootMediator);
             _gameInitializationFields.SetField(rootMediator);
 
+            return elevationBuffers;
         }
 
     }

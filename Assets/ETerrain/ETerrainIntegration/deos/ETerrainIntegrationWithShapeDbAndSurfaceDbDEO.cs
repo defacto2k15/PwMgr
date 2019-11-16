@@ -205,8 +205,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                                 segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
                                                 cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
                                             }
-
-                                            Resources.UnloadUnusedAssets();
                                         }
                                     },
                                     (c) => { },

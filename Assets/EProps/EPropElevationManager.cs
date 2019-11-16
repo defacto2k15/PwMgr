@@ -12,6 +12,7 @@ using Assets.ETerrain.Pyramid.Map;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Utils;
+using Assets.Utils.Services;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
@@ -52,21 +53,18 @@ namespace Assets.EProps
         private EPropLocaleBufferManager _localeBufferManager;
         private EPropElevationLocalePointersOccupancyContainer _pointersOccupancyContainer;
 
-        public EPropElevationManager(EPropElevationConfiguration configuration, UnityThreadComputeShaderExecutorObject shaderExecutorObject,
-            EPropConstantPyramidParameters constantPyramidParameters)
+        public EPropElevationManager(CommonExecutorUTProxy commonExecutor, UnityThreadComputeShaderExecutorObject shaderExecutorObject,
+            EPropElevationConfiguration configuration, EPropConstantPyramidParameters constantPyramidParameters)
         {
             _configuration = configuration;
-            _localeBufferManager = new EPropLocaleBufferManager(shaderExecutorObject, _configuration, constantPyramidParameters);
+            _localeBufferManager = new EPropLocaleBufferManager(commonExecutor, shaderExecutorObject, configuration, constantPyramidParameters);
             _pointersOccupancyContainer = new EPropElevationLocalePointersOccupancyContainer(configuration);
         }
 
-        public ComputeBuffer EPropLocaleBuffer => _localeBufferManager.EPropLocaleBuffer;
-        public ComputeBuffer EPropIdsBuffer => _localeBufferManager.EPropIdsBuffer;
-
-        public void Initialize(ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer,
+        public EPropLocaleBufferManagerInitializedBuffers Initialize(ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer,
             Dictionary<HeightPyramidLevel, Texture> heightmapTextures ) 
         {
-            _localeBufferManager.Initialize(ePyramidPerFrameParametersBuffer, ePyramidConfigurationBuffer, heightmapTextures);
+            return _localeBufferManager.Initialize(ePyramidPerFrameParametersBuffer, ePyramidConfigurationBuffer, heightmapTextures);
         }
 
         public EPropElevationPointer RegisterProp(Vector2 flatPosition)
@@ -95,7 +93,6 @@ namespace Assets.EProps
             var localeIds = sector.RegisterPropGroup(positions,center);
             return localeIds.Select(c => _pointersOccupancyContainer.ClaimFreePointer(c)).ToList();
         }
-
 
         public EPropPointerWithId DebugRegisterPropWithElevationId(Vector2 flatPosition)
         {
@@ -127,19 +124,19 @@ namespace Assets.EProps
                 _configuration.BaseSectorsWorldSpaceLength/_configuration.QuadTreeMaxDepth);
         }
 
-        public void Update(Vector2 travellerFlatPosition, Dictionary<HeightPyramidLevel, Vector2> levelCentersWorldSpace, EPropHotAreaSelectorWithParameters selectorWithParameters)
+        public async Task UpdateAsync(Vector2 travellerFlatPosition, Dictionary<HeightPyramidLevel, Vector2> levelCentersWorldSpace, EPropHotAreaSelectorWithParameters selectorWithParameters)
         {
             var changes = _quadTreeRoots.Values.SelectMany(c => c.RetriveAndClearUpdateOrders()).ToList();
-            List<EPropSectorSoleUpdateOrder> updateOrders = changes.Select(c => new EPropSectorSoleUpdateOrder()
+            var updateOrders = changes.Select(c => new EPropSectorSoleUpdateOrder()
             {
                 Change = c,
                 Pointer = _pointersOccupancyContainer.RetrivePointer(new EPropElevationId() { InScopeIndex = c.ScopeUpdateOrder.Index, LocaleBufferScopeIndex = c.ScopeIndex})
             }).ToList();
-            _localeBufferManager.UpdateBuffers(updateOrders, travellerFlatPosition);
+            await _localeBufferManager.UpdateBuffersAsync(updateOrders, travellerFlatPosition);
 
             var sectorsWithState = _quadTreeRoots.Values.SelectMany(c => c.RetriveSectorsWithState(selectorWithParameters)).ToList();
             var hotScopes = sectorsWithState.Where(c => c.State == EPropSectorState.Hot).SelectMany(c => c.Sector.ScopeIds).ToList();
-            _localeBufferManager.RecalculateLocales(travellerFlatPosition, hotScopes);
+            await _localeBufferManager.RecalculateLocalesAsync(travellerFlatPosition, hotScopes);
         }
 
         public List<DebugSectorInformation> DebugQuerySectorStates(EPropHotAreaSelectorWithParameters selectorWithParameters)
@@ -153,14 +150,13 @@ namespace Assets.EProps
             }).ToList();
         }
 
-        public List<EPropIdChange> RecalculateSectorsDivision(Vector2 travellerPosition)
+        public async Task<List<EPropIdChange>> RecalculateSectorsDivisionAsync(Vector2 travellerPosition)
         {
             Debug.Log("Recalculating sectors division");
             Func<float, int> nodeDepthResolver = (distance =>
                 Mathf.Max(0,
                     _configuration.QuadTreeMaxDepth-
                         Mathf.RoundToInt(Mathf.Sqrt(_configuration.QuadTreeDivisionMultiplier * distance / (_configuration.BaseSectorsWorldSpaceLength / 2)))));
-            //Func<float, int> nodeDepthResolver = (distance => 3);
             var perTreeDivisionResults = _quadTreeRoots.Values
                 .Select(c => c.ResolveDivision(new EPropQuadTreeDivisionDecider(nodeDepthResolver, travellerPosition, 0))).ToList();
             var divisionResult = new EPropQuadTreeDivisionResult()
@@ -169,7 +165,7 @@ namespace Assets.EProps
                 IdChanges = perTreeDivisionResults.SelectMany(c => c.IdChanges).ToList()
             };
 
-            _localeBufferManager.ProcessDivisionChanges(new EPropIdChangeOrder()
+            await _localeBufferManager.ProcessDivisionChangesAsync(new EPropIdChangeOrder()
             {
                 ScopesToFree = divisionResult.ScopesToFree,
                 IdChanges = divisionResult.IdChanges.Select(c=> new EPropIdChangeWithPointer()
@@ -449,11 +445,12 @@ namespace Assets.EProps
         private EPropElevationConfiguration _configuration;
         private readonly EPropConstantPyramidParameters _constantPyramidParameters;
         private UnityThreadComputeShaderExecutorObject _shaderExecutorObject;
+        private CommonExecutorUTProxy _commonExecutor;
         private EPropLocaleBufferScopeRegistry[] _scopes;
 
         private ComputeBuffer _scopesUpdateOrdersBuffer;
         private ComputeBuffer _ePropLocaleBuffer;
-        public ComputeBuffer _ePropIdsBuffer;
+        private ComputeBuffer _ePropIdsBuffer;
         private ComputeBuffer _scopesToRecalculateBuffer;
         private ComputeBuffer _localesCopyOrdersBuffer;
 
@@ -461,18 +458,17 @@ namespace Assets.EProps
         private Func<int, Vector2, Task> _localeRecalculationShaderOrderGenerator;
         private Func<int, Task> _localesCopyShaderOrderGenerator;
 
-        public EPropLocaleBufferManager(UnityThreadComputeShaderExecutorObject shaderExecutorObject, EPropElevationConfiguration configuration, EPropConstantPyramidParameters constantPyramidParameters)
+        public EPropLocaleBufferManager(CommonExecutorUTProxy commonExecutor, UnityThreadComputeShaderExecutorObject shaderExecutorObject, EPropElevationConfiguration configuration
+            , EPropConstantPyramidParameters constantPyramidParameters)
         {
             _shaderExecutorObject = shaderExecutorObject;
             _configuration = configuration;
+            _commonExecutor = commonExecutor;
             _constantPyramidParameters = constantPyramidParameters;
             _scopes = new EPropLocaleBufferScopeRegistry[configuration.MaxScopesCount];
         }
 
-        public ComputeBuffer EPropLocaleBuffer => _ePropLocaleBuffer;
-        public ComputeBuffer EPropIdsBuffer => _ePropIdsBuffer;
-
-        public void Initialize( ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer, Dictionary<HeightPyramidLevel, Texture> heightmapTextures)
+        public EPropLocaleBufferManagerInitializedBuffers Initialize( ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer, Dictionary<HeightPyramidLevel, Texture> heightmapTextures)
         {
             _scopesUpdateOrdersBuffer = new ComputeBuffer(_configuration.MaxScopeUpdateOrdersInBuffer,
                 System.Runtime.InteropServices.Marshal.SizeOf(typeof(GpuSoleUpdateOrder)), ComputeBufferType.Default);
@@ -489,6 +485,12 @@ namespace Assets.EProps
                 System.Runtime.InteropServices.Marshal.SizeOf(typeof(GpuEPropElevationId)), ComputeBufferType.Default);
 
             GenerateShaderOrderTemplates(ePyramidPerFrameParametersBuffer, ePyramidConfigurationBuffer, heightmapTextures);
+
+            return new EPropLocaleBufferManagerInitializedBuffers()
+            {
+                EPropIdsBuffer = _ePropIdsBuffer,
+                EPropLocaleBuffer = _ePropLocaleBuffer
+            };
         }
 
         private void GenerateShaderOrderTemplates(ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer,
@@ -538,7 +540,6 @@ namespace Assets.EProps
                 }
 
                 localeBufferUpdateShader.SetGlobalUniform("g_travellerPositionWorldSpace", travellerPositionWorldSpace);
-
 
                 return _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
                 {
@@ -695,7 +696,7 @@ namespace Assets.EProps
             return null;
         }
 
-        public void UpdateBuffers(List<EPropSectorSoleUpdateOrder> updateOrders, Vector2 travellerPositionWorldSpace)
+        public async Task UpdateBuffersAsync(List<EPropSectorSoleUpdateOrder> updateOrders, Vector2 travellerPositionWorldSpace)
         {
             var passesCount = Mathf.CeilToInt(updateOrders.Count / ((float) _configuration.MaxScopeUpdateOrdersInBuffer));
             for (int i = 0; i < passesCount; i++)
@@ -716,18 +717,18 @@ namespace Assets.EProps
                     };
                 }
 
-                ExecuteUpdateOrder(scopeUpdateOrdersArray, thisPassOrdersCount, travellerPositionWorldSpace);
+                await ExecuteUpdateOrderAsync(scopeUpdateOrdersArray, thisPassOrdersCount, travellerPositionWorldSpace);
             }
         }
 
 
-        private void ExecuteUpdateOrder(GpuSoleUpdateOrder[] scopeUpdateOrdersArray, int ordersCount, Vector2 travellerPositionWorldSpace)
+        private async Task ExecuteUpdateOrderAsync(GpuSoleUpdateOrder[] scopeUpdateOrdersArray, int ordersCount, Vector2 travellerPositionWorldSpace)
         {
-            _scopesUpdateOrdersBuffer.SetData(scopeUpdateOrdersArray);
-            _localeBufferUpdaterShaderOrderGenerator(ordersCount,travellerPositionWorldSpace).Wait();
+            await _commonExecutor.AddAction(() => _scopesUpdateOrdersBuffer.SetData(scopeUpdateOrdersArray));
+            await _localeBufferUpdaterShaderOrderGenerator(ordersCount,travellerPositionWorldSpace);
         }
 
-        public void RecalculateLocales(Vector2 travellerPositionWorldSpace, List<LocaleBufferScopeIndexType> scopesToRecalculate)
+        public async Task RecalculateLocalesAsync(Vector2 travellerPositionWorldSpace, List<LocaleBufferScopeIndexType> scopesToRecalculate)
         {
             var passesCount = Mathf.CeilToInt(scopesToRecalculate.Count / ((float) _configuration.MaxScopesToRecalculatePerPass));
             for (int i = 0; i < passesCount; i++)
@@ -736,23 +737,23 @@ namespace Assets.EProps
 
                 var thisPassScopesCount = Mathf.Min(_configuration.MaxScopesToRecalculatePerPass,scopesToRecalculate.Count - offset);
                 var scopesToRecalculateThisPass = scopesToRecalculate.Skip(offset).Take(thisPassScopesCount).ToList();
-                ExecuteScopesRecalculation(scopesToRecalculateThisPass, thisPassScopesCount, travellerPositionWorldSpace);
+                await ExecuteScopesRecalculationAsync(scopesToRecalculateThisPass, thisPassScopesCount, travellerPositionWorldSpace);
             }
         }
 
-        private void ExecuteScopesRecalculation(List<uint> scopesToRecalculateThisPass, int thisPassScopesCount, Vector2 travellerPositionWorldSpace)
+        private async Task ExecuteScopesRecalculationAsync(List<uint> scopesToRecalculateThisPass, int thisPassScopesCount, Vector2 travellerPositionWorldSpace)
         {
-            _scopesToRecalculateBuffer.SetData(scopesToRecalculateThisPass);
-            _localeRecalculationShaderOrderGenerator(thisPassScopesCount * _configuration.ScopeLength, travellerPositionWorldSpace).Wait();
+            await _commonExecutor.AddAction(() => _scopesToRecalculateBuffer.SetData(scopesToRecalculateThisPass));
+            await _localeRecalculationShaderOrderGenerator(thisPassScopesCount * _configuration.ScopeLength, travellerPositionWorldSpace);
         }
 
-        public void ProcessDivisionChanges(EPropIdChangeOrder idChangeOrder)
+        public async Task ProcessDivisionChangesAsync(EPropIdChangeOrder idChangeOrder)
         {
-            CopyLocales(idChangeOrder.IdChanges);
+            await CopyLocalesAsync(idChangeOrder.IdChanges);
             FreeScopes(idChangeOrder.ScopesToFree);
         }
 
-        private void CopyLocales(List<EPropIdChangeWithPointer> idChanges)
+        private async Task CopyLocalesAsync(List<EPropIdChangeWithPointer> idChanges)
         {
             var passesCount = Mathf.CeilToInt(idChanges.Count / ((float) _configuration.MaxLocalesToCopyInBuffer));
 
@@ -776,14 +777,14 @@ namespace Assets.EProps
                     };
                 }
 
-                ExecuteLocalesCopyOrder(scopeUpdateOrdersArray, thisPassOrdersCount);
+                await ExecuteLocalesCopyOrderAsync(scopeUpdateOrdersArray, thisPassOrdersCount);
             }
         }
 
-        private void ExecuteLocalesCopyOrder(GpuSoleLocaleCopyOrder[] localesCopyOrdersArray, int thisPassOrdersCount)
+        private async Task ExecuteLocalesCopyOrderAsync(GpuSoleLocaleCopyOrder[] localesCopyOrdersArray, int thisPassOrdersCount)
         {
-            _localesCopyOrdersBuffer.SetData(localesCopyOrdersArray.OrderBy(c=> UnityEngine.Random.Range(0,1)).ToArray());
-            _localesCopyShaderOrderGenerator(thisPassOrdersCount).Wait();
+            await _commonExecutor.AddAction(() => _localesCopyOrdersBuffer.SetData(localesCopyOrdersArray));
+            await _localesCopyShaderOrderGenerator(thisPassOrdersCount);
         }
 
         private void FreeScopes(List<LocaleBufferScopeIndexType> scopesToFree)
@@ -824,6 +825,12 @@ namespace Assets.EProps
             public uint NewScopeIndex;
             public uint NewIndexInScope;
         }
+    }
+
+    public class EPropLocaleBufferManagerInitializedBuffers
+    {
+        public ComputeBuffer EPropLocaleBuffer;
+        public ComputeBuffer EPropIdsBuffer;
     }
 
     public class EPropIdChangeOrder
