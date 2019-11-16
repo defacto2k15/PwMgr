@@ -123,9 +123,6 @@ namespace Assets.ESurface
                                                 var sap = c.SegmentAlignedPosition;
                                                 MyRectangle surfaceWorldSpaceRectangle = new MyRectangle(sap.X * segmentLength, sap.Y * segmentLength,
                                                     segmentLength, segmentLength);
-                                                //if ((c.SegmentAlignedPosition.X == 0 || c.SegmentAlignedPosition.X==1) && c.SegmentAlignedPosition.Y == 0)
-                                                //{
-                                                //    MyRectangle surfaceWorldSpaceRectangle = new MyRectangle(0, 0, 90, 90);
                                                 var texturesPack = surfacePatchProvider.ProvideSurfaceDetail(surfaceWorldSpaceRectangle, new FlatLod(1, 1));
                                                 if (texturesPack != null)
                                                 {
