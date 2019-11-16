@@ -84,24 +84,16 @@ namespace Assets.ETerrain.ETerrainIntegration
                 var perGroundTypesEntities = groundEntitiesGenerators.Select(c =>
                 {
                     var groundType = c.Key;
-                    var generators = c.Value;
-                    var ceilTexture = new EGroundTexture(
-                        generators.CeilTextureGenerator(),
-                        groundType
-                    );
+                    var generator = c.Value;
 
-                    var segmentsPlacer = generators.SegmentPlacerGenerator( ceilTexture.Texture);
+                    var textureAndFillingListener = generator.GeneratorFunc(level);
 
-                    var pyramidLevelManager = new GroundLevelTexturesManager(heightPyramidMapConfiguration.SlotMapSize);
-
-                    var segmentAddingManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
                     var segmentFiller = new SegmentFiller(heightPyramidMapConfiguration.SlotMapSize, perLevelConfiguration.SegmentFillerStandByMarginsSize,
-                        perLevelConfiguration.BiggestShapeObjectInGroupLength,
-                        generators.LambdaSegmentFillingListenerGenerator(level, segmentAddingManager));
+                        perLevelConfiguration.BiggestShapeObjectInGroupLength, textureAndFillingListener.SegmentFillingListener);
 
                     return new PerGroundTypeEntities()
                     {
-                        CeilTexture = ceilTexture,
+                        CeilTexture = new EGroundTexture(textureAndFillingListener.CeilTexture, groundType),
                         Filler = segmentFiller
                     };
                 }).ToList();

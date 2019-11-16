@@ -46,33 +46,36 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             }),startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
 
-            _eTerrainHeightPyramidFacade.Start( perLevelTemplates,
+            _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>()
                 {
                     {
                         EGroundTextureType.HeightMap, new OneGroundTypeLevelTextureEntitiesGenerator()
                         {
-                            LambdaSegmentFillingListenerGenerator =
-                                (level, segmentModificationManager) => new LambdaSegmentFillingListener(
-                                    (c) =>
-                                    {
-                                        var segmentTexture = CreateDummySegmentTexture(c, level);
-                                        segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
-                                    },
-                                    (c) => { },
-                                    (c) => { }),
-                            CeilTextureGenerator = () => EGroundTextureGenerator.GenerateEmptyGroundTexture(
-                                startConfiguration.CommonConfiguration.CeilTextureSize, startConfiguration.CommonConfiguration.HeightTextureFormat),
-                            SegmentPlacerGenerator = (ceilTexture) =>
+                            GeneratorFunc = (level) =>
                             {
-                                var modifiedCornerBuffer =
-                                    EGroundTextureGenerator.GenerateModifiedCornerBuffer(startConfiguration.CommonConfiguration.SegmentTextureResolution,
+                                var ceilTexture =
+                                    EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
                                         startConfiguration.CommonConfiguration.HeightTextureFormat);
+                                var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
+                                    , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                                var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                                var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+                                return new SegmentFillingListenerWithCeilTexture()
+                                {
+                                    CeilTexture = ceilTexture,
+                                    SegmentFillingListener =
+                                        new LambdaSegmentFillingListener(
+                                            (c) =>
+                                            {
+                                                var segmentTexture = CreateDummySegmentTexture(c, level);
+                                                segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
+                                            },
+                                            (c) => { },
+                                            (c) => { })
+                                };
 
-                                return new HeightSegmentPlacer(textureRendererProxy, ceilTexture, startConfiguration.CommonConfiguration.SlotMapSize,
-                                    startConfiguration.CommonConfiguration.CeilTextureSize, startConfiguration.CommonConfiguration.InterSegmentMarginSize,
-                                    modifiedCornerBuffer);
-                            }
+                            },
                         }
                     }
                 }

@@ -59,7 +59,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             }),startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
 
-
             var repositioner = Repositioner.Default;
             var dbInitialization =
                 new FETerrainShapeDbInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, new FilePathsConfiguration());
@@ -71,7 +70,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                 {
                     {
-                        EGroundTextureType.HeightMap, GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(startConfiguration, dbProxy, repositioner, _gameInitializationFields,true)
+                        EGroundTextureType.HeightMap, GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(startConfiguration, dbProxy, repositioner
+                            , _gameInitializationFields.Retrive<UTTextureRendererProxy>(), true)
                     }
                 }
             );
@@ -84,54 +84,51 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public static OneGroundTypeLevelTextureEntitiesGenerator GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(
             ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, TerrainShapeDbProxy dbProxy, Repositioner repositioner,
-            GameInitializationFields initializationFields, bool modifyCorners=true)
+            UTTextureRendererProxy textureRendererProxy, bool modifyCorners = true)
         {
             return new OneGroundTypeLevelTextureEntitiesGenerator
             {
-                LambdaSegmentFillingListenerGenerator =
-                    (level, segmentModificationManager) =>
-                    {
-                        return new LambdaSegmentFillingListener(
-                            c =>
-                            {
-                                var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
-                                    startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
-
-                                var terrainDetailElementOutput = dbProxy.Query(new TerrainDescriptionQuery()
-                                {
-                                    QueryArea = repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                    RequestedElementDetails = new List<TerrainDescriptionQueryElementDetail>()
-                                    {
-                                        new TerrainDescriptionQueryElementDetail()
-                                        {
-                                            Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
-                                            RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
-                                            Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
-                                        }
-                                    }
-                                }).Result.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
-                                var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
-                                dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
-                                segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
-                            },
-                            c => { },
-                            c => { });
-                    },
-                CeilTextureGenerator = () => EGroundTextureGenerator.GenerateEmptyGroundTexture(
-                    startConfiguration.CommonConfiguration.CeilTextureSize, startConfiguration.CommonConfiguration.HeightTextureFormat),
-                SegmentPlacerGenerator = ceilTexture =>
+                GeneratorFunc = (level) =>
                 {
-                    var modifiedCornerBuffer =
-                        EGroundTextureGenerator.GenerateModifiedCornerBuffer(startConfiguration.CommonConfiguration.SegmentTextureResolution,
-                            startConfiguration.CommonConfiguration.HeightTextureFormat);
 
-                    return new HeightSegmentPlacer(
-                        initializationFields.Retrive<UTTextureRendererProxy>(),
-                        ceilTexture
-                        , startConfiguration.CommonConfiguration.SlotMapSize
-                        , startConfiguration.CommonConfiguration.CeilTextureSize
-                        , startConfiguration.CommonConfiguration.InterSegmentMarginSize
-                        , modifiedCornerBuffer, modifyCorners);
+                    var ceilTexture =
+                        EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                            startConfiguration.CommonConfiguration.HeightTextureFormat);
+                    var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
+                        , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                    var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                    var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+
+                    return new SegmentFillingListenerWithCeilTexture()
+                    {
+                        CeilTexture = ceilTexture,
+                        SegmentFillingListener =
+                            new LambdaSegmentFillingListener(
+                                c =>
+                                {
+                                    var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
+                                        startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
+
+                                    var terrainDetailElementOutput = dbProxy.Query(new TerrainDescriptionQuery()
+                                    {
+                                        QueryArea = repositioner.InvMove(surfaceWorldSpaceRectangle),
+                                        RequestedElementDetails = new List<TerrainDescriptionQueryElementDetail>()
+                                        {
+                                            new TerrainDescriptionQueryElementDetail()
+                                            {
+                                                Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
+                                                RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
+                                                Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
+                                            }
+                                        }
+                                    }).Result.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
+                                    var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
+                                    dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
+                                    segmentModificationManager.AddSegment(segmentTexture, c.SegmentAlignedPosition);
+                                },
+                                c => { },
+                                c => { })
+                    };
                 }
             };
         }

@@ -108,9 +108,13 @@ namespace Assets.ETerrain.ETerrainIntegration
 
     public class OneGroundTypeLevelTextureEntitiesGenerator
     {
-        public Func< RenderTexture> CeilTextureGenerator;
-        public Func<HeightPyramidLevel, SoleLevelGroundTextureSegmentModificationsManager, LambdaSegmentFillingListener> LambdaSegmentFillingListenerGenerator;
-        public Func< RenderTexture, IGroundTextureSegmentPlacer> SegmentPlacerGenerator;
+        public Func<HeightPyramidLevel,SegmentFillingListenerWithCeilTexture> GeneratorFunc;
+    }
+
+    public class SegmentFillingListenerWithCeilTexture
+    {
+        public ISegmentFillingListener SegmentFillingListener;
+        public Texture CeilTexture;
     }
 
     public class PerGroundTypeEntities

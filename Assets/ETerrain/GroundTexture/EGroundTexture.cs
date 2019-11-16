@@ -10,16 +10,16 @@ namespace Assets.ETerrain.GroundTexture
 {
     public class EGroundTexture
     {
-        private RenderTexture _texture;
+        private Texture _texture;
         private EGroundTextureType _textureType;
 
-        public EGroundTexture(RenderTexture texture, EGroundTextureType textureType)
+        public EGroundTexture(Texture texture, EGroundTextureType textureType)
         {
             _texture = texture;
             _textureType = textureType;
         }
 
-        public RenderTexture Texture => _texture;
+        public Texture Texture => _texture;
 
         public string Name => _textureType.GetName();
 

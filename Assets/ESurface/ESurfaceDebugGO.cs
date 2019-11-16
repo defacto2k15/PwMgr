@@ -103,32 +103,44 @@ namespace Assets.ESurface
                     {
                         EGroundTextureType.SurfaceTexture, new OneGroundTypeLevelTextureEntitiesGenerator()
                         {
-                            LambdaSegmentFillingListenerGenerator =
-                                (level, segmentModificationManager) => new LambdaSegmentFillingListener(
-                                    (c) =>
-                                    {
-                                        var segmentLength = startConfiguration.PerLevelConfigurations[level].BiggestShapeObjectInGroupLength;
-                                        var sap = c.SegmentAlignedPosition;
-                                        MyRectangle surfaceWorldSpaceRectangle = new MyRectangle(sap.X*segmentLength, sap.Y*segmentLength, segmentLength, segmentLength);
-                                        //if ((c.SegmentAlignedPosition.X == 0 || c.SegmentAlignedPosition.X==1) && c.SegmentAlignedPosition.Y == 0)
-                                        //{
-                                        //    MyRectangle surfaceWorldSpaceRectangle = new MyRectangle(0, 0, 90, 90);
-                                            var texturesPack = surfacePatchProvider.ProvideSurfaceDetail(surfaceWorldSpaceRectangle, new FlatLod(1, 1));
-                                            if (texturesPack != null)
+                            GeneratorFunc = (level) =>
+                            {
+                                var ceilTexture = EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                                    surfaceTextureFormat);
+                                var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
+                                    , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                                var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                                var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+
+                                return new SegmentFillingListenerWithCeilTexture()
+                                {
+                                    CeilTexture = ceilTexture,
+                                    SegmentFillingListener =
+                                        new LambdaSegmentFillingListener(
+                                            (c) =>
                                             {
-                                                var mainTexture = texturesPack.MainTexture;
-                                                segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
-                                                GameObject.Destroy(mainTexture);
-                                            }
-                                        //}
-                                    },
-                                    (c) => { },
-                                    (c) => { }),
-                            CeilTextureGenerator = () =>
-                                EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
-                                    surfaceTextureFormat),
-                            SegmentPlacerGenerator = (ceilTexture) => new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture,
-                                startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize)
+                                                var segmentLength = startConfiguration.PerLevelConfigurations[level].BiggestShapeObjectInGroupLength;
+                                                var sap = c.SegmentAlignedPosition;
+                                                MyRectangle surfaceWorldSpaceRectangle = new MyRectangle(sap.X * segmentLength, sap.Y * segmentLength,
+                                                    segmentLength, segmentLength);
+                                                //if ((c.SegmentAlignedPosition.X == 0 || c.SegmentAlignedPosition.X==1) && c.SegmentAlignedPosition.Y == 0)
+                                                //{
+                                                //    MyRectangle surfaceWorldSpaceRectangle = new MyRectangle(0, 0, 90, 90);
+                                                var texturesPack = surfacePatchProvider.ProvideSurfaceDetail(surfaceWorldSpaceRectangle, new FlatLod(1, 1));
+                                                if (texturesPack != null)
+                                                {
+                                                    var mainTexture = texturesPack.MainTexture;
+                                                    segmentModificationManager.AddSegment(mainTexture, c.SegmentAlignedPosition);
+                                                    GameObject.Destroy(mainTexture);
+                                                }
+
+                                                //}
+                                            },
+                                            (c) => { },
+                                            (c) => { })
+                                };
+
+                            },
                         }
                     }
                 }
