@@ -303,8 +303,7 @@ namespace Assets.FinalExecution
                 {
                     if (_configuration.UpdateRingTree)
                     {
-                        ring1TreeProxy.UpdateCamera(
-                            FovData.FromCamera(camera, repositioner));
+                        ring1TreeProxy.UpdateCamera( FovData.FromCamera(camera, repositioner));
                     }
                 }
             });
@@ -316,7 +315,7 @@ namespace Assets.FinalExecution
                     ring1TreeProxy.CreateHeightmap(
                         new Ring1Tree.RootNodeCreationParameters()
                         {
-                            InitialCameraPosition = repositioner.InvMove(camera.transform.localPosition),
+                            InitialCameraPosition = repositioner.InvMove(camera.Position),
                             NodeListener = eventCollector,
                             PrecisionDistances = _gRingConfiguration.QuadLodPrecisionDistances,
                             UnityCoordsCalculator = unityCoordsCalculator

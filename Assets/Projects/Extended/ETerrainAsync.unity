@@ -333,7 +333,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_GeneratorAsset: {fileID: 0}
-  m_Script: {fileID: 11500000, guid: 6d389fbc3ac1bd8438684d0a4b46bfd4, type: 3}
+  m_Script: {fileID: 11500000, guid: fe9a5881859649443aec24888523af31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Traveller: {fileID: 185176292}
@@ -353,7 +353,7 @@ MonoBehaviour:
     GenerateBigBushes: 0
     GenerateGrass: 0
     GenerateSmallBushes: 0
-    BigTreesSupportedDetailLevels: 02000000
+    BigTreesSupportedDetailLevels: 000000000200000001000000
     ShaderNames:
       TreeBillboardShader: Custom/EVegetation/GenericBillboardLocaledInstanced
       BaseTreeShader: Custom/EVegetation/BaseTreeLocaledInstanced

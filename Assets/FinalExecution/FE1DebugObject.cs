@@ -100,7 +100,7 @@ namespace Assets.FinalExecution
 
         public void Update()
         {
-            _updaterUntilException.Execute(() => { _ultraUpdatableContainer.Update(ActiveCamera); });
+            _updaterUntilException.Execute(() => { _ultraUpdatableContainer.Update(new EncapsulatedCameraForUpdate(ActiveCamera)); });
             if (msw != null)
             {
                 Debug.Log("T65: game initialization took: " + msw.CollectResults());

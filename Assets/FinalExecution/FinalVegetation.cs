@@ -210,12 +210,12 @@ namespace Assets.FinalExecution
                         StartCameraField = (camera) =>
                         {
                             outerVegetationRuntimeManagementProxy.StartThreading();
-                            var position = camera.transform.localPosition;
+                            var position = camera.Position;
                             outerVegetationRuntimeManagementProxy.Start(repositioner.InvMove(position));
                         },
                         UpdateCameraField = (camera) =>
                         {
-                            var position = camera.transform.localPosition;
+                            var position = camera.Position;
                             outerVegetationRuntimeManagementProxy.AddUpdate(repositioner.InvMove(position));
                             outerVegetationRuntimeManagementProxy.SynchronicUpdate(repositioner.InvMove(position));
                         },
@@ -263,12 +263,12 @@ namespace Assets.FinalExecution
                 StartCameraField = (camera) =>
                 {
                     vegetationRuntimeManagementProxy.StartThreading();
-                    var position = camera.transform.localPosition;
+                    var position = camera.Position;
                     vegetationRuntimeManagementProxy.Start(repositioner.InvMove(position));
                 },
                 UpdateCameraField = (camera) =>
                 {
-                    var position = camera.transform.localPosition;
+                    var position = camera.Position;
                     vegetationRuntimeManagementProxy.AddUpdate(repositioner.InvMove(position));
                     vegetationRuntimeManagementProxy.SynchronicUpdate(repositioner.InvMove(position));
                 },
@@ -307,12 +307,12 @@ namespace Assets.FinalExecution
                 StartCameraField = (camera) =>
                 {
                     vegetationRuntimeManagementProxy.StartThreading();
-                    var position = camera.transform.localPosition;
+                    var position = camera.Position;
                     vegetationRuntimeManagementProxy.Start(queryRepositioner.InvMove(position));
                 },
                 UpdateCameraField = (camera) =>
                 {
-                    var position = camera.transform.localPosition;
+                    var position = camera.Position;
                     vegetationRuntimeManagementProxy.AddUpdate(queryRepositioner.InvMove(position));
                     vegetationRuntimeManagementProxy.SynchronicUpdate(queryRepositioner.InvMove(position));
                 },
@@ -468,12 +468,12 @@ namespace Assets.FinalExecution
                 StartCameraField = (camera) =>
                 {
                     vegetationRuntimeManagementProxy.StartThreading();
-                    var newPosition = repositioner.InvMove(camera.transform.localPosition);
+                    var newPosition = repositioner.InvMove(camera.Position);
                     vegetationRuntimeManagementProxy.Start(newPosition);
                 },
                 UpdateCameraField = (camera) =>
                 {
-                    var newPosition = repositioner.InvMove(camera.transform.localPosition);
+                    var newPosition = repositioner.InvMove(camera.Position);
                     vegetationRuntimeManagementProxy.AddUpdate(newPosition);
                     vegetationRuntimeManagementProxy.SynchronicUpdate(newPosition);
                 },

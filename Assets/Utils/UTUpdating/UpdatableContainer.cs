@@ -64,7 +64,7 @@ namespace Assets.Utils.UTUpdating
             _utScheduler.AddService(service);
         }
 
-        public void Update(Camera camera)
+        public void Update(ICameraForUpdate camera)
         {
             if (!_once)
             {
@@ -92,7 +92,6 @@ namespace Assets.Utils.UTUpdating
 
                 _otherThreadProxys.ForEach(c =>
                 {
-                    int todo = 22;
                     c.OtherThreadProxy.SynchronicUpdate();
                 });
 
@@ -114,6 +113,7 @@ namespace Assets.Utils.UTUpdating
         }
     }
 
+
     public class UltraUpdatableContainerConfiguration
     {
         public bool ServicesProfilingEnabled = true;
@@ -129,11 +129,11 @@ namespace Assets.Utils.UTUpdating
         {
         }
 
-        public virtual void UpdateCamera(Camera camera)
+        public virtual void UpdateCamera(ICameraForUpdate camera)
         {
         }
 
-        public virtual void StartUpdateCamera(Camera camera)
+        public virtual void StartUpdateCamera(ICameraForUpdate camera)
         {
         }
 
@@ -146,10 +146,10 @@ namespace Assets.Utils.UTUpdating
     public class FieldBasedUltraUpdatable : BaseUltraUpdatable
     {
         public Action UpdateField;
-        public Action<Camera> UpdateCameraField;
+        public Action<ICameraForUpdate> UpdateCameraField;
 
         public Action StartField;
-        public Action<Camera> StartCameraField;
+        public Action<ICameraForUpdate> StartCameraField;
 
         public override void Update()
         {
@@ -161,12 +161,12 @@ namespace Assets.Utils.UTUpdating
             StartField?.Invoke();
         }
 
-        public override void UpdateCamera(Camera camera)
+        public override void UpdateCamera(ICameraForUpdate camera)
         {
             UpdateCameraField?.Invoke(camera);
         }
 
-        public override void StartUpdateCamera(Camera camera)
+        public override void StartUpdateCamera(ICameraForUpdate camera)
         {
             StartCameraField?.Invoke(camera);
         }
@@ -176,5 +176,52 @@ namespace Assets.Utils.UTUpdating
     {
         public BaseOtherThreadProxy OtherThreadProxy;
         public Action PerPostAction;
+    }
+
+    public interface ICameraForUpdate
+    {
+        Vector3 Position { get; set; }
+        Plane[] CalculateFrustumPlanes(ICameraForUpdate camera);
+    }
+
+    public class EncapsulatedCameraForUpdate : ICameraForUpdate
+    {
+        private Camera _camera;
+
+        public EncapsulatedCameraForUpdate(Camera camera)
+        {
+            _camera = camera;
+        }
+
+        public Vector3 Position
+        {
+            get => _camera.transform.position;
+            set => _camera.transform.position = value;
+        }
+
+        public Plane[] CalculateFrustumPlanes(ICameraForUpdate camera)
+        {
+            return GeometryUtility.CalculateFrustumPlanes(_camera);
+        }
+    }
+
+    public class MockedFromGameObjectCameraForUpdate : ICameraForUpdate
+    {
+        private GameObject _go;
+
+        public MockedFromGameObjectCameraForUpdate(GameObject go)
+        {
+            _go = go;
+        }
+
+        public Vector3 Position
+        {
+            get => _go.transform.position;
+            set => _go.transform.position = value;
+        }
+        public Plane[] CalculateFrustumPlanes(ICameraForUpdate camera)
+        {
+            throw new NotImplementedException("This object only mocks camera from GameObject. Cannot calculate frustum planes.");
+        }
     }
 }
