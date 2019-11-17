@@ -34,9 +34,9 @@ namespace Assets.FinalExecution
 
             GUIStyle style = new GUIStyle();
 
-            Rect rect = new Rect(10, 10, w * 2, h * 4 / 40);
+            Rect rect = new Rect(10, 10, w * 2, h * 4 / 10f);
             style.alignment = TextAnchor.UpperLeft;
-            style.fontSize = h * 2 / 100;
+            style.fontSize = h * 6 / 100;
             style.normal.textColor = new Color(0.0f, 0.0f, 0.5f, 1.0f);
 
             float msec = _deltaTime * 1000.0f;
@@ -54,7 +54,7 @@ namespace Assets.FinalExecution
             int width = 500;
             int height = 10;
 
-            int currentHeight = 40;
+            int currentHeight = 60;
             foreach (var otService in ServicesProfileInfo.OtServicesProfileInfo)
             {
                 var color = Color.green;

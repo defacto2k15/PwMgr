@@ -37,9 +37,6 @@ namespace Assets.Scheduling
             //_logger.StartFrame();
         }
 
-
-        private float _freeTimeAmount = 0;
-
         public void Update()
         {
             if (!_configuration.SchedulingEnabled)
@@ -68,7 +65,6 @@ namespace Assets.Scheduling
             }
             else
             {
-
                 List<BaseUTService> newNeedyServices = null;
                 foreach (var service in _sleepingServices)
                 {
@@ -91,40 +87,34 @@ namespace Assets.Scheduling
                     }
                 }
 
-                if (_needyServices.Any())
+                //TODO take into account time taken in services before
+                var beforeFrameTime = (float) _stopwatches.FrameStopwatch.Elapsed.Milliseconds;
+                var freeTimeAmount = _configuration.InitialFreeTimePerFrame;
+                while (_needyServices.Any() &&  freeTimeAmount > 0)
                 {
-                    if (_freeTimeAmount > _configuration.FreeTimeAmountAllowingForUpdate )
+                    _stopwatches.ServiceStopwatch.Start();
+                    var service = _needyServices.Dequeue();
+                    service.Update();
+                    _stopwatches.ServiceStopwatch.Stop();
+
+                    if (service.HasWorkToDo())
                     {
-                        _stopwatches.ServiceStopwatch.Start();
-                        var service = _needyServices.Dequeue();
-                        service.Update();
-                        _stopwatches.ServiceStopwatch.Stop();
-
-                        if (service.HasWorkToDo())
-                        {
-                            _needyServices.Enqueue(service);
-                        }
-                        else
-                        {
-                            _sleepingServices.Add(service);
-                        }
-
-                        var timeUsed = (float) _stopwatches.ServiceStopwatch.Elapsed.TotalSeconds;
-                        _freeTimeAmount -= timeUsed * _configuration.FreeTimeSubtractingMultiplier;
-
-                        _stopwatches.ServiceStopwatch.Reset();
+                        _needyServices.Enqueue(service);
                     }
+                    else
+                    {
+                        _sleepingServices.Add(service);
+                    }
+
+                    var timeUsed = (float) _stopwatches.ServiceStopwatch.Elapsed.TotalSeconds;
+                    freeTimeAmount -= timeUsed * _configuration.FreeTimeSubtractingMultiplier;
+
+                    _stopwatches.ServiceStopwatch.Reset();
                 }
 
-                var frameTime = (float) _stopwatches.FrameStopwatch.Elapsed.TotalSeconds;
-                _freeTimeAmount += Mathf.Max(0.000001f, (_configuration.TargetFrameTime - frameTime));
-                _freeTimeAmount = Mathf.Min(_configuration.MaxFreeTime, _freeTimeAmount);
+                var frameTime = (float) _stopwatches.FrameStopwatch.Elapsed.Milliseconds;
+                Debug.Log($"Frame time {frameTime} Prev Updating: {beforeFrameTime} Serv time {frameTime-beforeFrameTime}");
 
-                //if (Time.frameCount == 1500)
-                //{
-                //    _logger.SetActive(false);
-                //    _logger.WriteToFile(@"C:\inz\profiling\frames.csv");
-                //}
             }
         }
 
@@ -145,7 +135,7 @@ namespace Assets.Scheduling
     {
         public double FreeTimeAmountAllowingForUpdate = 1 / 50f;
         public float TargetFrameTime = 1 / 30f;
-        public float MaxFreeTime = 1 / 30f;
+        public float InitialFreeTimePerFrame = 1 / 50f;
         public float FreeTimeSubtractingMultiplier = 1;
         public bool SchedulingEnabled = true;
     }

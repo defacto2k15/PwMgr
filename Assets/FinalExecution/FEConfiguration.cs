@@ -315,7 +315,7 @@ namespace Assets.FinalExecution
         {
             FreeTimeAmountAllowingForUpdate = 1 / 50f,
             TargetFrameTime = 1 / 30f,
-            MaxFreeTime = 1 / 30f,
+            InitialFreeTimePerFrame = 1 / 30f,
             FreeTimeSubtractingMultiplier = 1,
             SchedulingEnabled = true, 
         };
