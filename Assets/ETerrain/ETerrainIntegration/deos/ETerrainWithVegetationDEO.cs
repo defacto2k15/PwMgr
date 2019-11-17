@@ -107,13 +107,15 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             );
 
             initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
+
             EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
             var elevationBuffers = InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration
                 , _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager, perLevelTemplates);
 
-            var reloader = FindObjectOfType<BufferReloaderRootGO>();
             var commonUniforms = new UniformsPack();
             commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
+
+            var reloader = FindObjectOfType<BufferReloaderRootGO>();
             ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
             computeBuffersPack.SetBuffer("_EPropLocaleBuffer", elevationBuffers.EPropLocaleBuffer);
             computeBuffersPack.SetBuffer("_EPropIdsBuffer", elevationBuffers.EPropIdsBuffer);

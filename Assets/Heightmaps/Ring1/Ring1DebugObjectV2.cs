@@ -215,7 +215,7 @@ namespace Assets.Heightmaps.Ring1
             _updatableContainer.AddUpdatableElement(stamperProxy);
 
             Ring2PatchStamplingOverseerFinalizer patchStamper =
-                new Ring2PatchStamplingOverseerFinalizer(stamperProxy, textureRendererProxy);
+                new Ring2PatchStamplingOverseerFinalizer(stamperProxy, textureRendererProxy, commonExecutorUtProxy);
 
             var gStampedRing2NodeTerrainCreator = new GStampedRing2NodeTerrainCreator(
                 orderGrabber,

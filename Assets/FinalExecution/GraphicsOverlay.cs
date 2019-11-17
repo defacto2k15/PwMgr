@@ -54,8 +54,7 @@ namespace Assets.FinalExecution
             int width = 500;
             int height = 10;
 
-            int currentHeight = 10;
-            int currentHeight1 = currentHeight;
+            int currentHeight = 40;
             foreach (var otService in ServicesProfileInfo.OtServicesProfileInfo)
             {
                 var color = Color.green;
@@ -64,35 +63,26 @@ namespace Assets.FinalExecution
                     color = Color.magenta;
                 }
 
-                _cachedStringBuilder.Append(otService.Name).Append(" ");
-                for (int i = 0; i < otService.WorkQueueSize; i++)
-                {
-                    _cachedStringBuilder.Append("#");
-                }
+                _cachedStringBuilder.Append($"{otService.Name}  New:{otService.NewTaskCount} Continuing:{otService.ContinuingTasksCount} Blocked:{otService.BlockedTasksCount}");
 
                 GUIStyle style = new GUIStyle();
                 style.normal.textColor = color;
-                GUI.Label(new Rect(10, currentHeight1, width, height), _cachedStringBuilder.ToString(), style);
+                GUI.Label(new Rect(10, currentHeight, width, height), _cachedStringBuilder.ToString(), style);
 
-                currentHeight1 += height + 5;
+                currentHeight += height + 5;
                 _cachedStringBuilder.Length = 0;
             }
 
-            currentHeight = 0;
-            int currentHeight2 = currentHeight;
+            currentHeight = currentHeight+40;
             foreach (var utService in ServicesProfileInfo.UtServicesProfileInfo.OrderBy(c => c.Name))
             {
                 var color1 = Color.cyan;
-                _cachedStringBuilder.Append(utService.Name).Append(" ");
-                for (int i1 = 0; i1 < utService.WorkQueueSize; i1++)
-                {
-                    _cachedStringBuilder.Append("#");
-                }
+                _cachedStringBuilder.Append($"{utService.Name} Queue size: {utService.WorkQueueSize}");
 
                 GUIStyle style1 = new GUIStyle();
                 style1.normal.textColor = color1;
-                GUI.Label(new Rect(300, currentHeight2, width, height), _cachedStringBuilder.ToString(), style1);
-                currentHeight2 += height + 5;
+                GUI.Label(new Rect(10, currentHeight, width, height), _cachedStringBuilder.ToString(), style1);
+                currentHeight += height + 5;
                 _cachedStringBuilder.Length = 0;
             }
         }

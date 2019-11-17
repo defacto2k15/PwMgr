@@ -83,7 +83,7 @@ namespace Assets.ESurface
                     {
                         var inGamePosition = new MyRectangle(x*segmentLength, y*segmentLength, segmentLength, segmentLength);
                         var flatLod = new FlatLod(1, 0);
-                        var detailPack = _provider.ProvideSurfaceDetail(inGamePosition, flatLod);
+                        var detailPack = _provider.ProvideSurfaceDetailAsync(inGamePosition, flatLod).Result;
 
                         var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
                         //StandardMaterialUtils.SetMaterialRenderingModeToAlphablend(quad.GetComponent<MeshRenderer>().material);
@@ -108,7 +108,7 @@ namespace Assets.ESurface
                 MyRectangle inGamePosition = new MyRectangle(PatchArea.x, PatchArea.y, PatchArea.z - PatchArea.x, PatchArea.w - PatchArea.y);
                 var flatLod = new FlatLod(1, 0);
 
-                var detailPack = _provider.ProvideSurfaceDetail(inGamePosition, flatLod);
+                var detailPack = _provider.ProvideSurfaceDetailAsync(inGamePosition, flatLod).Result;
                 DummyPlate1.GetComponent<MeshRenderer>().material.mainTexture = detailPack.MainTexture;
                 //DummyPlate2.GetComponent<MeshRenderer>().material.SetTexture("_BumpMap", detailPack.NormalTexture);
 
@@ -185,11 +185,11 @@ namespace Assets.ESurface
             updatableContainer.Add(commonExecutorUtProxy);
 
             Ring2PatchStamplingOverseerFinalizer patchStamperOverseerFinalizer =
-                new Ring2PatchStamplingOverseerFinalizer(stamperProxy, textureRendererProxy);
+                new Ring2PatchStamplingOverseerFinalizer(stamperProxy, textureRendererProxy, commonExecutorUtProxy);
 
             MipmapExtractor mipmapExtractor = new MipmapExtractor(textureRendererProxy);
             var patchesCreatorProxy = new GRing2PatchesCreatorProxy(CreateRing2PatchesCreator(updatableContainer, intensityPatternPixelsPerUnit));
-            return new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
+            return new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, commonExecutorUtProxy, mipmapExtractor, mipmapLevelToExtract);
         }
 
         public static GRing2PatchesCreator CreateRing2PatchesCreator(UltraUpdatableContainer updatableContainer, Dictionary<int, float> intensityPatternPixelsPerUnit )

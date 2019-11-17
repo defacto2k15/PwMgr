@@ -154,7 +154,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
             var patchesCreatorProxy = gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
             var  patchStamperOverseerFinalizer= gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
-            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
+            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer,gameInitializationFields.Retrive<CommonExecutorUTProxy>(),
+                mipmapExtractor, mipmapLevelToExtract);
 
             var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
             var cachedSurfacePatchProvider =

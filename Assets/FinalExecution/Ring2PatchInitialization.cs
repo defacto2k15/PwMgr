@@ -9,6 +9,7 @@ using Assets.Ring2.PatchTemplateToPatch;
 using Assets.Ring2.RuntimeManagementOtherThread;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
 using Assets.Ring2.Stamping;
+using Assets.Utils.Services;
 using Assets.Utils.Textures;
 using Assets.Utils.UTUpdating;
 
@@ -62,7 +63,7 @@ namespace Assets.FinalExecution
 
             Ring2PatchStamplingOverseerFinalizer patchStamper = new Ring2PatchStamplingOverseerFinalizer(
                 stamperProxy,
-                _gameInitializationFields.Retrive<UTTextureRendererProxy>());
+                _gameInitializationFields.Retrive<UTTextureRendererProxy>(), _gameInitializationFields.Retrive<CommonExecutorUTProxy>());
             _gameInitializationFields.SetField(patchStamper);
         }
     }

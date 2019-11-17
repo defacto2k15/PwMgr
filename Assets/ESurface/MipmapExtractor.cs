@@ -1,4 +1,5 @@
-﻿using Assets.Heightmaps.Ring1.RenderingTex;
+﻿using System.Threading.Tasks;
+using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.ShaderUtils;
 using Assets.Utils;
@@ -17,7 +18,7 @@ namespace Assets.ESurface
             _textureRenderer = textureRenderer;
         }
 
-        public TextureWithSize ExtractMipmap(TextureWithSize inputTexture, RenderTextureFormat format, int mipmapLevelToExtract )
+        public async Task<TextureWithSize> ExtractMipmapAsync(TextureWithSize inputTexture, RenderTextureFormat format, int mipmapLevelToExtract )
         {
             var pack = new UniformsPack();
             pack.SetTexture("_InputTexture", inputTexture.Texture);
@@ -25,7 +26,7 @@ namespace Assets.ESurface
 
             var outSize = ComputeMipmappedOutSize(inputTexture.Size, mipmapLevelToExtract);
 
-            var newTexture = _textureRenderer.AddOrder(new TextureRenderingTemplate()
+            var newTexture = await _textureRenderer.AddOrder(new TextureRenderingTemplate()
             {
                 CanMultistep = true,
                 Coords = new MyRectangle(0, 0, 1, 1),
@@ -35,7 +36,7 @@ namespace Assets.ESurface
                 RenderTextureMipMaps = true,
                 ShaderName = "Custom/Tool/ExtractMipmap",
                 UniformPack = pack,
-            }).Result;
+            });
             return new TextureWithSize()
             {
                 Texture = newTexture,

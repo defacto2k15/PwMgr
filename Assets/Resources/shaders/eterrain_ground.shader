@@ -292,9 +292,9 @@
 
 			//Our Fragment Shader
 			fixed4 frag(v2f i) : Color{
-				if (i.shouldDiscard) {
-					discard;
-				}
+				//if (i.shouldDiscard) {
+				//	discard;
+				//}
 
 				float4 finalColor;
 				ETerrainParameters terrainParameters = init_ETerrainParametersFromUniforms();
@@ -331,7 +331,23 @@
 				//finalColor = float4(worldNormal, 1);
 
 				half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
-				finalColor = nl*finalColor;
+				//finalColor = nl*finalColor;
+
+
+				//TODO
+				//levelIndex;
+				//if (_MainPyramidLevelWorldSize <= 541) {
+				//	levelIndex = 0;
+				//}
+				//else if (_MainPyramidLevelWorldSize < 34550){
+				//	levelIndex = 1;
+				//}
+				//else {
+				//	levelIndex = 2;
+				//}
+				//levelAndRingIndexes.levelIndex = levelIndex;
+				//levelAndRingIndexes.ringIndex = 0;
+				//finalColor = calculateESurfaceColor(i.inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, 0);
 
 				return finalColor;
 			} 

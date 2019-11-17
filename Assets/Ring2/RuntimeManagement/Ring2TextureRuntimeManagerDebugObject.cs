@@ -105,7 +105,7 @@ namespace Assets.Ring2.RuntimeManagement
                         new MultistepTextureRenderer(ComputeShaderContainer), new TextureRendererServiceConfiguration()
                         {
                             StepSize = new Vector2(500, 500)
-                        })))
+                        })), new CommonExecutorUTProxy())
             );
 
             var overseerProxy = new Ring2PatchesOverseerProxy(patchesOverseer);

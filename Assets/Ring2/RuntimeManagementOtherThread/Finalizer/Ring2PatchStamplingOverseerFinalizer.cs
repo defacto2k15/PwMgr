@@ -25,15 +25,14 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
     {
         private UTRing2PlateStamperProxy _stamper;
         private UTTextureRendererProxy _textureRenderer;
+        private readonly CommonExecutorUTProxy _commonExecutor;
         private Repositioner _repositioner = Repositioner.Default; //todo
 
-        public Ring2PatchStamplingOverseerFinalizer(
-            UTRing2PlateStamperProxy stamper,
-            UTTextureRendererProxy textureRenderer)
-            
+        public Ring2PatchStamplingOverseerFinalizer( UTRing2PlateStamperProxy stamper, UTTextureRendererProxy textureRenderer, CommonExecutorUTProxy commonExecutor) 
         {
             _stamper = stamper;
             _textureRenderer = textureRenderer;
+            _commonExecutor = commonExecutor;
         }
 
         public async Task<List<Ring2PatchDevised>> FinalizePatchesCreation(List<Ring2PatchDevised> devisedPatches) //TODO REMOVE
@@ -98,10 +97,7 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
             }
 
             var fusedSlices = await FuseSliceStampsAsync(slicedTextures);
-            slicedTextures.ForEach(c =>
-            {
-                c.Destroy();
-            });
+            await _commonExecutor.AddAction(() => { slicedTextures.ForEach(c => { c.Destroy(); }); });
 
             return fusedSlices;
         }
@@ -154,11 +150,11 @@ namespace Assets.Ring2.RuntimeManagementOtherThread.Finalizer
 
                 var finalStamp = await SinglePassFuseSliceStampsAsync(new List<Ring2PlateStamp>() {firstStamp, secondStamp});// todo more optimal solution. We can merge not 2 but 5
 
-                firstStamp.Destroy();
+                await _commonExecutor.AddAction(() => firstStamp.Destroy());
                 bool shouldDestroySecondStamp = secondPassSlices.Count > 1; //we check if FuseSliceStampsAsync call will create new texture
                 if (shouldDestroySecondStamp)
                 {
-                    secondStamp.Destroy();
+                    await _commonExecutor.AddAction(() => secondStamp.Destroy());
                 }
 
                 return finalStamp;

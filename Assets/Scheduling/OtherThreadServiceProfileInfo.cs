@@ -9,6 +9,8 @@ namespace Assets.Scheduling
     {
         public string Name = "?";
         public bool IsWorking;
-        public int WorkQueueSize;
+        public int NewTaskCount;
+        public int BlockedTasksCount;
+        public int ContinuingTasksCount;
     }
 }

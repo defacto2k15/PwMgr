@@ -64,7 +64,8 @@ namespace Assets.ETerrain.ETerrainIntegration
             TaskUtils.SetGlobalMultithreading(configuration.Multithreading);
             return TaskUtils.ExecuteFunctionWithOverridenMultithreading(true, () =>
             {
-                GlobalServicesProfileInfo servicesProfileInfo = new GlobalServicesProfileInfo();
+                var servicesProfileInfo = new GlobalServicesProfileInfo();
+                gameInitializationFields.SetField(servicesProfileInfo);
                 var ultraUpdatableContainer = new UltraUpdatableContainer(
                     configuration.SchedulerConfiguration,
                     servicesProfileInfo,

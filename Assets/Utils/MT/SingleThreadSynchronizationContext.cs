@@ -13,7 +13,7 @@ namespace Assets.Utils.MT
     public class SingleThreadSynchronizationContext : SynchronizationContext
     {
         private readonly Queue<Action> _continuationsToProcess = new Queue<Action>();
-        private readonly Queue<Action> _messagesToProcess = new Queue<Action>();
+        private readonly Queue<Action> _newTasksToProcess = new Queue<Action>();
         private readonly object myLock = new object();
         private bool isRunning = true;
 
@@ -49,7 +49,7 @@ namespace Assets.Utils.MT
                 }
                 else
                 {
-                    _messagesToProcess.Enqueue(() => codeToRun(state));
+                    _newTasksToProcess.Enqueue(() => codeToRun(state));
                 }
                 SignalContinue();
             }
@@ -81,9 +81,9 @@ namespace Assets.Utils.MT
                 if (_continuationsToProcess.Any())
                 {
                     action = _continuationsToProcess.Dequeue();
-                }else if (_messagesToProcess.Any())
+                }else if (_newTasksToProcess.Any())
                 {
-                    action = _messagesToProcess.Dequeue();
+                    action = _newTasksToProcess.Dequeue();
                 }
                 else
                 {
@@ -99,7 +99,7 @@ namespace Assets.Utils.MT
         {
             lock (myLock)
             {
-                while (CanContinue() && _messagesToProcess.Count == 0 && _continuationsToProcess.Count == 0)
+                while (CanContinue() && _newTasksToProcess.Count == 0 && _continuationsToProcess.Count == 0)
                 {
                     _threadIsWorking = false;
                     Monitor.Wait(myLock);
@@ -116,7 +116,7 @@ namespace Assets.Utils.MT
                 }
                 else
                 {
-                    return _messagesToProcess.Dequeue();
+                    return _newTasksToProcess.Dequeue();
                 }
             }
         }
@@ -163,7 +163,9 @@ namespace Assets.Utils.MT
             return new OtherThreadServiceProfileInfo()
             {
                 IsWorking = _threadIsWorking,
-                WorkQueueSize = _nonCompletedTasks + _messagesToProcess.Count + addonToQueue
+                NewTaskCount = _newTasksToProcess.Count,
+                ContinuingTasksCount = _continuationsToProcess.Count,
+                BlockedTasksCount = _nonCompletedTasks - _continuationsToProcess.Count - addonToQueue
             };
         }
     }

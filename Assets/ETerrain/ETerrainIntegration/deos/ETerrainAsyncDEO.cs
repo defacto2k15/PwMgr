@@ -36,7 +36,9 @@ using UnityEngine;
 namespace Assets.ETerrain.ETerrainIntegration.deos
 {
     public class  ETerrainAsyncDEO : MonoBehaviour
-    { 
+    {
+        public GraphicsOverlay Overlay;
+        public bool Multithreading = false;
         public GameObject Traveller;
         public FinalVegetationConfiguration VegetationConfiguration;
 
@@ -56,18 +58,20 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             msw.StartSegment("Start");
             TaskUtils.ExecuteActionWithOverridenMultithreading(true, () =>
             {
-                _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = true};
+                _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = Multithreading};
                 _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
                 _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
                 _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
-                ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
+                var containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
                 VegetationConfiguration.FeConfiguration = _configuration;
 
                 _gameInitializationFields = new GameInitializationFields();
 
-                _ultraUpdatableContainer =
-                    ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields,
-                        initializeLegacyDesignBodySpotUpdater: false);
+                _ultraUpdatableContainer = ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields, initializeLegacyDesignBodySpotUpdater: false);
+                if (Overlay != null)
+                {
+                    Overlay.ServicesProfileInfo = _gameInitializationFields.Retrive<GlobalServicesProfileInfo>();
+                }
 
                 var startConfiguration = ETerrainHeightPyramidFacadeStartConfiguration.DefaultConfiguration;
                 startConfiguration.GenerateInitialSegmentsDuringStart = false;
@@ -75,8 +79,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1 / 6.0f;
                 startConfiguration.InitialTravellerPosition = new Vector2(440, 100) + new Vector2(90f * 8, 90f * 4);
                 //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
-                startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>()
-                    {HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
+                startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() {HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
 
                 var buffersManager = new ETerrainHeightBuffersManager();
                 _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,
@@ -199,6 +202,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         {
             var repositioner = gameInitializationFields.Retrive<Repositioner>();
             var surfaceTextureFormat = RenderTextureFormat.ARGB32;
+            var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
 
             var feRing2PatchConfiguration = new FeRing2PatchConfiguration(configuration);
             feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
@@ -227,9 +231,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
             var patchesCreatorProxy = gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
             var patchStamperOverseerFinalizer = gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
-            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, mipmapExtractor, mipmapLevelToExtract);
+            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, commonExecutor,
+                mipmapExtractor, mipmapLevelToExtract);
 
-            var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
             var cachedSurfacePatchProvider =
                 new CachedESurfacePatchProvider(surfacePatchProvider
                     , new InMemoryAssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>(

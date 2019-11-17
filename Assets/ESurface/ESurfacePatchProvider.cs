@@ -1,9 +1,11 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Assets.Heightmaps.GRing;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Ring2.GRuntimeManagementOtherThread;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
 using Assets.Utils;
+using Assets.Utils.Services;
 using Assets.Utils.Textures;
 using UnityEngine;
 
@@ -13,19 +15,23 @@ namespace Assets.ESurface
     {
         private GRing2PatchesCreatorProxy _patchesCreator;
         private Ring2PatchStamplingOverseerFinalizer _patchStamper;
+        private readonly CommonExecutorUTProxy _commonExecutor;
         private MipmapExtractor _mipmapExtractor;
         private readonly int _mipmapLevelToExtract;
 
-        public ESurfacePatchProvider(GRing2PatchesCreatorProxy patchesCreator, Ring2PatchStamplingOverseerFinalizer patchStamper, MipmapExtractor mipmapExtractor, int mipmapLevelToExtract)
+        public ESurfacePatchProvider(GRing2PatchesCreatorProxy patchesCreator, Ring2PatchStamplingOverseerFinalizer patchStamper, CommonExecutorUTProxy commonExecutor,
+            MipmapExtractor mipmapExtractor, int mipmapLevelToExtract)
         {
             _patchesCreator = patchesCreator;
             _patchStamper = patchStamper;
+            _commonExecutor = commonExecutor;
             _mipmapExtractor = mipmapExtractor;
             _mipmapLevelToExtract = mipmapLevelToExtract;
         }
 
-        public ESurfaceTexturesPack ProvideSurfaceDetail(MyRectangle inGamePosition, FlatLod flatLod)
+        public async Task<ESurfaceTexturesPack> ProvideSurfaceDetailAsync(MyRectangle inGamePosition, FlatLod flatLod)
         {
+            Debug.Log("ProvideSurfaceDetailAsync 1");
             var devisedPatches = _patchesCreator.CreatePatchAsync(inGamePosition.ToRectangle(), flatLod.ScalarValue).Result;
             Preconditions.Assert(devisedPatches.Count <= 1,
                 $"More than one patches created: {devisedPatches.Count}, rect is {inGamePosition}");
@@ -33,26 +39,31 @@ namespace Assets.ESurface
             {
                 return null;
             }
+            Debug.Log("ProvideSurfaceDetailAsync 2");
 
             Preconditions.Assert(devisedPatches.Count==1, "There are more than one devised patch. Exacly "+devisedPatches.Count);
             var onlyPatch = devisedPatches.First();
-            var stampedSlice = _patchStamper.FinalizeGPatchCreation(onlyPatch, flatLod.ScalarValue).Result;
-            onlyPatch.Destroy();
+            var stampedSlice = await _patchStamper.FinalizeGPatchCreation(onlyPatch, flatLod.ScalarValue);
+            await _commonExecutor.AddAction(() => { onlyPatch.Destroy(); });
+            Debug.Log("ProvideSurfaceDetailAsync 3");
             if (stampedSlice != null)
             {
                 if (_mipmapLevelToExtract != 0)
                 {
-                    var mipMappedMainTexture = _mipmapExtractor.ExtractMipmap(new TextureWithSize()
+            Debug.Log("ProvideSurfaceDetailAsync 4");
+                    var mipMappedMainTexture = await _mipmapExtractor.ExtractMipmapAsync(new TextureWithSize()
                     {
                         Size = stampedSlice.Resolution,
                         Texture = stampedSlice.ColorStamp
                     }, RenderTextureFormat.ARGB32, _mipmapLevelToExtract);
-                    var mipMappedNormalTexture = _mipmapExtractor.ExtractMipmap(new TextureWithSize()
+                    var mipMappedNormalTexture = await _mipmapExtractor.ExtractMipmapAsync(new TextureWithSize()
                     {
                         Size = stampedSlice.Resolution,
                         Texture = stampedSlice.NormalStamp
                     }, RenderTextureFormat.ARGB32, _mipmapLevelToExtract);
-                    stampedSlice.Destroy();
+            Debug.Log("ProvideSurfaceDetailAsync 5");
+                    await _commonExecutor.AddAction(() => {stampedSlice.Destroy(); });
+            Debug.Log("ProvideSurfaceDetailAsync 6");
 
                     return new ESurfaceTexturesPack()
                     {
