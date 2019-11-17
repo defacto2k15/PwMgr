@@ -164,7 +164,7 @@ namespace Assets.ETerrain.Pyramid.Shape
                 if (shapeTemplate.RingIndex == 0) //center
                 {
                     var centerMesh = _meshGenerator.AddOrder(() =>
-                            PlaneGenerator.CreateETerrainSegmentMesh(_configuration.CenterObjectMeshVertexLength.X, _configuration.CenterObjectMeshVertexLength.Y)) .Result; //todo
+                            PlaneGenerator.CreateETerrainSegmentMesh(_configuration.CenterObjectMeshVertexLength.X, _configuration.CenterObjectMeshVertexLength.Y)).Result; //todo
                     MeshGenerationUtils.SetYBoundsToInfinity(centerMesh);
                     centerObject = CreateShapeObject(centerMesh, ringTemplate, shapeTemplate, "Center");
 

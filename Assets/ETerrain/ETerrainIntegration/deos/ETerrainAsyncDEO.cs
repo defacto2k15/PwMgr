@@ -54,7 +54,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         {
             var msw = new MyStopWatch();
             msw.StartSegment("Start");
-            _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = false};
+            _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = true};
             _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
             _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
             _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
@@ -67,6 +67,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields,initializeLegacyDesignBodySpotUpdater:false);
 
             var startConfiguration = ETerrainHeightPyramidFacadeStartConfiguration.DefaultConfiguration;
+            startConfiguration.GenerateInitialSegmentsDuringStart = false;
             startConfiguration.CommonConfiguration.YScale = _gameInitializationFields.Retrive<HeightDenormalizer>().DenormalizationMultiplier;
             startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/6.0f;
             startConfiguration.InitialTravellerPosition = new Vector2(440, 100) + new Vector2(90f*8, 90f*4);
@@ -88,25 +89,24 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             }),startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
 
-            var repositioner = Repositioner.Default;
             var dbInitialization =
                 new FETerrainShapeDbInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, new FilePathsConfiguration());
+            TaskUtils.SetMultithreadingOverride(true);
             dbInitialization.Start();
             
             var initializingHelper = new FEInitializingHelper(_gameInitializationFields,_ultraUpdatableContainer,_configuration);
             initializingHelper.InitializeGlobalInstancingContainer();
 
-            var dbProxy = _gameInitializationFields.Retrive<TerrainShapeDbProxy>();
-
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                 {
                     [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-                        startConfiguration, dbProxy, repositioner, _gameInitializationFields.Retrive<UTTextureRendererProxy>()),
+                        startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
                     [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
-                        _configuration,startConfiguration,_gameInitializationFields,_ultraUpdatableContainer,repositioner )
+                        _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                 }
             );
+            TaskUtils.SetMultithreadingOverride(false);
 
             initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
             Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
@@ -125,17 +125,21 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var travellerFlatPosition = new Vector2(position3D.x, position3D.z);
 
              _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
-            if (!_wasFirstUpdateDone)
-            {
-                Debug.Log("FIRST UPDATE RESULT " + msw.CollectResults());
-                _wasFirstUpdateDone = true;
-            }
+             int after = 22;
+             //if (!_wasFirstUpdateDone)
+             //{
+             //    Debug.Log("FIRST UPDATE RESULT " + msw.CollectResults());
+             //    _wasFirstUpdateDone = true;
+             //}
         }
 
         public static OneGroundTypeLevelTextureEntitiesGenerator GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-            ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, TerrainShapeDbProxy dbProxy, Repositioner repositioner,
-            UTTextureRendererProxy textureRendererProxy, bool modifyCorners = true)
+            ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields initializationFields, UltraUpdatableContainer updatableContainer, bool modifyCorners = true)
         {
+            var textureRendererProxy = initializationFields.Retrive<UTTextureRendererProxy>();
+            var dbProxy = initializationFields.Retrive<TerrainShapeDbProxy>();
+            var repositioner = initializationFields.Retrive<Repositioner>();
+
             return new OneGroundTypeLevelTextureEntitiesGenerator
             {
                 GeneratorFunc = (level) =>
@@ -174,6 +178,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                 await segmentModificationManager.AddSegmentAsync(segmentTexture, segmentAlignedPosition);
                             }
                         ));
+                    updatableContainer.AddOtherThreadProxy(otherThreadExecutor);
 
                     return new SegmentFillingListenerWithCeilTexture()
                     {
@@ -186,8 +191,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public static OneGroundTypeLevelTextureEntitiesGenerator GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
             FEConfiguration configuration, ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields gameInitializationFields
-            , UltraUpdatableContainer ultraUpdatableContainer, Repositioner repositioner)
+            , UltraUpdatableContainer ultraUpdatableContainer)
         {
+            var repositioner = gameInitializationFields.Retrive<Repositioner>();
             var surfaceTextureFormat = RenderTextureFormat.ARGB32;
 
             var feRing2PatchConfiguration = new FeRing2PatchConfiguration(configuration);
@@ -234,6 +240,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                             , new ESurfaceTexturesPackFileManager(commonExecutor, configuration.FilePathsConfiguration.SurfacePatchCachePath))));
             cachedSurfacePatchProvider.Initialize().Wait();
 
+            var cachedSurfacePatchDbProxy = new ESurfacePatchDbProxy(cachedSurfacePatchProvider);
+            ultraUpdatableContainer.AddOtherThreadProxy(cachedSurfacePatchDbProxy);
+
             var textureRendererProxy = gameInitializationFields.Retrive<UTTextureRendererProxy>();
 
             return new OneGroundTypeLevelTextureEntitiesGenerator()
@@ -253,15 +262,16 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                             var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
                                 startConfiguration.PerLevelConfigurations[level], segmentAlignedPosition);
                             var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
-                            var packAndToken = await cachedSurfacePatchProvider.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle), lod);
+                            var packAndToken = await cachedSurfacePatchDbProxy.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle), lod);
                             var pack = packAndToken.Pack;
                             if (pack != null)
                             {
                                 var mainTexture = pack.MainTexture;
                                 await segmentModificationManager.AddSegmentAsync(mainTexture, segmentAlignedPosition);
-                                await cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
+                                cachedSurfacePatchDbProxy.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
                             }
                         }));
+                    ultraUpdatableContainer.AddOtherThreadProxy(otherThreadExecutor);
                     return new SegmentFillingListenerWithCeilTexture()
                     {
                         CeilTexture = ceilTexture,

@@ -152,7 +152,10 @@ namespace Assets.ETerrain.ETerrainIntegration
                     }
                 }
             });
-            _fillingInitializationBox.Update(); // REMOVE IF WANT TO INITIALIZE SEGMENTS @ UPDATE
+            if (_startConfiguration.GenerateInitialSegmentsDuringStart)
+            {
+                _fillingInitializationBox.Update(); 
+            }
 
             _pyramidCommonEntites = new HeightPyramidCommonEntites()
             {

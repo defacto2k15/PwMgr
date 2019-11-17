@@ -133,6 +133,12 @@ namespace Assets.Utils.MT
             }
         }
 
+        public Task<TReturn> GenericPostAction<TReturn>(Func<Task<TReturn>> action)
+        {
+            var tcs = new TaskCompletionSource<TReturn>();
+            PostAction(async () => tcs.SetResult(await action()));
+            return tcs.Task;
+        } 
 
         public void PostPureAsyncAction(Func<Task> taskedAction, [CallerMemberName] string memberName = "")
         {

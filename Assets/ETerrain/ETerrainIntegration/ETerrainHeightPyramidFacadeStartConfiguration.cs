@@ -12,6 +12,7 @@ namespace Assets.ETerrain.ETerrainIntegration
 {
     public class ETerrainHeightPyramidFacadeStartConfiguration
     {
+        public bool GenerateInitialSegmentsDuringStart = true;
         public Vector2 InitialTravellerPosition;
         public List<HeightPyramidLevel> HeightPyramidLevels; 
         public HeightPyramidCommonConfiguration CommonConfiguration;
