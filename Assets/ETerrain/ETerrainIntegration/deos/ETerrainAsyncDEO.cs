@@ -54,62 +54,66 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         {
             var msw = new MyStopWatch();
             msw.StartSegment("Start");
-            _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = true};
-            _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
-            _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
-            _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
-            ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
-            VegetationConfiguration.FeConfiguration = _configuration;
-
-            _gameInitializationFields = new GameInitializationFields();
-
-            _ultraUpdatableContainer =
-                ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields,initializeLegacyDesignBodySpotUpdater:false);
-
-            var startConfiguration = ETerrainHeightPyramidFacadeStartConfiguration.DefaultConfiguration;
-            startConfiguration.GenerateInitialSegmentsDuringStart = false;
-            startConfiguration.CommonConfiguration.YScale = _gameInitializationFields.Retrive<HeightDenormalizer>().DenormalizationMultiplier;
-            startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1/6.0f;
-            startConfiguration.InitialTravellerPosition = new Vector2(440, 100) + new Vector2(90f*8, 90f*4);
-            //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
-            startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() { HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
-
-            var buffersManager = new ETerrainHeightBuffersManager();
-            _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,
-                _gameInitializationFields.Retrive<MeshGeneratorUTProxy>(),
-                _gameInitializationFields.Retrive<UTTextureRendererProxy>(), startConfiguration);
-
-            var perLevelTemplates = _eTerrainHeightPyramidFacade.GenerateLevelTemplates();
-            var levels = startConfiguration.PerLevelConfigurations.Keys.Where(c=> startConfiguration.HeightPyramidLevels.Contains(c));
-            buffersManager.InitializeBuffers(levels.ToDictionary(c => c, c => new EPyramidShaderBuffersGeneratorPerRingInput()
+            TaskUtils.ExecuteActionWithOverridenMultithreading(true, () =>
             {
-                CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X,  //TODO i use only X, - works only for squares
-                HeightMergeRanges = perLevelTemplates[c].LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
-                PyramidLevelWorldSize = startConfiguration.PerLevelConfigurations[c].PyramidLevelWorldSize.Width,  // TODO works only for square pyramids - i use width
-                RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
-            }),startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
+                _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = true};
+                _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
+                _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
+                _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
+                ComputeShaderContainerGameObject containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
+                VegetationConfiguration.FeConfiguration = _configuration;
 
-            var dbInitialization =
-                new FETerrainShapeDbInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, new FilePathsConfiguration());
-            TaskUtils.SetMultithreadingOverride(true);
-            dbInitialization.Start();
-            
-            var initializingHelper = new FEInitializingHelper(_gameInitializationFields,_ultraUpdatableContainer,_configuration);
-            initializingHelper.InitializeGlobalInstancingContainer();
+                _gameInitializationFields = new GameInitializationFields();
 
-            _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
-                new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
+                _ultraUpdatableContainer =
+                    ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields,
+                        initializeLegacyDesignBodySpotUpdater: false);
+
+                var startConfiguration = ETerrainHeightPyramidFacadeStartConfiguration.DefaultConfiguration;
+                startConfiguration.GenerateInitialSegmentsDuringStart = false;
+                startConfiguration.CommonConfiguration.YScale = _gameInitializationFields.Retrive<HeightDenormalizer>().DenormalizationMultiplier;
+                startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1 / 6.0f;
+                startConfiguration.InitialTravellerPosition = new Vector2(440, 100) + new Vector2(90f * 8, 90f * 4);
+                //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
+                startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>()
+                    {HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
+
+                var buffersManager = new ETerrainHeightBuffersManager();
+                _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,
+                    _gameInitializationFields.Retrive<MeshGeneratorUTProxy>(),
+                    _gameInitializationFields.Retrive<UTTextureRendererProxy>(), startConfiguration);
+
+                var perLevelTemplates = _eTerrainHeightPyramidFacade.GenerateLevelTemplates();
+                var levels = startConfiguration.PerLevelConfigurations.Keys.Where(c => startConfiguration.HeightPyramidLevels.Contains(c));
+                buffersManager.InitializeBuffers(levels.ToDictionary(c => c, c => new EPyramidShaderBuffersGeneratorPerRingInput()
                 {
-                    [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-                        startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
-                    [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
-                        _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
-                }
-            );
-            TaskUtils.SetMultithreadingOverride(false);
+                    CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X, //TODO i use only X, - works only for squares
+                    HeightMergeRanges = perLevelTemplates[c].LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
+                    PyramidLevelWorldSize =
+                        startConfiguration.PerLevelConfigurations[c].PyramidLevelWorldSize.Width, // TODO works only for square pyramids - i use width
+                    RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
+                }), startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
 
-            initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
-            Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
+                var dbInitialization =
+                    new FETerrainShapeDbInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, new FilePathsConfiguration());
+                dbInitialization.Start();
+
+                var initializingHelper = new FEInitializingHelper(_gameInitializationFields, _ultraUpdatableContainer, _configuration);
+                initializingHelper.InitializeGlobalInstancingContainer();
+
+                _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
+                    new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
+                    {
+                        [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
+                            startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
+                        [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+                            _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
+                    }
+                );
+                initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
+                Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
+            });
+
             Debug.Log("Init time "+msw.CollectResults());
         }
 

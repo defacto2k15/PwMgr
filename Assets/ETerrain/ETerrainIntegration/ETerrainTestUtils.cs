@@ -62,51 +62,51 @@ namespace Assets.ETerrain.ETerrainIntegration
             , bool initializeLegacyDesignBodySpotUpdater = false)
         {
             TaskUtils.SetGlobalMultithreading(configuration.Multithreading);
-            TaskUtils.SetMultithreadingOverride(true);
-
-            GlobalServicesProfileInfo servicesProfileInfo = new GlobalServicesProfileInfo();
-            var ultraUpdatableContainer = new UltraUpdatableContainer(
-                configuration.SchedulerConfiguration,
-                servicesProfileInfo,
-                configuration.UpdatableContainerConfiguration);
-
-            configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
-
-            gameInitializationFields.SetField(containerGameObject);
-            gameInitializationFields.SetField(configuration.Repositioner);
-            gameInitializationFields.SetField(configuration.HeightDenormalizer);
-
-            var initializingHelper =
-                new FEInitializingHelper(gameInitializationFields, ultraUpdatableContainer, configuration);
-            initializingHelper.InitializeUTService(new TextureConcieverUTProxy());
-            initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
-            initializingHelper.InitializeUTService(new CommonExecutorUTProxy());
-            initializingHelper.CreatePathProximityTextureDb();
-
-            if (initializeLegacyDesignBodySpotUpdater)
+            return TaskUtils.ExecuteFunctionWithOverridenMultithreading(true, () =>
             {
-                initializingHelper.InitializeDesignBodySpotUpdater();
-            }
+                GlobalServicesProfileInfo servicesProfileInfo = new GlobalServicesProfileInfo();
+                var ultraUpdatableContainer = new UltraUpdatableContainer(
+                    configuration.SchedulerConfiguration,
+                    servicesProfileInfo,
+                    configuration.UpdatableContainerConfiguration);
 
-            initializingHelper.InitializeUTRendererProxy();
-            initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
-            if (ring2RegionsDatabasesConfiguration != null)
-            {
-                initializingHelper.InitializeComplexRing2RegionsDatabase(ring2RegionsDatabasesConfiguration);
-            }
-            else
-            {
-                initializingHelper.InitializeMonoliticRing2RegionsDatabase();
-            }
+                configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
 
-            //var finalTerrainInitialization = new FinalTerrainInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, FeGRingConfiguration);
-            //finalTerrainInitialization.Start();
+                gameInitializationFields.SetField(containerGameObject);
+                gameInitializationFields.SetField(configuration.Repositioner);
+                gameInitializationFields.SetField(configuration.HeightDenormalizer);
 
-            initializingHelper.InitializeGlobalInstancingContainer();
-            //var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration);
-            //finalVegetation.Start();
-            TaskUtils.SetMultithreadingOverride(false);
-            return ultraUpdatableContainer;
+                var initializingHelper =
+                    new FEInitializingHelper(gameInitializationFields, ultraUpdatableContainer, configuration);
+                initializingHelper.InitializeUTService(new TextureConcieverUTProxy());
+                initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
+                initializingHelper.InitializeUTService(new CommonExecutorUTProxy());
+                initializingHelper.CreatePathProximityTextureDb();
+
+                if (initializeLegacyDesignBodySpotUpdater)
+                {
+                    initializingHelper.InitializeDesignBodySpotUpdater();
+                }
+
+                initializingHelper.InitializeUTRendererProxy();
+                initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
+                if (ring2RegionsDatabasesConfiguration != null)
+                {
+                    initializingHelper.InitializeComplexRing2RegionsDatabase(ring2RegionsDatabasesConfiguration);
+                }
+                else
+                {
+                    initializingHelper.InitializeMonoliticRing2RegionsDatabase();
+                }
+
+                //var finalTerrainInitialization = new FinalTerrainInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, FeGRingConfiguration);
+                //finalTerrainInitialization.Start();
+
+                initializingHelper.InitializeGlobalInstancingContainer();
+                //var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration);
+                //finalVegetation.Start();
+                return ultraUpdatableContainer;
+            });
         }
     }
 }

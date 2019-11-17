@@ -46,52 +46,54 @@ namespace Assets.FinalExecution
             VegetationConfiguration.FeConfiguration = _configuration;
 
             TaskUtils.SetGlobalMultithreading(_configuration.Multithreading);
-            TaskUtils.SetMultithreadingOverride(true);
-            MyProfiler.BeginSample("Sample1");
-            msw.StartSegment("Game initialization");
-
-            GlobalServicesProfileInfo servicesProfileInfo = new GlobalServicesProfileInfo();
-            if (GraphicsOverlay != null)
+            TaskUtils.ExecuteActionWithOverridenMultithreading(true, () =>
             {
-                GraphicsOverlay.ServicesProfileInfo = servicesProfileInfo;
-            }
+                MyProfiler.BeginSample("Sample1");
+                msw.StartSegment("Game initialization");
 
-            _ultraUpdatableContainer = new UltraUpdatableContainer(
-                _configuration.SchedulerConfiguration,
-                servicesProfileInfo, 
-                _configuration.UpdatableContainerConfiguration);
+                GlobalServicesProfileInfo servicesProfileInfo = new GlobalServicesProfileInfo();
+                if (GraphicsOverlay != null)
+                {
+                    GraphicsOverlay.ServicesProfileInfo = servicesProfileInfo;
+                }
 
-            _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
+                _ultraUpdatableContainer = new UltraUpdatableContainer(
+                    _configuration.SchedulerConfiguration,
+                    servicesProfileInfo,
+                    _configuration.UpdatableContainerConfiguration);
 
-            _gameInitializationFields.SetField(ContainerGameObject);
-            _gameInitializationFields.SetField(_configuration.Repositioner);
-            _gameInitializationFields.SetField(_configuration.HeightDenormalizer);
+                _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
 
-            var initializingHelper =
-                new FEInitializingHelper(_gameInitializationFields, _ultraUpdatableContainer, _configuration);
-            initializingHelper.InitializeUTService(new TextureConcieverUTProxy());
-            initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
-            initializingHelper.InitializeUTService(new CommonExecutorUTProxy());
-            initializingHelper.CreatePathProximityTextureDb();
+                _gameInitializationFields.SetField(ContainerGameObject);
+                _gameInitializationFields.SetField(_configuration.Repositioner);
+                _gameInitializationFields.SetField(_configuration.HeightDenormalizer);
 
-            SetInitialCameraPosition();
+                var initializingHelper =
+                    new FEInitializingHelper(_gameInitializationFields, _ultraUpdatableContainer, _configuration);
+                initializingHelper.InitializeUTService(new TextureConcieverUTProxy());
+                initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
+                initializingHelper.InitializeUTService(new CommonExecutorUTProxy());
+                initializingHelper.CreatePathProximityTextureDb();
 
-            initializingHelper.InitializeDesignBodySpotUpdater();
-            initializingHelper.InitializeUTRendererProxy();
-            initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
-            initializingHelper.InitializeMonoliticRing2RegionsDatabase();
+                SetInitialCameraPosition();
 
-            var finalSurfacePathInitialization =
-                new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, new FeRing2PatchConfiguration(_configuration));
-            finalSurfacePathInitialization.Start();
+                initializingHelper.InitializeDesignBodySpotUpdater();
+                initializingHelper.InitializeUTRendererProxy();
+                initializingHelper.InitializeUTService(new MeshGeneratorUTProxy(new MeshGeneratorService()));
+                initializingHelper.InitializeMonoliticRing2RegionsDatabase();
 
-            var finalTerrainInitialization = new FinalTerrainInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, FeGRingConfiguration);
-            finalTerrainInitialization.Start();
+                var finalSurfacePathInitialization =
+                    new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, new FeRing2PatchConfiguration(_configuration));
+                finalSurfacePathInitialization.Start();
 
-            initializingHelper.InitializeGlobalInstancingContainer();
-            var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration);
-            finalVegetation.Start();
-            TaskUtils.SetMultithreadingOverride(false);
+                var finalTerrainInitialization =
+                    new FinalTerrainInitialization(_ultraUpdatableContainer, _gameInitializationFields, _configuration, FeGRingConfiguration);
+                finalTerrainInitialization.Start();
+
+                initializingHelper.InitializeGlobalInstancingContainer();
+                var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration);
+                finalVegetation.Start();
+            });
 
             MyProfiler.EndSample();
         }

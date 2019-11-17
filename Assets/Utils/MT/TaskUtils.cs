@@ -38,13 +38,29 @@ namespace Assets.Utils.MT
             return _multithreadingOverride;
         }
 
+        public static void ExecuteActionWithOverridenMultithreading(bool overrideValue, Action action)
+        {
+            var original = GetMultithreadingOverride();
+            SetMultithreadingOverride(overrideValue);
+            action();
+            SetMultithreadingOverride(original);
+        }
+
+        public static T ExecuteFunctionWithOverridenMultithreading<T>(bool overrideValue,  Func<T> function)
+        {
+            var original = GetMultithreadingOverride();
+            SetMultithreadingOverride(overrideValue);
+            var outValue = function();
+            SetMultithreadingOverride(original);
+            return outValue;
+        }
+
         public static Task<T> MyFromResult<T>(T elem)
         {
             var tcs = new TaskCompletionSource<T>();
             tcs.SetResult(elem);
             return tcs.Task;
         }
-
 
         public static Task MyFromResultGenetic()
         {
@@ -216,6 +232,5 @@ namespace Assets.Utils.MT
                 task.Wait();
             }
         }
-
     }
 }
