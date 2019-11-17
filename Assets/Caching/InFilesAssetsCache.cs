@@ -31,7 +31,7 @@ namespace Assets.Caching
             return _filesOnDisk.Contains(query.ProvideFilename());
         }
 
-        public Task<TAsset> TryRetrive(TQuery query)
+        public Task<TAsset> TryRetriveAsync(TQuery query)
         {
             var filename = query.ProvideFilename();
             if (!_filesOnDisk.Contains(filename))
@@ -42,7 +42,7 @@ namespace Assets.Caching
             return _fileManager.RetriveAssetAsync(filename, query);
         }
 
-        public async Task<bool> AddAsset( TQuery query, TAsset asset)
+        public async Task<bool> AddAssetAsync( TQuery query, TAsset asset)
         {
             var filename = query.ProvideFilename();
             Preconditions.Assert(!_filesOnDisk.Contains(filename), "There is arleady file "+filename+" listed in cache");

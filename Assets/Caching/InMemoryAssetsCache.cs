@@ -51,7 +51,7 @@ namespace Assets.Caching
             if (elementUnderCreation != null)
             {
                 await elementUnderCreation.Semaphore.Await();
-                var detailElementAfterWaiting = _level2Cache.TryRetrive(query);
+                var detailElementAfterWaiting = _level2Cache.TryRetriveAsync(query);
                 Preconditions.Assert(detailElementAfterWaiting!= null, "Impossible. Even after waiting, still no queryOutput");
 
                 var elementAfterWaiting = await detailElementAfterWaiting;
@@ -63,7 +63,7 @@ namespace Assets.Caching
                 };
             }
 
-            var  detailElement = _level2Cache.TryRetrive(query);
+            var  detailElement = _level2Cache.TryRetriveAsync(query);
             if ( detailElement != null)
             {
                 var awaitedElement = await  detailElement;
@@ -96,7 +96,7 @@ namespace Assets.Caching
 
         public async Task<bool> AddAssetAsync(int creationObligationToken, TQuery query, TAsset asset)
         {
-            var wasAddedToCache = await _level2Cache.AddAsset( query, asset); 
+            var wasAddedToCache = await _level2Cache.AddAssetAsync( query, asset); 
 
             // TODO different behaviour should be done if element was not added to cache( cache was full)
             var semaphore = _creationObligationDictionary[creationObligationToken];
@@ -121,7 +121,7 @@ namespace Assets.Caching
 
     public interface MemoryCachableAssetsActionsPerformer<TEntity>
     {
-        int CalculateMemoryUsage(TEntity entity);
+        Task<int> CalculateMemoryUsage(TEntity entity);
         Task DestroyAsset(TEntity entity);
     }
 
@@ -134,9 +134,9 @@ namespace Assets.Caching
             _commonExecutor = commonExecutor;
         }
 
-        public int CalculateMemoryUsage(TextureWithSize tex)
+        public Task<int> CalculateMemoryUsage(TextureWithSize tex)
         {
-            return tex.Size.X * tex.Size.Y * 4;
+            return TaskUtils.MyFromResult(tex.Size.X * tex.Size.Y * 4);
         }
 
         public Task DestroyAsset(TextureWithSize entity)
@@ -157,8 +157,8 @@ namespace Assets.Caching
     {
         Task InitializeAsync();
         bool IsInCache(TQuery query);
-        Task<TAsset> TryRetrive(TQuery queryArea);
-        Task<bool> AddAsset( TQuery query, TAsset asset);
+        Task<TAsset> TryRetriveAsync(TQuery queryArea);
+        Task<bool> AddAssetAsync( TQuery query, TAsset asset);
         Task RemoveAssetElementAsync(TQuery queryArea);
     }
 
@@ -186,18 +186,18 @@ namespace Assets.Caching
             return _inFilesCache.IsInCache(query) || _inMemoryCache.IsInCache(query);
         }
 
-        public async Task<TAsset> TryRetrive(TQuery queryArea)
+        public async Task<TAsset> TryRetriveAsync(TQuery queryArea)
         {
             if (_inMemoryCache.IsInCache(queryArea))
             {
-                return await _inMemoryCache.TryRetrive(queryArea);
+                return await _inMemoryCache.TryRetriveAsync(queryArea);
             }
             else
             {
                 if (_inFilesCache.IsInCache(queryArea))
                 {
-                    var found = await _inFilesCache.TryRetrive(queryArea);
-                    await _inMemoryCache.AddAsset(queryArea, found);
+                    var found = await _inFilesCache.TryRetriveAsync(queryArea);
+                    await _inMemoryCache.AddAssetAsync(queryArea, found);
                     return found;
                 }
             }
@@ -205,12 +205,12 @@ namespace Assets.Caching
             return null;
         }
 
-        public async Task<bool> AddAsset( TQuery query,  TAsset asset)
+        public async Task<bool> AddAssetAsync( TQuery query,  TAsset asset)
         {
-            var addedToMemoryCache = await _inMemoryCache.AddAsset(query, asset);
+            var addedToMemoryCache = await _inMemoryCache.AddAssetAsync(query, asset);
             if (!_inFilesCache.IsInCache(query) && _saveToFiles)
             {
-                await _inFilesCache.AddAsset(query, asset);
+                await _inFilesCache.AddAssetAsync(query, asset);
             }
 
             return addedToMemoryCache;
@@ -249,7 +249,7 @@ namespace Assets.Caching
             return TryRetriveAssetFromTree(query) != null;
         }
 
-        public Task<TAsset> TryRetrive(TQuery queryArea)
+        public Task<TAsset> TryRetriveAsync(TQuery queryArea)
         {
             LogUsedMemory();
             ReferenceCountedAsset foundElement = null;
@@ -304,7 +304,7 @@ namespace Assets.Caching
         }
 
 
-        public async Task<bool> AddAsset(TQuery query, TAsset asset)
+        public async Task<bool> AddAssetAsync(TQuery query, TAsset asset)
         {
             LogUsedMemory();
             var activeTreeElement = TryRetriveAssetFromTree(query);
@@ -317,9 +317,9 @@ namespace Assets.Caching
                 ReferenceCount = 1
             };
             await ClearNonReferencedElements();
-            if (ThereIsPlaceForNewAsset(asset))
+            if (await  ThereIsPlaceForNewAssetAsync(asset))
             {
-                AddElementToActiveTree(query, newElement);
+                await AddElementToActiveTreeAsync(query, newElement);
                 return true;
             }
             else
@@ -329,10 +329,10 @@ namespace Assets.Caching
 
         }
 
-        private void AddElementToActiveTree(TQuery queryArea, ReferenceCountedAsset newElement)
+        private async Task AddElementToActiveTreeAsync(TQuery queryArea, ReferenceCountedAsset newElement)
         {
             _activeTree[queryArea] = newElement;
-            _elementsLength += _entityActionsPerformer.CalculateMemoryUsage(newElement.Element);
+            _elementsLength += await _entityActionsPerformer.CalculateMemoryUsage(newElement.Element);
         }
 
         public async Task RemoveAssetElementAsync(TQuery queryArea)
@@ -343,7 +343,7 @@ namespace Assets.Caching
             foundElement.ReferenceCount--;
             if (foundElement.ReferenceCount <= 0)
             {
-                if (ThereIsPlaceForNewAsset(foundElement.Element))
+                if (await ThereIsPlaceForNewAssetAsync(foundElement.Element))
                 {
                     _nonReferencedElementsList.Add(queryArea);
                     //Debug.Log($"T97 min ref count. Adding to non-ref list. CurrentSize {_elementsLength} max size {_configuration.MaxTextureMemoryUsed}.");
@@ -351,24 +351,24 @@ namespace Assets.Caching
                 else
                 {
                     //Debug.Log($"T98 min ref count. CurrentSize {_elementsLength} max size {_configuration.MaxTextureMemoryUsed}. Removing");
-                    await DeleteElement(queryArea, foundElement);
+                    await DeleteElementAsync(queryArea, foundElement);
                 }
             }
         }
 
-        private bool ThereIsPlaceForNewAsset(TAsset asset)
+        private async Task<bool> ThereIsPlaceForNewAssetAsync(TAsset asset)
         {
-            var textureSize = _entityActionsPerformer.CalculateMemoryUsage(asset);
+            var textureSize = await  _entityActionsPerformer.CalculateMemoryUsage(asset);
             return _elementsLength + textureSize <= _configuration.MaxTextureMemoryUsed;
         }
 
-        private async Task DeleteElement(TQuery queryArea,
+        private async Task DeleteElementAsync(TQuery queryArea,
             ReferenceCountedAsset foundElement)
         {
             await _entityActionsPerformer.DestroyAsset(foundElement.Element);
             var removalResult = _activeTree.Remove(queryArea);
             Preconditions.Assert(removalResult, "Removing failed");
-            _elementsLength -= _entityActionsPerformer.CalculateMemoryUsage(foundElement.Element);
+            _elementsLength -= await _entityActionsPerformer.CalculateMemoryUsage(foundElement.Element);
         }
 
 
@@ -382,7 +382,7 @@ namespace Assets.Caching
                 var elementToRemove = TryRetriveAssetFromTree(tokenOfElementToRemove);
                 Preconditions.Assert(elementToRemove != null, "Element we wish to delete is not in activeTree");
                 Debug.Log("T77 Removing element from non-referenced!");
-                await DeleteElement(tokenOfElementToRemove, elementToRemove);
+                await DeleteElementAsync(tokenOfElementToRemove, elementToRemove);
             }
         }
 

@@ -122,13 +122,13 @@ namespace Assets.ESurface
             _commonExecutor = commonExecutor;
         }
 
-        public int CalculateMemoryUsage(NullableESurfaceTexturesPack entity)
+        public Task<int> CalculateMemoryUsage(NullableESurfaceTexturesPack entity)
         {
             if (entity.Pack == null)
             {
-                return 0;
+                return TaskUtils.MyFromResult(0);
             }
-            return (entity.Pack.MainTexture.width * entity.Pack.MainTexture.height) * 4*2;
+            return _commonExecutor.AddAction(() => entity.Pack.MainTexture.width * entity.Pack.MainTexture.height * 4*2);
         }
 
         public Task DestroyAsset(NullableESurfaceTexturesPack entity)
