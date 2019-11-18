@@ -112,8 +112,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     {
                         [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
                             startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
-                        //[EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
-                        //    _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
+                        [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+                            _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());

@@ -26,11 +26,10 @@ namespace Assets.Ring2.IntensityProvider
 
         public async Task<List<float>> RetriveIntensityAsync(List<Vector2> queryPositions)
         {
-            List<List<float>> allIntensities =
+            var allIntensities =
                 await TaskUtils.WhenAll(_providers.Select(c => c.RetriveIntensityAsync(queryPositions)));
 
-            return Enumerable.Range(0, queryPositions.Count).Select(i => allIntensities.Select(list => list[i]).Max())
-                .ToList();
+            return Enumerable.Range(0, queryPositions.Count).Select(i => allIntensities.Select(list => list[i]).Max()).ToList();
         }
 
         public bool RequiresRegionToCompute()

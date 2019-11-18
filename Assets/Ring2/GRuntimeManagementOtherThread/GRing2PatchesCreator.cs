@@ -12,6 +12,7 @@ using Assets.Ring2.Geometries;
 using Assets.Ring2.IntensityProvider;
 using Assets.Ring2.Painting;
 using Assets.Ring2.PatchTemplateToPatch;
+using Assets.Ring2.RegionsToPatchTemplate;
 using Assets.Ring2.RuntimeManagementOtherThread;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
 using Assets.Utils;
@@ -59,12 +60,15 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
             var patchTemplates = _toPatchConventer.Convert(regions, queryArea);
             MyProfiler.EndSample();
 
-            // dzielone są na patche o patch size, każdy patch składa się ze sliców
+            MyProfiler.BeginSample("GRing2PatchesCreation Slices combining");
+            var slicesCombiner = new GRing2SlicesCombiner(); //TODO to constructor instead of templateCombiner
+            patchTemplates = patchTemplates.Select(c => slicesCombiner.CombineSlicesInPatch(c)).ToList();
+            MyProfiler.EndSample();
 
+            // dzielone są na patche o patch size, każdy patch składa się ze sliców
             //MyProfiler.BeginSample("GRing2PatchesCreation PatchCombiner"); //TODO remove, not not used as we use only stamped patches and even these only with rendering one slice per pass
             //patchTemplates = _templateCombiner.CombineTemplates(patchTemplates);
             //MyProfiler.EndSample();
-
             // slice w pojedyñczym patchu sa ³¹czone
 
             // todo: sprawdzanie czy w danym sayerze slicu sa jakies dane, a jak nie to taki slice wywalic
@@ -74,14 +78,8 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
             float patternPixelsPerUnit = _configuration.IntensityPatternPixelsPerUnit[lodValue];
 
             MyProfiler.BeginSample("GRing2PatchesCreation IntensityProviding");
-            var patches = await TaskUtils.WhenAll(
-                patchTemplates
-                    .Select(template =>
-                        _intensityPatternProvider.ProvidePatchWithIntensityPattern(
-                            _patchCreator.CreatePatch(template),
-                            template,
-                            patternPixelsPerUnit)
-                    ).ToList());
+            var patches = await TaskUtils.WhenAll(patchTemplates.Select(template =>
+                _intensityPatternProvider.ProvidePatchWithIntensityPattern(_patchCreator.CreatePatch(template), template, patternPixelsPerUnit)).ToList());
             MyProfiler.EndSample();
 
             MyProfiler.BeginSample("GRing2PatchesCreation PatchDevising");
@@ -107,6 +105,96 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
             var tcs = new TaskCompletionSource<List<GRing2PatchDevised>>();
             PostAction(async () => tcs.SetResult(await _creator.CreatePatchAsync(queryArea, lodValue)));
             return tcs.Task;
+        }
+    }
+
+    public class GRing2SlicesCombiner
+    {
+        public Ring2PatchTemplate CombineSlicesInPatch(Ring2PatchTemplate ring2PatchTemplate)
+        {
+            var workList = ring2PatchTemplate.SliceTemplates.ToList();
+
+            var outList = new List<Ring2SliceTemplate>();
+            while (workList.Any())
+            {
+                var indexesOfSimilarSlices = new List<int>(){0};
+                var patternElement = workList[0];
+
+                for (int i = 1; i < workList.Count; i++)
+                {
+                    var elementToCheck = workList[i];
+                    if (SlicesAreSimilar(patternElement, elementToCheck))
+                    {
+                        indexesOfSimilarSlices.Add(i);
+                    }
+                }
+
+                var similarSlices = indexesOfSimilarSlices.Select(c => workList[c]).ToList();
+                indexesOfSimilarSlices.Reverse();
+                foreach (var idx in indexesOfSimilarSlices)
+                {
+                    workList.RemoveAt(idx);
+                }
+
+                if (similarSlices.Count == 1)
+                {
+                    outList.Add(patternElement);
+                }
+                else
+                {
+
+                    List<Ring2Fabric> fabrics = new List<Ring2Fabric>();
+                    for (var fabricIndex = 0; fabricIndex < patternElement.Substance.LayerFabrics.Count; fabricIndex++)
+                    {
+                        var subProviders = similarSlices.Select(c => c.Substance.LayerFabrics[fabricIndex].IntensityProvider).ToList();
+                        var summedProvider = new MaxValueCollectionIntensityProvider(subProviders);
+                        var patternFabric = patternElement.Substance.LayerFabrics[fabricIndex];
+                        fabrics.Add(new Ring2Fabric(patternFabric.Fiber, patternFabric.PaletteColors, summedProvider, patternFabric.LayerPriority, patternFabric.PatternScale));
+                    }
+                    outList.Add(new Ring2SliceTemplate(new Ring2Substance(fabrics)));
+                }
+            }
+
+            return new Ring2PatchTemplate(outList, ring2PatchTemplate.SliceArea);
+        }
+
+        private bool SlicesAreSimilar(Ring2SliceTemplate t1, Ring2SliceTemplate t2)
+        {
+            if (!(t1.Substance.LayerFabrics.Count == t2.Substance.LayerFabrics.Count))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < t1.Substance.LayerFabrics.Count; i++)
+            {
+                if (!FabricsAreSimilar(t1.Substance.LayerFabrics[i], t2.Substance.LayerFabrics[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool FabricsAreSimilar(Ring2Fabric f1, Ring2Fabric f2)
+        {
+            double EPSILON = 0.0000001f;
+            return f1.IsFirm == f2.IsFirm
+                   && Equals(f1.Fiber, f2.Fiber)
+                   && Mathf.Abs(f1.LayerPriority - f2.LayerPriority) < EPSILON
+                   && Mathf.Abs(f1.PatternScale - f2.PatternScale) < EPSILON
+                   && PalettesAreSimilar(f1.PaletteColors, f2.PaletteColors);
+        }
+
+        private bool PalettesAreSimilar(Ring2FabricColors p1, Ring2FabricColors p2)
+        {
+            if (p1.Colors.Count != p2.Colors.Count)
+            {
+                return false;
+            }
+
+            double EPSILON = 0.0000001f;
+            return Enumerable.Range(0, p1.Colors.Count).Select(c => p1.Colors[c].ToVector3() - p2.Colors[c].ToVector3()).Select(c => c.magnitude).Min() < EPSILON;
         }
     }
 }

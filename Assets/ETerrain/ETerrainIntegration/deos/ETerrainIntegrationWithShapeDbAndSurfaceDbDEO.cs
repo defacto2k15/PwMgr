@@ -94,8 +94,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                 {
-                    [EGroundTextureType.HeightMap] = ETerrainIntegrationUsingTerrainDatabaseDEO.GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-                        startConfiguration, dbProxy, repositioner, _gameInitializationFields.Retrive< UTTextureRendererProxy>()  ),
+                    //[EGroundTextureType.HeightMap] = ETerrainIntegrationUsingTerrainDatabaseDEO.GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(
+                    //    startConfiguration, dbProxy, repositioner, _gameInitializationFields.Retrive< UTTextureRendererProxy>()  ),
                     [EGroundTextureType.SurfaceTexture] = GenerateSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
                         _configuration,startConfiguration,_gameInitializationFields,_ultraUpdatableContainer,repositioner)
                 }
@@ -138,7 +138,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 [0] = 1/3f,
                 [1] = 1 /(3*8f),
-                [2] = 1 /(3f*64f)
+                [2] = 1 /(3f*32f)
             }; 
 
             int mipmapLevelToExtract = 1;
@@ -194,18 +194,18 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                     (c) =>
                                     {
                                         {
-                                            var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
-                                                startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
-                                            var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
-                                            var packAndToken = cachedSurfacePatchProvider.ProvideSurfaceDetail(
-                                                repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
-                                            var pack = packAndToken.Pack;
-                                            if (pack != null)
-                                            {
-                                                var mainTexture = pack.MainTexture;
-                                                segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
-                                                cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
-                                            }
+                                                var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
+                                                    startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
+                                                var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
+                                                var packAndToken = cachedSurfacePatchProvider.ProvideSurfaceDetail(
+                                                    repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
+                                                var pack = packAndToken.Pack;
+                                                if (pack != null)
+                                                {
+                                                    var mainTexture = pack.MainTexture;
+                                                    segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
+                                                    cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
+                                                }
                                         }
                                     },
                                     (c) => { },

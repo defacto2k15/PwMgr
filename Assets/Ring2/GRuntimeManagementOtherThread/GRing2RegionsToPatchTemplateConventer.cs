@@ -32,8 +32,8 @@ namespace Assets.Ring2.GRuntimeManagementOtherThread
             if (ring2Fabric.IntensityProvider.RequiresRegionToCompute())
             {
                 return new Ring2Fabric(ring2Fabric.Fiber, ring2Fabric.PaletteColors,
-                    new RegionPinnedFabricRing2IntensityProvider(ring2Fabric.IntensityProvider, region.Space),
-                    ring2Fabric.LayerPriority, ring2Fabric.PatternScale);
+                    new RegionPinnedFabricRing2IntensityProvider(ring2Fabric.IntensityProvider, region.Space), ring2Fabric.LayerPriority,
+                    ring2Fabric.PatternScale);
             }
             else
             {

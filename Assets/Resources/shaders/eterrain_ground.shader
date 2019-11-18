@@ -333,21 +333,7 @@
 				half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
 				//finalColor = nl*finalColor;
 
-
-				//TODO
-				//levelIndex;
-				//if (_MainPyramidLevelWorldSize <= 541) {
-				//	levelIndex = 0;
-				//}
-				//else if (_MainPyramidLevelWorldSize < 34550){
-				//	levelIndex = 1;
-				//}
-				//else {
-				//	levelIndex = 2;
-				//}
-				//levelAndRingIndexes.levelIndex = levelIndex;
-				//levelAndRingIndexes.ringIndex = 0;
-				//finalColor = calculateESurfaceColor(i.inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, 0);
+				//finalColor = tex2Dlod(_SurfaceTexture2, float4(i.uv,0,0));
 
 				return finalColor;
 			} 
