@@ -52,6 +52,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         private EPropElevationManager _elevationManager;
         private EPropHotAreaSelector _ePropHotAreaSelector;
+        private InitialSegmentsGenerationInspector _segmentsGenerationInspector;
 
         public void Start()
         {
@@ -61,7 +62,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = Multithreading};
                 _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
-                _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = false;
+                _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
                 _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
                 var containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
                 VegetationConfiguration.FeConfiguration = _configuration;
@@ -107,6 +108,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 var initializingHelper = new FEInitializingHelper(_gameInitializationFields, _ultraUpdatableContainer, _configuration);
                 initializingHelper.InitializeGlobalInstancingContainer();
 
+                _segmentsGenerationInspector = new InitialSegmentsGenerationInspector(() => Debug.Log("INITIAL CREATED"));
+                _gameInitializationFields.SetField(_segmentsGenerationInspector);
+
                 _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                     new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                     {
@@ -131,6 +135,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var msw = new MyStopWatch();
             msw.StartSegment("FIRST UPDATE");
 
+            _segmentsGenerationInspector.Update();
             _updaterUntilException.Execute(() => { _ultraUpdatableContainer.Update(new MockedFromGameObjectCameraForUpdate(Traveller)); });
             var position3D = Traveller.transform.position;
             var travellerFlatPosition = new Vector2(position3D.x, position3D.z);
@@ -202,6 +207,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     var fillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor);
                     var travellerCustodian = initializationFields.Retrive<TravellerMovementCustodian>();
                     travellerCustodian.AddLimiter(() => fillingListener.AreRequiredSegmentsPresent());
+                    initializationFields.Retrive<InitialSegmentsGenerationInspector>().SetConditionToCheck(() => fillingListener.AreRequiredSegmentsPresent());
                     return new SegmentFillingListenerWithCeilTexture()
                     {
                         CeilTexture = ceilTexture,
@@ -397,6 +403,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public bool AreRequiredSegmentsPresent()
         {
+            if (!_tokensDict.Any(c => c.Value.ShouldBeFilled))
+            {
+                return false;
+            }
             return _tokensDict.Select(c => c.Value).All(c =>
             {
                 if (c.ShouldBeFilled)
