@@ -150,42 +150,6 @@ namespace Assets.Roads.TerrainFeature
             return terrainObject;
         }
 
-        public class DEBUGTODOCommonAsyncExecutorUtProxy : LegacyBaseUTProxy
-        {
-            private SingleThreadSynchronizationContext _singleThreadSynchronizationContext;
-
-            public void StartThreading(Action perEveryPostAction = null)
-            {
-                if (!TaskUtils.GetGlobalMultithreading())
-                {
-                    return;
-                }
-                _singleThreadSynchronizationContext = new SingleThreadSynchronizationContext();
-                SingleThreadSynchronizationContext.SetSynchronizationContext(_singleThreadSynchronizationContext);
-            }
-
-            public override void InternalUpdate()
-            {
-                if (_singleThreadSynchronizationContext != null)
-                {
-                    _singleThreadSynchronizationContext.OneMessageLoop();
-                }
-            }
-
-            public void AddAction(Action action)
-            {
-                if (!TaskUtils.GetGlobalMultithreading() || TaskUtils.GetMultithreadingOverride())
-                {
-                    action();
-                }
-                else
-                {
-                    _singleThreadSynchronizationContext.Post(
-                        (unused) => action(), null);
-                }
-            }
-        }
-
         public class OtherThreadExecutorProxy : BaseOtherThreadProxy
         {
             public OtherThreadExecutorProxy() : base("OtherThreadExecutorProxyThread", false)

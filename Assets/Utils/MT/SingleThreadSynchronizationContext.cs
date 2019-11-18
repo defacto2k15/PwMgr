@@ -12,8 +12,7 @@ namespace Assets.Utils.MT
 {
     public class SingleThreadSynchronizationContext : SynchronizationContext
     {
-        private readonly Queue<Action> _continuationsToProcess = new Queue<Action>();
-        private readonly Queue<Action> _newTasksToProcess = new Queue<Action>();
+        private  SynchronizationContextWorkContainer _workContainer = new SynchronizationContextWorkContainer();
         private readonly object myLock = new object();
         private bool isRunning = true;
 
@@ -45,11 +44,11 @@ namespace Assets.Utils.MT
             {
                 if (state != null)
                 {
-                    _continuationsToProcess.Enqueue(() => codeToRun(state));
+                    _workContainer.AddContinuationToProcess(() => codeToRun(state));
                 }
                 else
                 {
-                    _newTasksToProcess.Enqueue(() => codeToRun(state));
+                    _workContainer.AddNewTaskToProcess(() => codeToRun(state));
                 }
                 SignalContinue();
             }
@@ -65,6 +64,7 @@ namespace Assets.Utils.MT
                     Preconditions.Assert(!CanContinue(), "E824 Got null action when CanCantinue is still true");
                     return; // 
                 }
+
                 nextToRun();
                 if (_perEveryOrderAction != null)
                 {
@@ -73,33 +73,11 @@ namespace Assets.Utils.MT
             }
         }
 
-        public void OneMessageLoop()
-        {
-            Action action = null;
-            lock (myLock)
-            {
-                if (_continuationsToProcess.Any())
-                {
-                    action = _continuationsToProcess.Dequeue();
-                }else if (_newTasksToProcess.Any())
-                {
-                    action = _newTasksToProcess.Dequeue();
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            action();
-            _perEveryOrderAction?.Invoke();
-        }
-
         private Action GrabItem()
         {
             lock (myLock)
             {
-                while (CanContinue() && _newTasksToProcess.Count == 0 && _continuationsToProcess.Count == 0)
+                while (CanContinue() && ! _workContainer.AnyWorkToDo())
                 {
                     _threadIsWorking = false;
                     Monitor.Wait(myLock);
@@ -110,14 +88,7 @@ namespace Assets.Utils.MT
                     return null;
                 }
 
-                if (_continuationsToProcess.Any())
-                {
-                    return _continuationsToProcess.Dequeue();
-                }
-                else
-                {
-                    return _newTasksToProcess.Dequeue();
-                }
+                return _workContainer.GetNextActionToPerform();
             }
         }
 
@@ -160,13 +131,70 @@ namespace Assets.Utils.MT
             {
                 addonToQueue++;
             }
+
+            var statistics = _workContainer.CalculateStatistics();
             return new OtherThreadServiceProfileInfo()
             {
                 IsWorking = _threadIsWorking,
-                NewTaskCount = _newTasksToProcess.Count,
-                ContinuingTasksCount = _continuationsToProcess.Count,
-                BlockedTasksCount = _nonCompletedTasks - _continuationsToProcess.Count - addonToQueue
+                NewTaskCount = statistics.NewTasksToProcessCount,
+                ContinuingTasksCount = statistics.ContinuationsToProcessCount,
+                BlockedTasksCount = _nonCompletedTasks - statistics.ContinuationsToProcessCount - addonToQueue
             };
         }
+    }
+
+    public enum SynchronizationContextWorkPriority
+    {
+        Low, High
+    }
+
+    public class SynchronizationContextWorkContainer
+    {
+        private readonly Queue<Action> _continuationsToProcess = new Queue<Action>();
+        private readonly Queue<Action> _newTasksToProcess = new Queue<Action>();
+
+        public void AddContinuationToProcess(Action action)
+        {
+            _continuationsToProcess.Enqueue(action);
+        }
+
+        public void AddNewTaskToProcess(Action action)
+        {
+            _newTasksToProcess.Enqueue(action);
+        }
+
+        public bool AnyWorkToDo()
+        {
+            return _continuationsToProcess.Any() || _newTasksToProcess.Any();
+        }
+
+        public Action GetNextActionToPerform()
+        {
+            if (_continuationsToProcess.Any())
+            {
+                return _continuationsToProcess.Dequeue();
+            }
+            else if (_newTasksToProcess.Any())
+            {
+                return _newTasksToProcess.Dequeue();
+            }
+            Preconditions.Fail( "There is no work to do");
+            return null;
+        }
+
+        public SynchronizationContextWorkContainerStatistics CalculateStatistics()
+        {
+            return new SynchronizationContextWorkContainerStatistics()
+            {
+                ContinuationsToProcessCount = _continuationsToProcess.Count,
+                NewTasksToProcessCount = _newTasksToProcess.Count
+            };
+        }
+    }
+
+    public class SynchronizationContextWorkContainerStatistics
+    {
+        public int ContinuationsToProcessCount;
+        public int NewTasksToProcessCount;
     }
 }

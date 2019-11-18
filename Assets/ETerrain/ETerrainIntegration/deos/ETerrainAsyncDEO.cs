@@ -159,12 +159,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
              _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
 
-            if (Time.frameCount % 50  ==0)
-            {
-                var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
-                    _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
-                _elevationManager.UpdateAsync(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters).Wait();
-            }
+            //if (Time.frameCount % 50  ==0)
+            //{
+            //    var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
+            //        _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
+            //    _elevationManager.UpdateAsync(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters).Wait();
+            //}
 
              //if (!_wasFirstUpdateDone)
              //{
