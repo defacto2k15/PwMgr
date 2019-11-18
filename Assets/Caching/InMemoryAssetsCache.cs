@@ -165,7 +165,9 @@ namespace Assets.Caching
     public class TwoStorageOverseeingLevel2Cache<TQuery, TAsset> : ILevel2AssetsCache<TQuery, TAsset> where TQuery : IFromQueryFilenameProvider where TAsset : class
     {
         private InFilesAssetsCache<TQuery, TAsset> _inFilesCache;
-        private InMemoryAssetsLevel2Cache<TQuery,TAsset> _inMemoryCache;
+        private InMemoryAssetsLevel2Cache<TQuery, TAsset> _inMemoryCache;
+        private Dictionary<TQuery, TcsSemaphore> _loadingFromFilesObligationDict;
+
         private bool _saveToFiles;
 
         public TwoStorageOverseeingLevel2Cache(InFilesAssetsCache<TQuery, TAsset> inFilesCache, InMemoryAssetsLevel2Cache<TQuery, TAsset> inMemoryCache, bool saveToFiles)
@@ -173,6 +175,7 @@ namespace Assets.Caching
             _inFilesCache = inFilesCache;
             _inMemoryCache = inMemoryCache;
             _saveToFiles = saveToFiles;
+            _loadingFromFilesObligationDict = new Dictionary<TQuery, TcsSemaphore>();
         }
 
         public async Task InitializeAsync()
@@ -196,9 +199,25 @@ namespace Assets.Caching
             {
                 if (_inFilesCache.IsInCache(queryArea))
                 {
-                    var found = await _inFilesCache.TryRetriveAsync(queryArea);
-                    await _inMemoryCache.AddAssetAsync(queryArea, found);
-                    return found;
+                    if (!_loadingFromFilesObligationDict.ContainsKey(queryArea))
+                    {
+                        var sem = new TcsSemaphore();
+                        _loadingFromFilesObligationDict[queryArea] = sem;
+
+                        var found = await _inFilesCache.TryRetriveAsync(queryArea);
+                        await _inMemoryCache.AddAssetAsync(queryArea, found);
+                        _loadingFromFilesObligationDict.Remove(queryArea);
+                        sem.Set();
+                        return found;
+                    }
+                    else
+                    {
+                        await _loadingFromFilesObligationDict[queryArea].Await();
+                    }
+
+                    var asset = await _inMemoryCache.TryRetriveAsync(queryArea);
+                    Preconditions.Assert(asset!=null, "Failed to found element after we added it");
+                    return asset;
                 }
             }
 

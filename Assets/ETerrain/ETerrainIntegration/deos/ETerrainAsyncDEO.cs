@@ -61,7 +61,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = Multithreading};
                 _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
-                _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
+                _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = false;
                 _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
                 var containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
                 VegetationConfiguration.FeConfiguration = _configuration;
@@ -112,8 +112,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     {
                         [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
                             startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
-                        [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
-                            _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
+                        //[EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+                        //    _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
@@ -374,6 +374,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public void RemoveSegment(SegmentInformation segmentInfo)
         {
             var sap = segmentInfo.SegmentAlignedPosition;
+            Preconditions.Assert(_tokensDict.ContainsKey(sap),"Cannot remove segment, as it was never present in dict "+segmentInfo.SegmentAlignedPosition);
             _executor.RemoveSegment(_tokensDict[sap], sap);
             _tokensDict.Remove(sap);
         }
@@ -613,7 +614,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public async Task RemoveSegmentAsync(IntVector2 alignedPosition)
         {
-            Preconditions.Assert( !_segmentsDict.ContainsKey(alignedPosition) ,"Segment of position "+alignedPosition+" is not present nor it is created");
+            Preconditions.Assert( _segmentsDict.ContainsKey(alignedPosition) ,"Segment of position "+alignedPosition+" is not present nor it is created");
             var token = _segmentsDict[alignedPosition].Token;
             Preconditions.Assert(token.ShouldBeRemoved, "Token is not marked as should-be-removed");
             switch (token.Situation)

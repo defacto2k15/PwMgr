@@ -27,7 +27,7 @@ namespace Assets.ETerrain.SectorFilling
         {
             var travellerPositionInSectorSpace = travellerPosition / _segmentWorldSpaceLength;
             _currentField = CalculateFieldRectangle(travellerPositionInSectorSpace);
-            foreach (var pair in ComputeSectorsInRectangle(_currentField).Where(c => c.Value==SegmentState.Active))
+            foreach (var pair in ComputeSectorsInRectangle(_currentField))
             {
                 _listener.AddSegment(new SegmentInformation
                 {
