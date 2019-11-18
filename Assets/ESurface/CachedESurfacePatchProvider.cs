@@ -36,10 +36,8 @@ namespace Assets.ESurface
 
         public async Task<TokenizedESurfaceTexturesPackToken> ProvideSurfaceDetail(MyRectangle inGamePosition, FlatLod flatLod)
         {
-            Debug.Log("ProvideSurfaceDetail 1");
             var internalToken = GenerateInternalToken(inGamePosition, flatLod);
             var queryOutput = await _cache.TryRetriveAsync(internalToken);
-            Debug.Log("ProvideSurfaceDetail 2");
 
             if (queryOutput.Asset != null)
             {
@@ -48,15 +46,12 @@ namespace Assets.ESurface
                     Pack = queryOutput.Asset.Pack,
                     Token = internalToken
                 };
-            Debug.Log("ProvideSurfaceDetail 3");
             }
             else
             {
                 var detailElement = await _provider.ProvideSurfaceDetailAsync(inGamePosition, flatLod);
-            Debug.Log("ProvideSurfaceDetail 4");
                 var queryOutputCreationObligationToken = queryOutput.CreationObligationToken.Value;
                 bool wasAdded = await _cache.AddAssetAsync( queryOutputCreationObligationToken, internalToken, new NullableESurfaceTexturesPack(){Pack = detailElement});
-            Debug.Log("ProvideSurfaceDetail 5");
 
                 var tokenToPassOut = internalToken;
                 if (!wasAdded)

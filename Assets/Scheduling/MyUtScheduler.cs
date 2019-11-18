@@ -113,7 +113,7 @@ namespace Assets.Scheduling
                 }
 
                 var frameTime = (float) _stopwatches.FrameStopwatch.Elapsed.Milliseconds;
-                Debug.Log($"Frame time {frameTime} Prev Updating: {beforeFrameTime} Serv time {frameTime-beforeFrameTime}");
+                //Debug.Log($"Frame time {frameTime} Prev Updating: {beforeFrameTime} Serv time {frameTime-beforeFrameTime}");
 
             }
         }

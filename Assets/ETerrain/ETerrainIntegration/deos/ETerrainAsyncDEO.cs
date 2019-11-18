@@ -42,6 +42,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public GameObject Traveller;
         public FinalVegetationConfiguration VegetationConfiguration;
 
+        private TravellerMovementCustodian _movementCustodian;
         private ETerrainHeightPyramidFacade _eTerrainHeightPyramidFacade;
 
         private UltraUpdatableContainer _ultraUpdatableContainer;
@@ -66,6 +67,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 VegetationConfiguration.FeConfiguration = _configuration;
 
                 _gameInitializationFields = new GameInitializationFields();
+                _movementCustodian = new TravellerMovementCustodian();
+                _gameInitializationFields.SetField(_movementCustodian);
 
                 _ultraUpdatableContainer = ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields, initializeLegacyDesignBodySpotUpdater: false);
                 if (Overlay != null)
@@ -124,6 +127,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public void Update()
         {
+            Debug.Log("MOVEMENT POSSIBILITY "+_movementCustodian.IsMovementPossible());
             var msw = new MyStopWatch();
             msw.StartSegment("FIRST UPDATE");
 
@@ -160,7 +164,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 
                     var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("Height-" + level.ToString(), 
-                        new  CompoundSegmentOrdersFillingExecutor<Texture>(
+                        new  CompoundSegmentOrdersFillingExecutor<TerrainDetailElementOutput>(
                             async (sap) =>
                             {
                                 var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
@@ -181,21 +185,27 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                 });
 
                                 var terrainDetailElementOutput = terrainDescriptionOutput.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
-                                var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
-                                await dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
-                                return segmentTexture;
+                                return terrainDetailElementOutput;
                             },
-                            (sap, segmentTexture) =>
+                            (sap, terrainDetailElementOutput) =>
                             {
+                                var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
                                 return segmentModificationManager.AddSegmentAsync(segmentTexture, sap);
+                            },
+                            (terrainDetailElementOutput) =>
+                            {
+                                return dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
                             }
                         ));
                     updatableContainer.AddOtherThreadProxy(otherThreadExecutor);
 
+                    var fillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor);
+                    var travellerCustodian = initializationFields.Retrive<TravellerMovementCustodian>();
+                    travellerCustodian.AddLimiter(() => fillingListener.AreRequiredSegmentsPresent());
                     return new SegmentFillingListenerWithCeilTexture()
                     {
                         CeilTexture = ceilTexture,
-                        SegmentFillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor)
+                        SegmentFillingListener = fillingListener
                     };
                 }
             };
@@ -285,17 +295,27 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                 {
                                     var mainTexture = pack.MainTexture;
                                     await segmentModificationManager.AddSegmentAsync(mainTexture, sap);
+                                }
+                            },
+                            segmentRemovalFunc: async (packAndToken) =>
+                            {
+                                var pack = packAndToken.Pack;
+                                if (pack != null)
+                                {
                                     cachedSurfacePatchDbProxy.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
                                 }
-
-                            }));
+                            }
+                            ));
 
 
                     ultraUpdatableContainer.AddOtherThreadProxy(otherThreadExecutor);
+                    var fillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor);
+                    var travellerCustodian = gameInitializationFields.Retrive<TravellerMovementCustodian>();
+                    travellerCustodian.AddLimiter(() => fillingListener.AreRequiredSegmentsPresent());
                     return new SegmentFillingListenerWithCeilTexture()
                     {
                         CeilTexture = ceilTexture,
-                        SegmentFillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor)
+                        SegmentFillingListener = fillingListener
                     };
                 }
             };
@@ -313,7 +333,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public void AddSegment(SegmentInformation segmentInfo)
         {
-            _executor.CreateAndFillSegment(segmentInfo.SegmentAlignedPosition);
+            var token = _executor.CreateSegmentAsync(segmentInfo.SegmentAlignedPosition);
+            _executor.FillSegmentWhenReady(token,segmentInfo.SegmentAlignedPosition);
         }
 
         public void RemoveSegment(SegmentInformation segmentInfo)
@@ -328,42 +349,103 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
     public class UnityThreadCompoundSegmentFillingListener : ISegmentFillingListener
     {
         private OtherThreadCompoundSegmentFillingOrdersExecutorProxy _executor;
+        private Dictionary<IntVector2, SegmentGenerationProcessToken> _tokensDict;
 
         public UnityThreadCompoundSegmentFillingListener(OtherThreadCompoundSegmentFillingOrdersExecutorProxy executor)
         {
             _executor = executor;
+            _tokensDict = new Dictionary<IntVector2, SegmentGenerationProcessToken>();
         }
 
         public void AddSegment(SegmentInformation segmentInfo)
         {
+            var sap = segmentInfo.SegmentAlignedPosition;
             if (segmentInfo.SegmentState == SegmentState.Active)
             {
-                _executor.CreateAndFillSegment(segmentInfo.SegmentAlignedPosition);
+                _tokensDict[sap] = _executor.CreateSegmentAsync(sap);
+                _executor.FillSegmentWhenReady(_tokensDict[sap], sap);
             }
             else
             {
-                _executor.CreateSegment(segmentInfo.SegmentAlignedPosition);
+                _tokensDict[sap] = _executor.CreateSegmentAsync(sap);
             }
         }
 
         public void RemoveSegment(SegmentInformation segmentInfo)
         {
-            _executor.RemoveSegment(segmentInfo.SegmentAlignedPosition);
+            var sap = segmentInfo.SegmentAlignedPosition;
+            _executor.RemoveSegment(_tokensDict[sap], sap);
+            _tokensDict.Remove(sap);
         }
 
         public void SegmentStateChange(SegmentInformation segmentInfo)
         {
+            var sap = segmentInfo.SegmentAlignedPosition;
             if (segmentInfo.SegmentState == SegmentState.Active)
             {
-                _executor.CreateAndFillSegment(segmentInfo.SegmentAlignedPosition);
+                Preconditions.Assert(_tokensDict.ContainsKey(sap),
+                    "During segmentStateChange to Active there is no tokens in dict");
+                _executor.FillSegmentWhenReady(_tokensDict[sap], sap);
             }
             else
             {
+                _executor.CancelFillingRequirement(_tokensDict[sap]);
                 // arleady creation was ordered
             }
         }
+
+        public bool AreRequiredSegmentsPresent()
+        {
+            return _tokensDict.Select(c => c.Value).All(c =>
+            {
+                if (c.ShouldBeFilled)
+                {
+                    return c.Situation == SegmentGenerationProcessSituation.Filled;
+                }
+                else
+                {
+                    return true;
+                }
+            });
+        }
     }
 
+    public enum SegmentGenerationProcessSituation
+    {
+        BeforeStartOfCreation, DuringCreation, Created, DuringFilling, Filled
+    }
+
+    public class SegmentGenerationProcessToken
+    {
+        private MyConcurrentValue<SegmentGenerationProcessSituation> _situation;
+        private MyConcurrentValue<bool> _shouldBeFilled;
+        private MyConcurrentValue<bool> _shouldBeRemoved;
+
+        public SegmentGenerationProcessToken(MyConcurrentValue<SegmentGenerationProcessSituation> situation, MyConcurrentValue<bool> shouldBeFilled, MyConcurrentValue<bool> shouldBeRemoved)
+        {
+            _situation = situation;
+            _shouldBeFilled = shouldBeFilled;
+            _shouldBeRemoved = shouldBeRemoved;
+        }
+
+        public SegmentGenerationProcessSituation Situation
+        {
+            get => _situation.Value;
+            set => _situation.Value = value;
+        }
+
+        public bool ShouldBeFilled
+        {
+            get => _shouldBeFilled.Value;
+            set => _shouldBeFilled.Value = value;
+        }
+
+        public bool ShouldBeRemoved
+        {
+            get => _shouldBeRemoved.Value;
+            set => _shouldBeRemoved.Value = value;
+        }
+    }
 
 
     public class OtherThreadCompoundSegmentFillingOrdersExecutorProxy :  BaseOtherThreadProxy
@@ -376,26 +458,37 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _executor = executor;
         }
 
-        public void CreateAndFillSegment(IntVector2 alignedPosition)
+        public SegmentGenerationProcessToken CreateSegmentAsync( IntVector2 alignedPosition)
         {
-            PostPureAsyncAction(() => _executor.CreateAndFillSegmentAsync(alignedPosition));
+            var token = new SegmentGenerationProcessToken(new MyConcurrentValue<SegmentGenerationProcessSituation>(), new MyConcurrentValue<bool>(),
+                new MyConcurrentValue<bool>()) {Situation = SegmentGenerationProcessSituation.BeforeStartOfCreation};
+            PostPureAsyncAction(() => _executor.CreateSegmentAsync(token, alignedPosition));
+            return token;
         }
 
-        public void CreateSegment(IntVector2 alignedPosition)
+        public void FillSegmentWhenReady(SegmentGenerationProcessToken token, IntVector2 alignedPosition)
         {
-            PostPureAsyncAction(() => _executor.CreateSegmentAsync(alignedPosition));
+            token.ShouldBeFilled = true;
+            PostPureAsyncAction(() => _executor.FillSegmentWhenReady(alignedPosition));
         }
 
-        public void RemoveSegment(IntVector2 alignedPosition)
+        public void RemoveSegment(SegmentGenerationProcessToken token, IntVector2 alignedPosition)
         {
+            token.ShouldBeRemoved = true;
             PostPureAsyncAction(() => _executor.RemoveSegmentAsync(alignedPosition));
+        }
+
+        public void CancelFillingRequirement(SegmentGenerationProcessToken token)
+        {
+            Preconditions.Assert(token.ShouldBeFilled, "There is not filling requirement");
+            token.ShouldBeFilled = false;
         }
     }
 
     public interface ISegmentOrdersFillingExecutor
     {
-        Task CreateAndFillSegmentAsync(IntVector2 alignedPosition);
-        Task CreateSegmentAsync(IntVector2 alignedPosition);
+        Task CreateSegmentAsync(SegmentGenerationProcessToken  token, IntVector2 alignedPosition);
+        Task FillSegmentWhenReady(IntVector2 alignedPosition);
         Task RemoveSegmentAsync(IntVector2 alignedPosition);
     } 
 
@@ -408,12 +501,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _segmentFillingFunc = segmentFillingFunc;
         }
 
-        public Task CreateAndFillSegmentAsync(IntVector2 alignedPosition)
+        public Task CreateSegmentAsync( SegmentGenerationProcessToken  token, IntVector2 alignedPosition)
         {
-            return _segmentFillingFunc(alignedPosition);
+            return _segmentFillingFunc(alignedPosition); //automatic filling, this is dummy 
         }
 
-        public Task CreateSegmentAsync(IntVector2 alignedPosition)
+        public Task FillSegmentWhenReady(IntVector2 alignedPosition)
         {
             throw new NotImplementedException();
         }
@@ -428,36 +521,132 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
     {
         private Func<IntVector2, Task<T>> _segmentGeneratingFunc;
         private Func<IntVector2,T, Task> _segmentFillingFunc;
-        private Dictionary<IntVector2, T> _segmentsDict;
+        private Func<T, Task> _segmentRemovalFunc;
+        private Dictionary<IntVector2, SegmentWithToken<T>> _segmentsDict;
 
-        public CompoundSegmentOrdersFillingExecutor(Func<IntVector2, Task<T>> segmentGeneratingFunc, Func<IntVector2, T, Task> segmentFillingFunc)
+        public CompoundSegmentOrdersFillingExecutor(Func<IntVector2, Task<T>> segmentGeneratingFunc, Func<IntVector2, T, Task> segmentFillingFunc, Func<T, Task> segmentRemovalFunc)
         {
             _segmentGeneratingFunc = segmentGeneratingFunc;
             _segmentFillingFunc = segmentFillingFunc;
-            _segmentsDict = new Dictionary<IntVector2, T>();
+            _segmentRemovalFunc = segmentRemovalFunc;
+            _segmentsDict = new Dictionary<IntVector2, SegmentWithToken<T>>();
         }
 
-        public async Task CreateSegmentAsync(IntVector2 alignedPosition)
+        public async Task CreateSegmentAsync( SegmentGenerationProcessToken token, IntVector2 alignedPosition)
         {
             Preconditions.Assert(!_segmentsDict.ContainsKey(alignedPosition), "There arleady is segment of position "+alignedPosition);
-            var segment = await _segmentGeneratingFunc(alignedPosition);
-            _segmentsDict[alignedPosition] = segment;
-        }
-
-        public async Task CreateAndFillSegmentAsync(IntVector2 alignedPosition)
-        {
-            if (!_segmentsDict.ContainsKey(alignedPosition))
+            _segmentsDict[alignedPosition] = new SegmentWithToken<T>()
             {
-                await CreateSegmentAsync(alignedPosition);
+                Token = token
+            };
+            token.Situation = SegmentGenerationProcessSituation.DuringCreation;
+            var segment = await _segmentGeneratingFunc(alignedPosition);
+            if (token.ShouldBeRemoved)
+            {
+                await RemoveInternal(alignedPosition);
+                return;
             }
 
-            var segment = _segmentsDict[alignedPosition];
+            switch (token.Situation)
+            {
+                case SegmentGenerationProcessSituation.BeforeStartOfCreation:
+                    Preconditions.Fail("Not expected State: "+token.Situation);
+                    return;
+                case SegmentGenerationProcessSituation.DuringCreation:
+                    break; //normal situation
+                case SegmentGenerationProcessSituation.Created:
+                    Preconditions.Fail("Not expected State: " + token.Situation);
+                    return;
+                case SegmentGenerationProcessSituation.DuringFilling:
+                    Preconditions.Fail("Not expected State: " + token.Situation);
+                    return;
+                case SegmentGenerationProcessSituation.Filled:
+                    Preconditions.Fail("Not expected State: " + token.Situation);
+                    return;
+            }
+
+            _segmentsDict[alignedPosition].Segment = segment;
+            token.Situation = SegmentGenerationProcessSituation.Created;
+
+            if (token.ShouldBeFilled)
+            {
+                await Fill(token, alignedPosition, segment);
+            }
+        }
+
+        private async Task Fill(SegmentGenerationProcessToken token, IntVector2 alignedPosition, T segment)
+        {
+            token.Situation = SegmentGenerationProcessSituation.DuringFilling;
             await _segmentFillingFunc(alignedPosition, segment);
+            token.Situation = SegmentGenerationProcessSituation.Filled;
+        }
+
+        public async Task FillSegmentWhenReady(IntVector2 alignedPosition)
+        {
+            Preconditions.Assert( _segmentsDict.ContainsKey(alignedPosition) ,"Segment of position "+alignedPosition+" is not present nor it is created");
+            var token = _segmentsDict[alignedPosition].Token;
+            if (token.ShouldBeRemoved)
+            {
+                await RemoveInternal(alignedPosition);
+                return;
+            }
+
+            switch (token.Situation)
+            {
+                case SegmentGenerationProcessSituation.BeforeStartOfCreation:
+                    Preconditions.Fail("Not expected State: "+token.Situation);
+                    return;
+                case SegmentGenerationProcessSituation.DuringCreation:
+                    token.ShouldBeFilled = true;
+                    return;
+                case SegmentGenerationProcessSituation.Created:
+                    await Fill(token, alignedPosition, _segmentsDict[alignedPosition].Segment);
+                    return;
+                case SegmentGenerationProcessSituation.DuringFilling:
+                    Preconditions.Fail("Not expected State: " + token.Situation);
+                    return;
+                case SegmentGenerationProcessSituation.Filled:
+                    Preconditions.Fail("Not expected State: " + token.Situation);
+                    return;
+            }
         }
 
         public async Task RemoveSegmentAsync(IntVector2 alignedPosition)
         {
+            Preconditions.Assert( !_segmentsDict.ContainsKey(alignedPosition) ,"Segment of position "+alignedPosition+" is not present nor it is created");
+            var token = _segmentsDict[alignedPosition].Token;
+            Preconditions.Assert(token.ShouldBeRemoved, "Token is not marked as should-be-removed");
+            switch (token.Situation)
+            {
+                case SegmentGenerationProcessSituation.BeforeStartOfCreation:
+                    Preconditions.Fail("Not expected State: "+token.Situation);
+                    return;
+                case SegmentGenerationProcessSituation.DuringCreation:
+                    return;
+                case SegmentGenerationProcessSituation.Created:
+                    _segmentsDict.Remove(alignedPosition);
+                    return;
+                case SegmentGenerationProcessSituation.DuringFilling:
+                    return;
+                case SegmentGenerationProcessSituation.Filled:
+                    _segmentsDict.Remove(alignedPosition);
+                    return;
+            }
+
+            await RemoveInternal(alignedPosition);
+        }
+
+        private async Task RemoveInternal(IntVector2 alignedPosition)
+        {
+            var segment = _segmentsDict[alignedPosition].Segment;
             _segmentsDict.Remove(alignedPosition);
-        } 
-    } 
+            await _segmentRemovalFunc(segment);
+        }
+    }
+
+    public class SegmentWithToken<T>
+    {
+        public T Segment;
+        public SegmentGenerationProcessToken Token;
+    }
 }
