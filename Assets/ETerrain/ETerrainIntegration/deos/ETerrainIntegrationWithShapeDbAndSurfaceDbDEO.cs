@@ -94,8 +94,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                 {
-                    //[EGroundTextureType.HeightMap] = ETerrainIntegrationUsingTerrainDatabaseDEO.GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-                    //    startConfiguration, dbProxy, repositioner, _gameInitializationFields.Retrive< UTTextureRendererProxy>()  ),
+                    [EGroundTextureType.HeightMap] = ETerrainIntegrationUsingTerrainDatabaseDEO.GenerateHeightTextureEntitiesGeneratorFromTerrainShapeDb(
+                        startConfiguration, dbProxy, repositioner, _gameInitializationFields.Retrive<UTTextureRendererProxy>()),
                     [EGroundTextureType.SurfaceTexture] = GenerateSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
                         _configuration,startConfiguration,_gameInitializationFields,_ultraUpdatableContainer,repositioner)
                 }
@@ -131,15 +131,15 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
             {
                 [0] = 3f,
-                [1] = 3 /8f,
+                [1] = 3 / 8f,
                 [2] = 3 / 64f
             };
-            feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit= new Dictionary<int, float>()
+            feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit = new Dictionary<int, float>()
             {
-                [0] = 1/3f,
-                [1] = 1 /(3*8f),
-                [2] = 1 /(3f*32f)
-            }; 
+                [0] = 1 / 3f,
+                [1] = 1 / (3 * 8f),
+                [2] = 1 / (3f * 32f)
+            };
 
             int mipmapLevelToExtract = 1;
             feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit =
@@ -153,8 +153,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             var mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
             var patchesCreatorProxy = gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
-            var  patchStamperOverseerFinalizer= gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
-            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer,gameInitializationFields.Retrive<CommonExecutorUTProxy>(),
+            var patchStamperOverseerFinalizer = gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
+            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer,
+                gameInitializationFields.Retrive<CommonExecutorUTProxy>(),
                 mipmapExtractor, mipmapLevelToExtract);
 
             var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
@@ -164,8 +165,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                         FETerrainShapeDbInitialization.CreateLevel2AssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>(
                             cachingConfiguration: new CachingConfiguration()
                             {
-                                SaveAssetsToFile =true,
-                                UseFileCaching =true,
+                                SaveAssetsToFile = true,
+                                UseFileCaching = true,
                             }
                             , new InMemoryCacheConfiguration() /*{ MaxTextureMemoryUsed = 0}*/
                             , new ESurfaceTexturesPackEntityActionsPerformer(commonExecutor)
@@ -194,18 +195,18 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                     (c) =>
                                     {
                                         {
-                                                var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
-                                                    startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
-                                                var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
-                                                var packAndToken = cachedSurfacePatchProvider.ProvideSurfaceDetail(
-                                                    repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
-                                                var pack = packAndToken.Pack;
-                                                if (pack != null)
-                                                {
-                                                    var mainTexture = pack.MainTexture;
-                                                    segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
-                                                    cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
-                                                }
+                                            var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
+                                                startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
+                                            var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
+                                            var packAndToken = cachedSurfacePatchProvider.ProvideSurfaceDetail(
+                                                repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
+                                            var pack = packAndToken.Pack;
+                                            if (pack != null)
+                                            {
+                                                var mainTexture = pack.MainTexture;
+                                                segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
+                                                cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
+                                            }
                                         }
                                     },
                                     (c) => { },

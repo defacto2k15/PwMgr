@@ -85,6 +85,10 @@ namespace Assets.ETerrain
             {
                 floatSegmentAlignedPosition = floatSegmentAlignedPosition + new Vector2(-8, -4);
             }
+            else
+            {
+                floatSegmentAlignedPosition = floatSegmentAlignedPosition + new Vector2(-1/8f, -1/16f);
+            }
 
             var surfaceWorldSpaceRectangle = new MyRectangle( floatSegmentAlignedPosition.x * segmentLength, floatSegmentAlignedPosition.y * segmentLength
                 , segmentLength, segmentLength);

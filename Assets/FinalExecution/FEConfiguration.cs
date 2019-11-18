@@ -227,7 +227,7 @@ namespace Assets.FinalExecution
             get
             {
                 var ring2GenerationArea =
-                    new MyRectangle(46440f - 360 * 6, 51840f - 360 * 6, 360 * 12, 360 * 12);
+                    new MyRectangle(46440f - 360 * 8, 51840f - 360 * 8, 360 * 16, 360 * 16);
 
                 return Ring2RegionsFromHabitatDebugObject.AlignGenerationAreaToPatch(ring2GenerationArea,
                     Ring2PatchSize);
