@@ -10,21 +10,10 @@
 		_SurfaceTexture1("_SurfaceTexture1", 2D) = "pink"{}
 		_SurfaceTexture2("_SurfaceTexture2", 2D) = "pink"{}
 
-		_MainHeightMap("_MainHeightMap", 2D) = "pink" {}
-
-		_MainPyramidCenterWorldSpace("MainPyramidCenterWorldSpace", Vector) = (0.0, 0.0, 0.0, 0.0)
 		_MainPyramidLevelWorldSize( "MainPyramidLevelWorldSize", Float) = 1.0
-		_AuxPyramidLevelWorldSize( "AuxPyramidLevelWorldSize", Float) = 1.0
 
 		_SegmentCoords("_SegmentCoords", Vector) = (0.0, 0.0, 1.0, 1.0)
-		_HeightMergeRange("_HeightMergeRange", Vector) = (0.0, 1.0, 0.0, 0.0)
 		_HighQualityMipMap("_HighQualityMipMap", Range(0,5)) = 0
-
-		_AuxHeightMap("_AuxHeightMap", 2D) = "pink" {}
-		_AuxHeightMapMode("_AuxHeightMapMode", Int) = 0 // 0 - no aux; 1- is lower heightmap 2- is higher heightmap
-		_HigherLevelAreaCutting("_HigherLevelAreaCutting", Int) = 0 // Cutting space in center of centerObjects when there is shape from higher object
-		_AuxPyramidCenterWorldSpace("AuxPyramidCenterWorldSpace", Vector) = (0.0, 0.0, 0.0, 0.0)
-		 _LastRingSegmentUvRange("LastRingSegmentUvRange", Vector) = (0.0, 0.0, 0.0, 0.0)
 
 		_TravellerPositionWorldSpace("TravellerPositionWorldSpace", Vector) = (0.0, 0.0, 0.0, 0.0)
 
@@ -54,21 +43,12 @@
 			sampler2D _SurfaceTexture1;
 			sampler2D _SurfaceTexture2;
 
-			sampler2D _MainHeightMap;
-			float2 _HeightMergeRange;
 			float _HighQualityMipMap;
 
 			float2 _MainPyramidCenterWorldSpace;
 			float _MainPyramidLevelWorldSize;
 
-			sampler2D _AuxHeightMap;
-			int _AuxHeightMapMode;
-			float2 _AuxPyramidCenterWorldSpace;
-			float _AuxPyramidLevelWorldSize;
 			float2 _TravellerPositionWorldSpace;
-			int _HigherLevelAreaCutting;
-
-			float2 _LastRingSegmentUvRange;
 
 			int _RingsPerLevelCount;
 			int _LevelsCount;
@@ -82,7 +62,6 @@
 				float terrainMergingLerpParam : ANY_TERRAIN_MERGING_LERP_PARAM;
 				float2 worldSpaceLocation : ANY_WSL;
 				bool shouldDiscard : ANY_SHOULD_DISCARD;
-				float height : ANY_HEIGHT;
 			};
 
 #include "eterrain_heightMapCommon.hlsl"
@@ -98,14 +77,6 @@
 				p.levelsCount = _LevelsCount;
 				return p;
 			};
-
-			EPerRingParameters init_EPerRingParametersFromUniforms() {
-				EPerRingParameters o;
-				o.auxHeightMapMode = (_AuxHeightMapMode > 0);//TODO
-				o.highQualityMipMap = _HighQualityMipMap;
-				o.higherLevelAreaCutting = _HigherLevelAreaCutting;
-				return o;
-			}
 
 				// UV IN RECTANGLE [{-L/2; -L/2} - {L/2; L/2}] where L - length of ceilTexture in worldSpace
 			float2 calculateInSegmentSpaceUv(float2 uv) {
