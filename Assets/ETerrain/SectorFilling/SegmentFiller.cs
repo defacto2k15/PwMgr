@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Assets.Ring2;
 using Assets.Utils;
 using UnityEngine;
@@ -26,7 +27,7 @@ namespace Assets.ETerrain.SectorFilling
         {
             var travellerPositionInSectorSpace = travellerPosition / _segmentWorldSpaceLength;
             _currentField = CalculateFieldRectangle(travellerPositionInSectorSpace);
-            foreach (var pair in ComputeSectorsInRectangle(_currentField))
+            foreach (var pair in ComputeSectorsInRectangle(_currentField).Where(c => c.Value==SegmentState.Active))
             {
                 _listener.AddSegment(new SegmentInformation
                 {

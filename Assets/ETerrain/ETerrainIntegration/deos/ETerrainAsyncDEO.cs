@@ -159,11 +159,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
                     var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 
-                    var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("Height-" + level.ToString(),
-                        new LambdaSegmentOrdersFillingExecutor(async (segmentAlignedPosition) =>
+                    var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("Height-" + level.ToString(), 
+                        new  CompoundSegmentOrdersFillingExecutor<Texture>(
+                            async (sap) =>
                             {
                                 var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
-                                    startConfiguration.PerLevelConfigurations[level], segmentAlignedPosition);
+                                    startConfiguration.PerLevelConfigurations[level],sap);
 
                                 var terrainDescriptionOutput = await dbProxy.Query(new TerrainDescriptionQuery()
                                 {
@@ -182,7 +183,11 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                 var terrainDetailElementOutput = terrainDescriptionOutput.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
                                 var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
                                 await dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
-                                await segmentModificationManager.AddSegmentAsync(segmentTexture, segmentAlignedPosition);
+                                return segmentTexture;
+                            },
+                            (sap, segmentTexture) =>
+                            {
+                                return segmentModificationManager.AddSegmentAsync(segmentTexture, sap);
                             }
                         ));
                     updatableContainer.AddOtherThreadProxy(otherThreadExecutor);
@@ -264,21 +269,28 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
                     var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 
-                    var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("Height-" + level.ToString(),
-                        new LambdaSegmentOrdersFillingExecutor(async (segmentAlignedPosition) =>
-                        {
-                            var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
-                                startConfiguration.PerLevelConfigurations[level], segmentAlignedPosition);
-                            var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
-                            var packAndToken = await cachedSurfacePatchDbProxy.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle), lod);
-                            var pack = packAndToken.Pack;
-                            if (pack != null)
+                    var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("ESurface-" + level.ToString(),
+                        new CompoundSegmentOrdersFillingExecutor<TokenizedESurfaceTexturesPackToken>(
+                            async (sap) =>
                             {
-                                var mainTexture = pack.MainTexture;
-                                await segmentModificationManager.AddSegmentAsync(mainTexture, segmentAlignedPosition);
-                                cachedSurfacePatchDbProxy.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
-                            }
-                        }));
+                                var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
+                                    startConfiguration.PerLevelConfigurations[level], sap);
+                                var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
+                                return await cachedSurfacePatchDbProxy.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle), lod);
+                            },
+                            async (sap, packAndToken) =>
+                            {
+                                var pack = packAndToken.Pack;
+                                if (pack != null)
+                                {
+                                    var mainTexture = pack.MainTexture;
+                                    await segmentModificationManager.AddSegmentAsync(mainTexture, sap);
+                                    cachedSurfacePatchDbProxy.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
+                                }
+
+                            }));
+
+
                     ultraUpdatableContainer.AddOtherThreadProxy(otherThreadExecutor);
                     return new SegmentFillingListenerWithCeilTexture()
                     {
@@ -287,6 +299,29 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     };
                 }
             };
+        }
+    }
+
+    public class UnityThreadDummySegmentFillingListener : ISegmentFillingListener
+    {
+        private OtherThreadCompoundSegmentFillingOrdersExecutorProxy _executor;
+
+        public UnityThreadDummySegmentFillingListener(OtherThreadCompoundSegmentFillingOrdersExecutorProxy executor)
+        {
+            _executor = executor;
+        }
+
+        public void AddSegment(SegmentInformation segmentInfo)
+        {
+            _executor.CreateAndFillSegment(segmentInfo.SegmentAlignedPosition);
+        }
+
+        public void RemoveSegment(SegmentInformation segmentInfo)
+        {
+        }
+
+        public void SegmentStateChange(SegmentInformation segmentInfo)
+        {
         }
     }
 
@@ -301,17 +336,35 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public void AddSegment(SegmentInformation segmentInfo)
         {
-            _executor.FillSegment(segmentInfo.SegmentAlignedPosition);
+            if (segmentInfo.SegmentState == SegmentState.Active)
+            {
+                _executor.CreateAndFillSegment(segmentInfo.SegmentAlignedPosition);
+            }
+            else
+            {
+                _executor.CreateSegment(segmentInfo.SegmentAlignedPosition);
+            }
         }
 
         public void RemoveSegment(SegmentInformation segmentInfo)
         {
+            _executor.RemoveSegment(segmentInfo.SegmentAlignedPosition);
         }
 
         public void SegmentStateChange(SegmentInformation segmentInfo)
         {
+            if (segmentInfo.SegmentState == SegmentState.Active)
+            {
+                _executor.CreateAndFillSegment(segmentInfo.SegmentAlignedPosition);
+            }
+            else
+            {
+                // arleady creation was ordered
+            }
         }
     }
+
+
 
     public class OtherThreadCompoundSegmentFillingOrdersExecutorProxy :  BaseOtherThreadProxy
     {
@@ -323,15 +376,27 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _executor = executor;
         }
 
-        public void FillSegment(IntVector2 alignedPosition)
+        public void CreateAndFillSegment(IntVector2 alignedPosition)
         {
-            PostPureAsyncAction(() => _executor.FillSegmentAsync(alignedPosition));
+            PostPureAsyncAction(() => _executor.CreateAndFillSegmentAsync(alignedPosition));
+        }
+
+        public void CreateSegment(IntVector2 alignedPosition)
+        {
+            PostPureAsyncAction(() => _executor.CreateSegmentAsync(alignedPosition));
+        }
+
+        public void RemoveSegment(IntVector2 alignedPosition)
+        {
+            PostPureAsyncAction(() => _executor.RemoveSegmentAsync(alignedPosition));
         }
     }
 
     public interface ISegmentOrdersFillingExecutor
     {
-        Task FillSegmentAsync(IntVector2 alignedPosition);
+        Task CreateAndFillSegmentAsync(IntVector2 alignedPosition);
+        Task CreateSegmentAsync(IntVector2 alignedPosition);
+        Task RemoveSegmentAsync(IntVector2 alignedPosition);
     } 
 
     public class LambdaSegmentOrdersFillingExecutor : ISegmentOrdersFillingExecutor
@@ -343,9 +408,56 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _segmentFillingFunc = segmentFillingFunc;
         }
 
-        public Task FillSegmentAsync(IntVector2 alignedPosition)
+        public Task CreateAndFillSegmentAsync(IntVector2 alignedPosition)
         {
             return _segmentFillingFunc(alignedPosition);
         }
+
+        public Task CreateSegmentAsync(IntVector2 alignedPosition)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task RemoveSegmentAsync(IntVector2 alignedPosition)
+        {
+            throw new NotImplementedException();
+        }
+    } 
+
+    public class CompoundSegmentOrdersFillingExecutor<T> : ISegmentOrdersFillingExecutor
+    {
+        private Func<IntVector2, Task<T>> _segmentGeneratingFunc;
+        private Func<IntVector2,T, Task> _segmentFillingFunc;
+        private Dictionary<IntVector2, T> _segmentsDict;
+
+        public CompoundSegmentOrdersFillingExecutor(Func<IntVector2, Task<T>> segmentGeneratingFunc, Func<IntVector2, T, Task> segmentFillingFunc)
+        {
+            _segmentGeneratingFunc = segmentGeneratingFunc;
+            _segmentFillingFunc = segmentFillingFunc;
+            _segmentsDict = new Dictionary<IntVector2, T>();
+        }
+
+        public async Task CreateSegmentAsync(IntVector2 alignedPosition)
+        {
+            Preconditions.Assert(!_segmentsDict.ContainsKey(alignedPosition), "There arleady is segment of position "+alignedPosition);
+            var segment = await _segmentGeneratingFunc(alignedPosition);
+            _segmentsDict[alignedPosition] = segment;
+        }
+
+        public async Task CreateAndFillSegmentAsync(IntVector2 alignedPosition)
+        {
+            if (!_segmentsDict.ContainsKey(alignedPosition))
+            {
+                await CreateSegmentAsync(alignedPosition);
+            }
+
+            var segment = _segmentsDict[alignedPosition];
+            await _segmentFillingFunc(alignedPosition, segment);
+        }
+
+        public async Task RemoveSegmentAsync(IntVector2 alignedPosition)
+        {
+            _segmentsDict.Remove(alignedPosition);
+        } 
     } 
 }
