@@ -10,6 +10,7 @@ using Assets.Ring2.BaseEntities;
 using Assets.ShaderUtils;
 using Assets.Utils;
 using Assets.Utils.MT;
+using Assets.Utils.Services;
 using Assets.Utils.Textures;
 using UnityEngine;
 
@@ -22,17 +23,18 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
         private TerrainDetailAlignmentCalculator _alignmentCalculator;
         private UTTextureRendererProxy _renderer;
         private TextureConcieverUTProxy _textureConciever;
+        private readonly CommonExecutorUTProxy _commonExecutor;
         private TerrainDetailCornerMergerConfiguration _configuration;
 
-        private RenderTexture _scratchTexture;
-
         public TerrainDetailCornerMerger(LateAssignFactory<BaseTerrainDetailProvider> terrainDetailProviderFactory,
-            TerrainDetailAlignmentCalculator alignmentCalculator, UTTextureRendererProxy renderer, TextureConcieverUTProxy textureConciever, TerrainDetailCornerMergerConfiguration configuration)
+            TerrainDetailAlignmentCalculator alignmentCalculator, UTTextureRendererProxy renderer, TextureConcieverUTProxy textureConciever,
+            CommonExecutorUTProxy commonExecutor, TerrainDetailCornerMergerConfiguration configuration)
         {
             _terrainDetailProviderFactory = terrainDetailProviderFactory;
             _alignmentCalculator = alignmentCalculator;
             _renderer = renderer;
             _textureConciever = textureConciever;
+            this._commonExecutor = commonExecutor;
             _configuration = configuration;
         }
 
@@ -80,10 +82,18 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
 
             var outputTexture = await CreateOutputTexture(baseTexture);
 
+            var scratchTextureSize = 121; //todo configurable
+            var scratchTexture = await _textureConciever.ConcieveRenderTextureAsync(new MyRenderTextureTemplate(scratchTextureSize, scratchTextureSize, RenderTextureFormat.RFloat, false, FilterMode.Point));
+            var scratchTextureWithSize = new TextureWithSize()
+            {
+                Texture = scratchTexture,
+                Size = new IntVector2(scratchTextureSize,scratchTextureSize)
+            };
+
             await MergeDetailObject(new Dictionary<TerrainDetailCorner, TerrainDetailElement>()
             {
                 {TerrainDetailCorner.BottomLeft, activeTerrainDetails},
-            }, baseTexture, outputTexture, TerrainDetailCorner.TopRight);
+            }, baseTexture, outputTexture, TerrainDetailCorner.TopRight, scratchTextureWithSize);
 
             if (sourceTerrainDetails.ContainsKey(TerrainDetailNeighbourhoodDirections.Left)) // do not merge if one of merging elements was out of map boundaries
             {
@@ -91,9 +101,8 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
                 {
                     {TerrainDetailCorner.BottomRight, activeTerrainDetails},
                     {TerrainDetailCorner.BottomLeft, sourceTerrainDetails[TerrainDetailNeighbourhoodDirections.Left].DetailElement},
-                }, baseTexture, outputTexture, TerrainDetailCorner.TopLeft);
+                }, baseTexture, outputTexture, TerrainDetailCorner.TopLeft, scratchTextureWithSize);
             }
-
 
             if (sourceTerrainDetails.ContainsKey(TerrainDetailNeighbourhoodDirections.Left) &&
                 sourceTerrainDetails.ContainsKey(TerrainDetailNeighbourhoodDirections.BottomLeft) &&
@@ -105,7 +114,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
                     {TerrainDetailCorner.TopLeft, sourceTerrainDetails[TerrainDetailNeighbourhoodDirections.Left].DetailElement},
                     {TerrainDetailCorner.BottomLeft, sourceTerrainDetails[TerrainDetailNeighbourhoodDirections.BottomLeft].DetailElement},
                     {TerrainDetailCorner.BottomRight, sourceTerrainDetails[TerrainDetailNeighbourhoodDirections.Bottom].DetailElement},
-                }, baseTexture, outputTexture, TerrainDetailCorner.BottomLeft);
+                }, baseTexture, outputTexture, TerrainDetailCorner.BottomLeft, scratchTextureWithSize);
             }
 
             if (sourceTerrainDetails.ContainsKey(TerrainDetailNeighbourhoodDirections.Bottom) )
@@ -114,9 +123,10 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
                 {
                     {TerrainDetailCorner.TopLeft, activeTerrainDetails},
                     {TerrainDetailCorner.BottomLeft, sourceTerrainDetails[TerrainDetailNeighbourhoodDirections.Bottom].DetailElement},
-                }, baseTexture, outputTexture, TerrainDetailCorner.BottomRight);
+                }, baseTexture, outputTexture, TerrainDetailCorner.BottomRight, scratchTextureWithSize);
             }
 
+            await _commonExecutor.AddAction(() => GameObject.Destroy(scratchTexture));
             await TaskUtils.WhenAll(sourceTerrainDetails.Values.Select(c => c.Token)
                 .Select(c => _terrainDetailProvider.RemoveTerrainDetailAsync(c)));
             return outputTexture;
@@ -136,13 +146,8 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
         }
 
         private async Task MergeDetailObject(Dictionary<TerrainDetailCorner, TerrainDetailElement> sourceTextures,
-            TextureWithSize sourceTexture, TextureWithSize outTexture, TerrainDetailCorner activeCorner)
+            TextureWithSize sourceTexture, TextureWithSize outTexture, TerrainDetailCorner activeCorner, TextureWithSize scratchTexture)
         {
-            var scratchTextureSize = 121;
-            if (_scratchTexture == null)
-            {
-                _scratchTexture = await _textureConciever.ConcieveRenderTextureAsync(new MyRenderTextureTemplate(scratchTextureSize, scratchTextureSize, RenderTextureFormat.RFloat, false, FilterMode.Point));
-            }
 
             var uniforms = new UniformsPack();
             var cornersPresent = new Vector4();
@@ -170,18 +175,18 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging
 
             uniforms.SetUniform("_ActiveCornerIndex", activeCornerIndex);
             uniforms.SetUniform("_CornersMerged", cornersMerged);
-            uniforms.SetTexture("_ScratchTex", _scratchTexture);
+            uniforms.SetTexture("_ScratchTex", scratchTexture.Texture);
             uniforms.SetUniform("_MergeMargin", _configuration.MergeMarginSize); // todo
 
             await _renderer.AddOrder(new TextureRenderingTemplate()
             {
                 CanMultistep = false,
                 CreateTexture2D = false,
-                RenderTextureToModify = _scratchTexture,
+                RenderTextureToModify = scratchTexture.Texture as RenderTexture, // todo 
                 ShaderName = "Custom/TerrainDetailMerger/MergeIntoScratch",
                 UniformPack = uniforms,
-                RenderingRectangle = new IntRectangle(0, 0, scratchTextureSize, scratchTextureSize),
-                RenderTargetSize = new IntVector2(scratchTextureSize, scratchTextureSize),
+                RenderingRectangle = new IntRectangle(0, 0, scratchTexture.Size.X, scratchTexture.Size.Y),
+                RenderTargetSize = new IntVector2(scratchTexture.Size.X, scratchTexture.Size.Y),
             });
 
 

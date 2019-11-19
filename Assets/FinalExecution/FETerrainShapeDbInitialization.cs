@@ -72,10 +72,11 @@ namespace Assets.FinalExecution
                         _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(),
                         _gameInitializationFields.Retrive<ComputeShaderContainerGameObject>());
 
-                TerrainDetailProvider terrainDetailProvider =
-                    CreateTerrainDetailProvider(terrainDetailGenerator);
-
                 var commonExecutorUtProxy = _gameInitializationFields.Retrive<CommonExecutorUTProxy>();
+
+                TerrainDetailProvider terrainDetailProvider =
+                    CreateTerrainDetailProvider(terrainDetailGenerator, commonExecutorUtProxy);
+
 
                 var terrainDetailFileManager =
                     new TerrainDetailFileManager(_configuration.TerrainDetailCachePath, commonExecutorUtProxy);
@@ -183,13 +184,14 @@ namespace Assets.FinalExecution
             return generator;
         }
 
-        private TerrainDetailProvider CreateTerrainDetailProvider(TerrainDetailGenerator generator)
+        private TerrainDetailProvider CreateTerrainDetailProvider(TerrainDetailGenerator generator, CommonExecutorUTProxy commonExecutorUtProxy)
         {
             var cornerMerger = new TerrainDetailCornerMerger(
                 new LateAssignFactory<BaseTerrainDetailProvider>(() => _gameInitializationFields.Retrive<BaseTerrainDetailProvider>()), 
                 _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>(),
                 _gameInitializationFields.Retrive<UTTextureRendererProxy>(),
                 _gameInitializationFields.Retrive<TextureConcieverUTProxy>(),
+                commonExecutorUtProxy,
                 _configuration.TerrainMergerConfiguration);
 
             var provider = new TerrainDetailProvider( generator, cornerMerger, _gameInitializationFields.Retrive<TerrainDetailAlignmentCalculator>());
