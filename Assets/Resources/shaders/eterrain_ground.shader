@@ -109,7 +109,7 @@
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
-				v.vertex.y = 0; // terrainOut.finalHeight;
+				v.vertex.y = 0 - levelAndRingIndexes.levelIndex*0.00002f; // terrainOut.finalHeight;
 
 				v2f_o.inSegmentSpaceUv = inSegmentSpaceUv;
 				v2f_o.uv = uv;
@@ -295,6 +295,9 @@
 				}
 
 				float surfaceColorLod = levelAndRingIndexes.ringIndex + i.terrainMergingLerpParam ;
+				if (levelAndRingIndexes.levelIndex == 2) {
+					surfaceColorLod += 1;
+				}
 				finalColor = calculateESurfaceColor(surfaceInfo.downLeftVerticleInSegmentSpaceUv, levelAndRingIndexes, terrainParameters, surfaceColorLod);
 
 				float3 worldNormal = surfaceInfo.worldNormal;
