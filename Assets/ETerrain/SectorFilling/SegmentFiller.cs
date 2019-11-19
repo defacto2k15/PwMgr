@@ -57,10 +57,14 @@ namespace Assets.ETerrain.SectorFilling
         }
 
         private IntRectangle CalculateFieldRectangle(Vector2 travellerPositionInSectorSpace)
-        {
-            var downLeftPointInSectorSpace =  travellerPositionInSectorSpace - new Vector2(_fieldSize.X / 2f, _fieldSize.Y / 2f);
+        {// TODO this is hack, temporary
+            //var centerIntPoint = IntVector2.FromFloat(travellerPositionInSectorSpace);
+            //return new IntRectangle(centerIntPoint.X-3, centerIntPoint.Y-3, 7, 7);
+
+
+            var downLeftPointInSectorSpace = travellerPositionInSectorSpace - new Vector2(_fieldSize.X / 2f, _fieldSize.Y / 2f);
             var alignedDownLeftPoint = IntVector2.FromFloat(downLeftPointInSectorSpace);
-            return new IntRectangle(alignedDownLeftPoint.X, alignedDownLeftPoint.Y, _fieldSize.X, _fieldSize.Y);
+            return new IntRectangle(alignedDownLeftPoint.X-1, alignedDownLeftPoint.Y-1, _fieldSize.X+2, _fieldSize.Y+2);
         }
 
         public void Update(Vector2 travellerPosition)
@@ -73,8 +77,8 @@ namespace Assets.ETerrain.SectorFilling
                 var rectangleDelta = CalculateDelta(newField, _currentField);
                 _currentField = newField;
 
-                rectangleDelta.SectorsToCreate.ForEach(c => _listener.AddSegment(c));
                 rectangleDelta.SectorsToRemove.ForEach(c => _listener.RemoveSegment(c));
+                rectangleDelta.SectorsToCreate.ForEach(c => _listener.AddSegment(c));
                 rectangleDelta.SectorsToChange.ForEach(c => _listener.SegmentStateChange(c));
             }
         }

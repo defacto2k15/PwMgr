@@ -297,8 +297,8 @@
 					float2 highLevelMaxCornerInWS = auxGlobalLevelUvSpaceToWorldSpace(1 - float2(1.0 / 6.0, 1.0 / 6.0), levelAndRingIndexes, terrainParameters);
 					float2 thisLevelPositionInWS = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
 
-					if (thisLevelPositionInWS.x > highLevelMinCornerInWS.x && thisLevelPositionInWS.x < highLevelMaxCornerInWS.x) {
-						if (thisLevelPositionInWS.y > highLevelMinCornerInWS.y && thisLevelPositionInWS.y < highLevelMaxCornerInWS.y) {
+					if (thisLevelPositionInWS.x >= highLevelMinCornerInWS.x && thisLevelPositionInWS.x <= highLevelMaxCornerInWS.x) {
+						if (thisLevelPositionInWS.y >= highLevelMinCornerInWS.y && thisLevelPositionInWS.y <= highLevelMaxCornerInWS.y) {
 							finalHeight = highQualityHeight;
 							shouldBeDiscarded =true;
 						}

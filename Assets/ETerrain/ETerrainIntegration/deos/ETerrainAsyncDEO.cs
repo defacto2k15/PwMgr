@@ -83,7 +83,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1 / 6.0f;
                 startConfiguration.InitialTravellerPosition = new Vector2(440, 100) + new Vector2(90f * 8, 90f * 4);
                 //startConfiguration.InitialTravellerPosition = new Vector2(0,0);
-                startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() {HeightPyramidLevel.Top, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
+                startConfiguration.HeightPyramidLevels = new List<HeightPyramidLevel>() {HeightPyramidLevel.Top};//, HeightPyramidLevel.Mid, HeightPyramidLevel.Bottom};
 
                 var buffersManager = new ETerrainHeightBuffersManager();
                 _eTerrainHeightPyramidFacade = new ETerrainHeightPyramidFacade(buffersManager,
@@ -114,29 +114,29 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                     new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                     {
-                        [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-                            startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
+                        //[EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
+                        //    startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
                         [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
                             _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
 
-                EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
-                var elevationBuffers = InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration
-                    , _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager, perLevelTemplates);
+                //EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
+                //var elevationBuffers = InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration
+                //    , _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager, perLevelTemplates);
 
-                var commonUniforms = new UniformsPack();
-                commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
+                //var commonUniforms = new UniformsPack();
+                //commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
 
-                var reloader = FindObjectOfType<BufferReloaderRootGO>();
-                ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
-                computeBuffersPack.SetBuffer("_EPropLocaleBuffer", elevationBuffers.EPropLocaleBuffer);
-                computeBuffersPack.SetBuffer("_EPropIdsBuffer", elevationBuffers.EPropIdsBuffer);
+                //var reloader = FindObjectOfType<BufferReloaderRootGO>();
+                //ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
+                //computeBuffersPack.SetBuffer("_EPropLocaleBuffer", elevationBuffers.EPropLocaleBuffer);
+                //computeBuffersPack.SetBuffer("_EPropIdsBuffer", elevationBuffers.EPropIdsBuffer);
 
-                var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
-                    , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
-                finalVegetation.Start();
+                //var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
+                //    , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
+                //finalVegetation.Start();
 
                 Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
             });
@@ -148,11 +148,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public void Update()
         {
-            Debug.Log("MOVEMENT POSSIBILITY "+_movementCustodian.IsMovementPossible());
+            //Debug.Log("MOVEMENT POSSIBILITY "+_movementCustodian.IsMovementPossible());
+                Traveller.SetActive(_movementCustodian.IsMovementPossible());
             var msw = new MyStopWatch();
             msw.StartSegment("FIRST UPDATE");
 
-            _segmentsGenerationInspector.Update();
+            //_segmentsGenerationInspector.Update();
             _updaterUntilException.Execute(() => { _ultraUpdatableContainer.Update(new MockedFromGameObjectCameraForUpdate(Traveller)); });
             var position3D = Traveller.transform.position;
             var travellerFlatPosition = new Vector2(position3D.x, position3D.z);
@@ -329,10 +330,14 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                             },
                             segmentRemovalFunc: async (packAndToken) =>
                             {
-                                var pack = packAndToken.Pack;
-                                if (pack != null)
+                                if (packAndToken != null)
                                 {
-                                    cachedSurfacePatchDbProxy.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
+                                    var pack = packAndToken.Pack;
+                                    if (pack != null)
+                                    {
+                                        Preconditions.Assert(packAndToken.Token!=null, "Token is null. Unexpected");
+                                        cachedSurfacePatchDbProxy.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
+                                    }
                                 }
                             }
                             ));
@@ -424,6 +429,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public void AddSegment(SegmentInformation segmentInfo)
         {
             var sap = segmentInfo.SegmentAlignedPosition;
+            if (sap.Equals(new IntVector2(10, 3)))
+            {
+                Debug.Log($"RT22: AddSegment "+segmentInfo.SegmentState);
+            }
             if (segmentInfo.SegmentState == SegmentState.Active)
             {
                 _tokensDict[sap] = _executor.CreateSegmentAsync(sap);
@@ -438,6 +447,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public void RemoveSegment(SegmentInformation segmentInfo)
         {
             var sap = segmentInfo.SegmentAlignedPosition;
+            if (sap.Equals(new IntVector2(10, 3)))
+            { 
+                Debug.Log($"RT22: Remove segment");
+            }
             Preconditions.Assert(_tokensDict.ContainsKey(sap),"Cannot remove segment, as it was never present in dict "+segmentInfo.SegmentAlignedPosition);
             _executor.RemoveSegment(_tokensDict[sap], sap);
             _tokensDict.Remove(sap);
@@ -446,6 +459,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public void SegmentStateChange(SegmentInformation segmentInfo)
         {
             var sap = segmentInfo.SegmentAlignedPosition;
+            if (sap.Equals(new IntVector2(10, 3)))
+            { 
+                Debug.Log($"RT22: SegmentStateChange "+segmentInfo.SegmentState);
+            }
             if (segmentInfo.SegmentState == SegmentState.Active)
             {
                 Preconditions.Assert(_tokensDict.ContainsKey(sap),
@@ -455,7 +472,11 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             else
             {
                 _executor.CancelFillingRequirement(_tokensDict[sap]);
-                // arleady creation was ordered
+                if (sap.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"RT22: SegmentStateChange cancelling, state is  " + _tokensDict[sap].Situation);
+                    // arleady creation was ordered
+                }
             }
         }
 
@@ -551,6 +572,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         {
             Preconditions.Assert(token.ShouldBeFilled, "There is not filling requirement");
             token.ShouldBeFilled = false;
+            if (token.Situation == SegmentGenerationProcessSituation.Filled)
+            {
+                token.Situation = SegmentGenerationProcessSituation.Created;
+            }
         }
     }
 
@@ -603,6 +628,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public async Task CreateSegmentAsync( SegmentGenerationProcessToken token, IntVector2 alignedPosition)
         {
+            if (alignedPosition.Equals(new IntVector2(10, 3)))
+            { 
+                Debug.Log($"UX22:  CreateSegmentAsync Start "+token.Situation);
+            }
             Preconditions.Assert(!_segmentsDict.ContainsKey(alignedPosition), "There arleady is segment of position "+alignedPosition);
             _segmentsDict[alignedPosition] = new SegmentWithToken<T>()
             {
@@ -610,9 +639,24 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             };
             token.Situation = SegmentGenerationProcessSituation.DuringCreation;
             var segment = await _segmentGeneratingFunc(alignedPosition);
+            if (alignedPosition.Equals(new IntVector2(10, 3)))
+            { 
+                Debug.Log($"UX22:  CreateSegmentAsync  After SGU"+token.Situation);
+            }
+
             if (token.ShouldBeRemoved)
             {
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:  CreateSegmentAsync  Before Removal" + token.Situation);
+                }
+
                 await RemoveInternal(alignedPosition);
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:  CreateSegmentAsync  After Removal" + token.Situation);
+                }
+
                 return;
             }
 
@@ -639,24 +683,57 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             if (token.ShouldBeFilled)
             {
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:  CreateSegmentAsync Before fill" + token.Situation);
+                }
                 await Fill(token, alignedPosition, segment);
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:  CreateSegmentAsync After fill" + token.Situation);
+                }
             }
         }
 
         private async Task Fill(SegmentGenerationProcessToken token, IntVector2 alignedPosition, T segment)
         {
             token.Situation = SegmentGenerationProcessSituation.DuringFilling;
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:  Fill before " + token.Situation);
+                }
             await _segmentFillingFunc(alignedPosition, segment);
             token.Situation = SegmentGenerationProcessSituation.Filled;
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:  Fill after " + token.Situation);
+                }
         }
 
         public async Task FillSegmentWhenReady(IntVector2 alignedPosition)
         {
             Preconditions.Assert( _segmentsDict.ContainsKey(alignedPosition) ,"Segment of position "+alignedPosition+" is not present nor it is created");
             var token = _segmentsDict[alignedPosition].Token;
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:   FSWR  start " + token.Situation);
+                }
             if (token.ShouldBeRemoved)
             {
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:   FSWR  removal  before " + token.Situation);
+                }
                 await RemoveInternal(alignedPosition);
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:   FSWR  removal   after " + token.Situation);
+                }
+                return;
+            }
+
+            if (!token.ShouldBeFilled)
+            {
                 return;
             }
 
@@ -669,13 +746,22 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     token.ShouldBeFilled = true;
                     return;
                 case SegmentGenerationProcessSituation.Created:
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:   FSWR  before fill " + token.Situation);
+                }
                     await Fill(token, alignedPosition, _segmentsDict[alignedPosition].Segment);
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:   FSWR  after fill " + token.Situation);
+                }
                     return;
                 case SegmentGenerationProcessSituation.DuringFilling:
                     Preconditions.Fail("Not expected State: " + token.Situation);
                     return;
                 case SegmentGenerationProcessSituation.Filled:
-                    Preconditions.Fail("Not expected State: " + token.Situation);
+                    //Preconditions.Fail("Not expected State: " + token.Situation);
+                    Debug.Log("L321 Not expected State: " + token.Situation+", ignoring with pos "+alignedPosition);
                     return;
             }
         }
@@ -684,6 +770,11 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         {
             Preconditions.Assert( _segmentsDict.ContainsKey(alignedPosition) ,"Segment of position "+alignedPosition+" is not present nor it is created");
             var token = _segmentsDict[alignedPosition].Token;
+
+                if (alignedPosition.Equals(new IntVector2(10, 3)))
+                {
+                    Debug.Log($"UX22:   Remove Segment Async " + token.Situation);
+                }
             Preconditions.Assert(token.ShouldBeRemoved, "Token is not marked as should-be-removed");
             switch (token.Situation)
             {

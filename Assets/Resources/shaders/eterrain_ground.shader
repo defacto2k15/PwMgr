@@ -59,7 +59,7 @@
 				float usedMipMapLevel;
 				float terrainMergingLerpParam;
 				float2 worldSpaceLocation;
-				bool shouldDiscard;
+				float shouldDiscardMarker;
 			};
 
 #include "eterrain_heightMapCommon.hlsl"
@@ -109,13 +109,13 @@
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
-				v.vertex.y = terrainOut.finalHeight;
+				v.vertex.y = 0; // terrainOut.finalHeight;
 
 				v2f_o.inSegmentSpaceUv = inSegmentSpaceUv;
 				v2f_o.uv = uv;
 				v2f_o.usedMipMapLevel = _HighQualityMipMap + terrainOut.terrainMergingLerpParam;
 				v2f_o.terrainMergingLerpParam = terrainOut.terrainMergingLerpParam;
-				v2f_o.shouldDiscard = terrainOut.shouldBeDiscarded;
+				v2f_o.shouldDiscardMarker = terrainOut.shouldBeDiscarded ? 1 : 0;
 				v2f_o.worldSpaceLocation = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
 			}
 
@@ -263,7 +263,7 @@
 
 			//Our Fragment Shader
 			void surf(in Input i, inout SurfaceOutput o) {	//TODO add normals coloring
-				if (i.shouldDiscard) {
+				if (i.shouldDiscardMarker > 0.5) {
 					discard;
 				}
 
@@ -294,7 +294,7 @@
 					squareIndex.x += 100000;
 				}
 
-				float surfaceColorLod = levelAndRingIndexes.ringIndex + i.terrainMergingLerpParam +2;
+				float surfaceColorLod = levelAndRingIndexes.ringIndex + i.terrainMergingLerpParam ;
 				finalColor = calculateESurfaceColor(surfaceInfo.downLeftVerticleInSegmentSpaceUv, levelAndRingIndexes, terrainParameters, surfaceColorLod);
 
 				float3 worldNormal = surfaceInfo.worldNormal;
