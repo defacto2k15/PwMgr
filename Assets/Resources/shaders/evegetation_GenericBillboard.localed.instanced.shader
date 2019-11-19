@@ -12,7 +12,7 @@
 
 		CGPROGRAM
 		// Physically based Standard lighting model, and enable shadows on all light types
-		#pragma surface surf Lambert addshadow vertex:vert 
+		#pragma surface surf SimpleLambert addshadow vertex:vert 
 		// Use shader model 3.0 target, to get nicer looking lighting
 		#pragma target 3.0
 		#pragma multi_compile_instancing
@@ -29,6 +29,15 @@
 #define _Color_arr Props
 			UNITY_DEFINE_INSTANCED_PROP(float, _Pointer)
 		UNITY_INSTANCING_BUFFER_END(Props)
+
+         half4 LightingSimpleLambert (SurfaceOutput s, half3 lightDir, half atten) {
+			float3 normal = lerp(s.Normal, -normalize(float3(lightDir.x, 0, lightDir.z) + float3(0, -0.7, 0)), s.Alpha);
+			half NdotL = (dot(normal, lightDir));
+			 half4 c;
+			 c.rgb = s.Albedo * _LightColor0.rgb * (NdotL * atten);
+			 c.a = 1; 
+			 return c;
+         }
 
 		#include "GenericBillboard.hlsl"
 		#include "eterrain_EPropLocaleHeightAccessing.hlsl"
@@ -137,6 +146,7 @@
 
 		#include "evegetation_color_common.hlsl"
 
+		float _GlobalX;
 		void surf(in Input i, inout SurfaceOutput o) {	//TODO add normals coloring
 			float baseYRotation = UNITY_ACCESS_INSTANCED_PROP(_BaseYRotation_arr, _BaseYRotation);
 			evegetation_samplingResult samplingResult =  evegetation_billboard_surf(i, _ImagesInArrayCount, baseYRotation);
@@ -151,6 +161,7 @@
 
 			float3 mergedNormal = normalize(lerp(samplingResult.texels[0].normal, samplingResult.texels[1].normal, samplingResult.blendWeight));
 			o.Normal = mergedNormal;
+			o.Alpha = saturate(i.flatDistanceToCamera/1000.0); // TODO - hack. Says how much we want to lerp between normal calculated here and generic billboard up normal;
 		}
 		ENDCG 
 	} 

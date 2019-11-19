@@ -114,29 +114,29 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                     new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                     {
-                        //[EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-                        //    startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
+                        [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
+                            startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
                         [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
                             _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
 
-                //EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
-                //var elevationBuffers = InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration
-                //    , _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager, perLevelTemplates);
+                EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
+                var elevationBuffers = InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration
+                    , _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager, perLevelTemplates);
 
-                //var commonUniforms = new UniformsPack();
-                //commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
+                var commonUniforms = new UniformsPack();
+                commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
 
-                //var reloader = FindObjectOfType<BufferReloaderRootGO>();
-                //ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
-                //computeBuffersPack.SetBuffer("_EPropLocaleBuffer", elevationBuffers.EPropLocaleBuffer);
-                //computeBuffersPack.SetBuffer("_EPropIdsBuffer", elevationBuffers.EPropIdsBuffer);
+                var reloader = FindObjectOfType<BufferReloaderRootGO>();
+                ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
+                computeBuffersPack.SetBuffer("_EPropLocaleBuffer", elevationBuffers.EPropLocaleBuffer);
+                computeBuffersPack.SetBuffer("_EPropIdsBuffer", elevationBuffers.EPropIdsBuffer);
 
-                //var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
-                //    , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
-                //finalVegetation.Start();
+                var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
+                    , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
+                finalVegetation.Start();
 
                 Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
             });

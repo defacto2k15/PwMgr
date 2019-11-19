@@ -11,6 +11,7 @@ struct Input {
 	float4 screenPos ;
 	float flatDistanceToCamera;
 	float angle_degrees; 
+	//float3 worldPos;
 };
 
 float4 RotateAroundYInDegrees (float4 vertex, float degrees)
@@ -38,6 +39,7 @@ void generic_billboard_vert (inout appdata_base v, out Input o){
 	o.angle_degrees = fmod(angle_degrees, 360);
 	o.screenPos = ComputeScreenPos( mul (UNITY_MATRIX_MVP, v.vertex));   
 	o.flatDistanceToCamera =  Calculate2DDistanceFromCameraInVertShader(v.vertex);
+	//o.worldPos = mul(unity_ObjectToWorld, v.vertex);
 }
 
 fixed4 getSubtextureValue( float billboardIndex, fixed2 uv, sampler2D l_CollageTex, float l_ColumnsCount, float l_RowsCount){
