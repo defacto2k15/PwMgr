@@ -9,38 +9,74 @@
 				float2 mergeRange;
 			};
 
+			ERingConfiguration null_ERingConfiguration( ){
+				ERingConfiguration c;
+				c.uvRange = 0;
+				c.mergeRange = 0;
+				return c;
+			}
+
 			struct ELevelConfiguration {
 				ERingConfiguration ringsConfiguration[MAX_RINGS_PER_LEVEL_COUNT];
 				float levelWorldSize;
 				float ceilTextureResolution;
 			};
 
+			ELevelConfiguration null_ELevelConfiguration() {
+				ELevelConfiguration c;
+				for (int i = 0; i < MAX_RINGS_PER_LEVEL_COUNT; i++) {
+					c.ringsConfiguration[i] = null_ERingConfiguration();
+				}
+				c.levelWorldSize = 0;
+				c.ceilTextureResolution = 0;
+				return c;
+			}
+
 			struct EPyramidConfiguration {
 				ELevelConfiguration levelsConfiguration[MAX_LEVELS_COUNT];
 			};
+
+			EPyramidConfiguration null_EPyramidConfiguration() {
+				EPyramidConfiguration c;
+				for (int i = 0; i < MAX_LEVELS_COUNT; i++) {
+					c.levelsConfiguration[i] = null_ELevelConfiguration();
+				}
+				return c;
+			}
 
 			struct ELevelPerFrameConfiguration {
 				float2 levelCenterWorldSpace;
 			};
 
+			ELevelPerFrameConfiguration null_ELevelPerFrameConfiguration()  {
+				ELevelPerFrameConfiguration c;
+				c.levelCenterWorldSpace = 0;
+				return c;
+			}
+
 			struct EPyramidPerFrameConfiguration {
 				ELevelPerFrameConfiguration levelConfiguration[MAX_LEVELS_COUNT];
 			};
+
+			EPyramidPerFrameConfiguration  null_EPyramidPerFrameConfiguration() {
+				EPyramidPerFrameConfiguration c;
+				for (int i = 0; i < MAX_LEVELS_COUNT; i++) {
+					c.levelConfiguration[i] = null_ELevelPerFrameConfiguration();
+				}
+				return c;
+			}
 
 			struct ELevelAndRingIndexes {
 				int levelIndex;
 				int ringIndex;
 			};
 
-			ELevelAndRingIndexes make_ELevelAndRingIndexes (
-				int levelIndex,
-				int ringIndex
-			){
+			ELevelAndRingIndexes make_ELevelAndRingIndexes ( int levelIndex, int ringIndex ){
 				ELevelAndRingIndexes i;
 				i.levelIndex = levelIndex;
 				i.ringIndex = ringIndex;
 				return i;
-			};
+			}
 
 			struct ETerrainParameters {
 				EPyramidConfiguration pyramidConfiguration;
@@ -72,7 +108,7 @@
 				return levelAndRingIndexes.ringIndex == 0;
 			}
 
-			struct  EPerRingParameters init_EPerRingParametersFromBuffers(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters){
+			EPerRingParameters init_EPerRingParametersFromBuffers(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters){
 				EPerRingParameters o;
 				o.auxHeightMapMode = calculateAuxHeightMapMode(levelAndRingIndexes, terrainParameters);
 				o.highQualityMipMap = levelAndRingIndexes.ringIndex;
@@ -96,11 +132,9 @@
 					float4(0.5 - 4 / 12.0, 0.5 - 4 / 12.0, 4 / 6.0, 4 / 6.0)
 				};
 
-				[unroll(MAX_LEVELS_COUNT)]
-				for (int levelIndex = 0; levelIndex < parameters.levelsCount; levelIndex++) {
+				for (int levelIndex = 0; levelIndex < min(parameters.levelsCount, MAX_LEVELS_COUNT); levelIndex++) {
 					float2 levelUv = worldSpaceToGlobalLevelUvSpace(worldSpacePosition, levelIndex, parameters);
-					[unroll(MAX_RINGS_PER_LEVEL_COUNT)]
-					for (int ringIndex = 0; ringIndex < parameters.ringsPerLevelCount; ringIndex++) {
+					for (int ringIndex = 0; ringIndex < min(parameters.ringsPerLevelCount, MAX_RINGS_PER_LEVEL_COUNT); ringIndex++) {
 						if (isInRectangle(levelUv, ringsUvs[ringIndex])) {
 							return make_ELevelAndRingIndexes(levelIndex, ringIndex);
 						}

@@ -24,12 +24,11 @@
 
 	SubShader
 	{
-		Pass
-		{
-		Cull Off ZWrite On Fog { Mode Off } //Rendering settings
 			CGPROGRAM
-			#pragma vertex vert
-			#pragma fragment frag
+			#pragma surface surf Lambert addshadow vertex:vert 
+			#pragma target 5.0
+#pragma exclude_renderers d3d11_9x
+#pragma exclude_renderers d3d9
 			#include "UnityCG.cginc" 
 			#include "common.txt"
 
@@ -54,42 +53,46 @@
 			int _LevelsCount;
 			float _Debug;
 
-			struct v2f {
-				float4 pos : POSITION; // niezbedna wartosc by dzialal shader
-				half2 inSegmentSpaceUv : TEXCOORD0;
-				half2 uv : ANY_UV;
-				float usedMipMapLevel : TEXCOORD1;
-				float terrainMergingLerpParam : ANY_TERRAIN_MERGING_LERP_PARAM;
-				float2 worldSpaceLocation : ANY_WSL;
-				bool shouldDiscard : ANY_SHOULD_DISCARD;
+			struct Input {
+				half2 inSegmentSpaceUv;
+				half2 uv;
+				float usedMipMapLevel;
+				float terrainMergingLerpParam;
+				float2 worldSpaceLocation;
+				bool shouldDiscard;
 			};
 
 #include "eterrain_heightMapCommon.hlsl"
+#ifdef SHADER_API_D3D11
 			StructuredBuffer<EPyramidConfiguration> _EPyramidConfigurationBuffer;
 			StructuredBuffer<EPyramidPerFrameConfiguration> _EPyramidPerFrameConfigurationBuffer;
+#endif
 
 			ETerrainParameters init_ETerrainParametersFromUniforms() {
 				ETerrainParameters p;
+#ifdef SHADER_API_D3D11
 				p.pyramidConfiguration = _EPyramidConfigurationBuffer[0];
 				p.perFrameConfiguration = _EPyramidPerFrameConfigurationBuffer[0];
+#else
+				p.pyramidConfiguration = null_EPyramidConfiguration();
+				p.perFrameConfiguration = null_EPyramidPerFrameConfiguration();
+#endif
 				p.travellerPositionWorldSpace = _TravellerPositionWorldSpace;
 				p.ringsPerLevelCount = _RingsPerLevelCount;
 				p.levelsCount = _LevelsCount;
 				return p;
-			};
+			}
 
 				// UV IN RECTANGLE [{-L/2; -L/2} - {L/2; L/2}] where L - length of ceilTexture in worldSpace
 			float2 calculateInSegmentSpaceUv(float2 uv) {
 				return _SegmentCoords.xy + float2(uv.x * _SegmentCoords.z, uv.y * _SegmentCoords.w);
 			}
 
-			v2f vert(appdata_img v) {
-				v2f o;
-
+			void vert( inout appdata_full v, out Input v2f_o) {
 				float2 uv = v.texcoord.xy;
 				float2 inSegmentSpaceUv = calculateInSegmentSpaceUv(uv);
 
-				//TODO
+				//TODO. THIS IS TEMPORARY
 				int levelIndex;
 				if (_MainPyramidLevelWorldSize <= 541) {
 					levelIndex = 0;
@@ -108,15 +111,12 @@
 
 				v.vertex.y = terrainOut.finalHeight;
 
-				o.pos = UnityObjectToClipPos(v.vertex);
-				o.inSegmentSpaceUv = inSegmentSpaceUv;
-				o.uv = uv;
-				o.usedMipMapLevel = _HighQualityMipMap + terrainOut.terrainMergingLerpParam;
-				o.terrainMergingLerpParam = terrainOut.terrainMergingLerpParam;
-				o.shouldDiscard = terrainOut.shouldBeDiscarded;
-				o.worldSpaceLocation = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
-
-				return o;
+				v2f_o.inSegmentSpaceUv = inSegmentSpaceUv;
+				v2f_o.uv = uv;
+				v2f_o.usedMipMapLevel = _HighQualityMipMap + terrainOut.terrainMergingLerpParam;
+				v2f_o.terrainMergingLerpParam = terrainOut.terrainMergingLerpParam;
+				v2f_o.shouldDiscard = terrainOut.shouldBeDiscarded;
+				v2f_o.worldSpaceLocation = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
 			}
 
 			float3 seedColorFrom(float value) {
@@ -183,7 +183,7 @@
 				p.squareIndex = squareIndex;
 				p.isLowerTriangle = isLowerTriangle;
 				return p;
-			};
+			}
 
 			InTriangleGridPosition calculateInTriangleGridPosition(float2 uv, int gridResolution) {
 				float2 perVerticleUv = uv * gridResolution;
@@ -262,10 +262,10 @@
 
 
 			//Our Fragment Shader
-			fixed4 frag(v2f i) : Color{
-				//if (i.shouldDiscard) {
-				//	discard;
-				//}
+			void surf(in Input i, inout SurfaceOutput o) {	//TODO add normals coloring
+				if (i.shouldDiscard) {
+					discard;
+				}
 
 				float4 finalColor;
 				ETerrainParameters terrainParameters = init_ETerrainParametersFromUniforms();
@@ -294,7 +294,7 @@
 					squareIndex.x += 100000;
 				}
 
-				float surfaceColorLod = levelAndRingIndexes.ringIndex + i.terrainMergingLerpParam;
+				float surfaceColorLod = levelAndRingIndexes.ringIndex + i.terrainMergingLerpParam +2;
 				finalColor = calculateESurfaceColor(surfaceInfo.downLeftVerticleInSegmentSpaceUv, levelAndRingIndexes, terrainParameters, surfaceColorLod);
 
 				float3 worldNormal = surfaceInfo.worldNormal;
@@ -306,11 +306,12 @@
 
 				//finalColor = tex2Dlod(_SurfaceTexture2, float4(i.uv,0,0));
 
-				return finalColor;
+				o.Albedo = finalColor;
+				o.Normal = float3(worldNormal.x, -worldNormal.z, worldNormal.y);// mul((float3x3)unity_WorldToObject, float3(worldNormal)).zyx;
 			} 
 
 			ENDCG
-		}
+		
 	}
 	FallBack "Diffuse"
 }
