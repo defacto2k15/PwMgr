@@ -4,15 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Assets.Utils.UTUpdating;
+using UnityEngine;
 
 namespace Assets.ETerrain
 {
     public class TravellerMovementCustodian 
     {
+        private readonly GameObject _traveller;
         private List<Func<bool>> _travelLimiters;
+        private Vector3? _lastFramePositon;
 
-        public TravellerMovementCustodian()
+        public TravellerMovementCustodian(GameObject traveller)
         {
+            _traveller = traveller;
             _travelLimiters = new List<Func<bool>>();
         }
 
@@ -24,6 +28,25 @@ namespace Assets.ETerrain
         public bool IsMovementPossible()
         {
             return _travelLimiters.All(c => c());
+        }
+
+        public void Update()
+        {
+            if (!_lastFramePositon.HasValue)
+            {
+                _lastFramePositon = _traveller.transform.position;
+            }
+            else
+            {
+                if (IsMovementPossible())
+                {
+                    _lastFramePositon = _traveller.transform.position;
+                }
+                else
+                {
+                    _traveller.transform.position = _lastFramePositon.Value;
+                }
+            }
         }
     }
 }
