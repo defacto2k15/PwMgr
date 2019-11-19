@@ -48,7 +48,8 @@ namespace Assets.ETerrain.SectorFilling
                     if (x < rectangle.X + _standbyMarginsSize.X || x >= rectangle.MaxX - _standbyMarginsSize.X ||
                         y < rectangle.Y + _standbyMarginsSize.Y || y >= rectangle.MaxY - _standbyMarginsSize.Y)
                     {
-                        state = SegmentState.Standby;
+                        //state = SegmentState.Standby;
+                        state = SegmentState.Active;
                     }
                     outDict[new IntVector2(x, y)] = state;
                 }
@@ -64,7 +65,8 @@ namespace Assets.ETerrain.SectorFilling
 
             var downLeftPointInSectorSpace = travellerPositionInSectorSpace - new Vector2(_fieldSize.X / 2f, _fieldSize.Y / 2f);
             var alignedDownLeftPoint = IntVector2.FromFloat(downLeftPointInSectorSpace);
-            return new IntRectangle(alignedDownLeftPoint.X-1, alignedDownLeftPoint.Y-1, _fieldSize.X+2, _fieldSize.Y+2);
+            return new IntRectangle(alignedDownLeftPoint.X, alignedDownLeftPoint.Y, _fieldSize.X, _fieldSize.Y);
+            //return new IntRectangle(alignedDownLeftPoint.X-1, alignedDownLeftPoint.Y-1, _fieldSize.X+2, _fieldSize.Y+2);
         }
 
         public void Update(Vector2 travellerPosition)

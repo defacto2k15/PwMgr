@@ -108,7 +108,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 var initializingHelper = new FEInitializingHelper(_gameInitializationFields, _ultraUpdatableContainer, _configuration);
                 initializingHelper.InitializeGlobalInstancingContainer();
 
-                _segmentsGenerationInspector = new InitialSegmentsGenerationInspector(() => _initialTerrainCreatedSemaphore.Set());
+                _segmentsGenerationInspector = new InitialSegmentsGenerationInspector(() => _initialTerrainCreatedSemaphore?.Set());
                 _gameInitializationFields.SetField(_segmentsGenerationInspector);
 
                 _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
@@ -122,50 +122,52 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
 
-                EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
-                var elevationBuffers = InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration
-                    , _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager, perLevelTemplates);
-
-                _initialTerrainCreatedSemaphore = new TcsSemaphore();
-                _elevationManagerUpdateInputData = new MyAwaitableValue<EPropElevationManagerUpdateInputData>();
-                var spotUpdaterProxy = _gameInitializationFields.Retrive<DesignBodySpotUpdaterProxy>();
-                spotUpdaterProxy.PostAction(async () =>
+                if (VegetationConfiguration.GenerateBigBushes || VegetationConfiguration.GenerateGrass || VegetationConfiguration.GenerateTrees)
                 {
-                    await _initialTerrainCreatedSemaphore.Await();
-                    var propsMsw = new MyStopWatch();
-                    while (true)
+                    EPropElevationConfiguration ePropLocationConfiguration = new EPropElevationConfiguration();
+                    var elevationBuffers = InitializeDesignBodySpotUpdater(startConfiguration, ePropLocationConfiguration
+                        , _gameInitializationFields.Retrive<UnityThreadComputeShaderExecutorObject>(), buffersManager, perLevelTemplates);
+
+                    _initialTerrainCreatedSemaphore = new TcsSemaphore();
+                    _elevationManagerUpdateInputData = new MyAwaitableValue<EPropElevationManagerUpdateInputData>();
+                    var spotUpdaterProxy = _gameInitializationFields.Retrive<DesignBodySpotUpdaterProxy>();
+
+                    spotUpdaterProxy.PostAction(async () =>
                     {
-                        //Debug.Log("RRT ErectingBarrier");
-                        //await spotUpdaterProxy.ErectNewActionsBarrierAndWaitForSoleRemainingTask().Await();
-                        //propsMsw.StartSegment("UpdateAsync");
-                        //Debug.Log("RRT 0");
-                        var updateInput = await _elevationManagerUpdateInputData.RetriveValue();
-                        await _elevationManager.UpdateAsync(updateInput);
+                        await _initialTerrainCreatedSemaphore.Await();
+                        var propsMsw = new MyStopWatch();
+                        while (true)
+                        {
+                            //Debug.Log("RRT ErectingBarrier");
+                            //await spotUpdaterProxy.ErectNewActionsBarrierAndWaitForSoleRemainingTask().Await();
+                            //propsMsw.StartSegment("UpdateAsync");
+                            //Debug.Log("RRT 0");
+                            var updateInput = await _elevationManagerUpdateInputData.RetriveValue();
+                            await _elevationManager.UpdateAsync(updateInput);
 
-                        //propsMsw.StartSegment("RecalculateSectorsDivision");
-                        //Debug.Log("RRT 1");
-                        //await _elevationManager.RecalculateSectorsDivisionAsync(updateInput.TravellerFlatPosition);
-                        //Debug.Log($"Update of localeRecalculation "+propsMsw.CollectResults());
-                        //propsMsw = new MyStopWatch();
+                            //propsMsw.StartSegment("RecalculateSectorsDivision");
+                            //Debug.Log("RRT 1");
+                            //await _elevationManager.RecalculateSectorsDivisionAsync(updateInput.TravellerFlatPosition);
+                            //Debug.Log($"Update of localeRecalculation "+propsMsw.CollectResults());
+                            //propsMsw = new MyStopWatch();
 
-                        //spotUpdaterProxy.DismantleNewActionsBarrierAndWaitForQueuedActionsToStart();
-                    }
-                });
-                _elevationManager.RecalculateSectorsDivisionAsync(startConfiguration.InitialTravellerPosition).Wait();
+                            //spotUpdaterProxy.DismantleNewActionsBarrierAndWaitForQueuedActionsToStart();
+                        }
+                    });
+                    _elevationManager.RecalculateSectorsDivisionAsync(startConfiguration.InitialTravellerPosition).Wait();
 
+                    var commonUniforms = new UniformsPack();
+                    commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
 
+                    var reloader = FindObjectOfType<BufferReloaderRootGO>();
+                    ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
+                    computeBuffersPack.SetBuffer("_EPropLocaleBuffer", elevationBuffers.EPropLocaleBuffer);
+                    computeBuffersPack.SetBuffer("_EPropIdsBuffer", elevationBuffers.EPropIdsBuffer);
 
-                var commonUniforms = new UniformsPack();
-                commonUniforms.SetUniform("_ScopeLength", ePropLocationConfiguration.ScopeLength);
-
-                var reloader = FindObjectOfType<BufferReloaderRootGO>();
-                ComputeBuffersPack computeBuffersPack = new ComputeBuffersPack(reloader);
-                computeBuffersPack.SetBuffer("_EPropLocaleBuffer", elevationBuffers.EPropLocaleBuffer);
-                computeBuffersPack.SetBuffer("_EPropIdsBuffer", elevationBuffers.EPropIdsBuffer);
-
-                var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
-                    , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
-                finalVegetation.Start();
+                    var finalVegetation = new FinalVegetation(_gameInitializationFields, _ultraUpdatableContainer, VegetationConfiguration
+                        , new UniformsAndComputeBuffersPack(commonUniforms, computeBuffersPack));
+                    finalVegetation.Start();
+                }
 
                 Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
             });
@@ -194,14 +196,17 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             if (Time.frameCount % 50 == 0)
             {
-                var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
-                    _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
-                _elevationManagerUpdateInputData.SetValue(new EPropElevationManagerUpdateInputData()
+                if (VegetationConfiguration.GenerateBigBushes || VegetationConfiguration.GenerateGrass || VegetationConfiguration.GenerateTrees)
                 {
-                    TravellerFlatPosition = travellerFlatPosition,
-                    SelectorWithParameters = selectorWithParameters,
-                    LevelCentersWorldSpace = _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel
-                });
+                    var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
+                        _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
+                    _elevationManagerUpdateInputData.SetValue(new EPropElevationManagerUpdateInputData()
+                    {
+                        TravellerFlatPosition = travellerFlatPosition,
+                        SelectorWithParameters = selectorWithParameters,
+                        LevelCentersWorldSpace = _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel
+                    });
+                }
             }
 
             //if (!_wasFirstUpdateDone)
@@ -721,7 +726,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     await Fill(token, alignedPosition, _segmentsDict[alignedPosition].Segment);
                     return;
                 case SegmentGenerationProcessSituation.DuringFilling:
-                    Preconditions.Fail("Not expected State: " + token.Situation);
+                    //Preconditions.Fail("Not expected State: " + token.Situation);
+                    Debug.Log("Not expected State: " + token.Situation);
                     return;
                 case SegmentGenerationProcessSituation.Filled:
                     Preconditions.Fail("Not expected State: " + token.Situation);
