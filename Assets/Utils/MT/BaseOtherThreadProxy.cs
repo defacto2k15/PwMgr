@@ -28,11 +28,16 @@ namespace Assets.Utils.MT
         private List<ActionWithNamedCaller> _synchronicActionsToPreform = new List<ActionWithNamedCaller>();
         private Action _perEveryPostAction;
 
+        private List<ActionWithNamedCaller> _actionsToPreformStoppedAtBarrier = new List<ActionWithNamedCaller>();
+        private bool _newActionsBarrierIsErected = false;
+
         public BaseOtherThreadProxy(string threadName, bool synchronicBufferingUntilThreadStart)
         {
             _threadName = threadName;
             _derivedClassName = this.GetType().Name;
             _synchronicBufferingUntilThreadStart = synchronicBufferingUntilThreadStart;
+            _newActionsBarrierIsErected = false;
+            _actionsToPreformStoppedAtBarrier = new List<ActionWithNamedCaller>();
         }
 
         public void StartThreading(Action perEveryPostAction = null)
@@ -107,6 +112,24 @@ namespace Assets.Utils.MT
             }
         }
 
+        public TcsSemaphore ErectNewActionsBarrierAndWaitForSoleRemainingTask()
+        {
+            Preconditions.Assert(!_newActionsBarrierIsErected, "NewActionsBarrier is arleady erected");
+            _newActionsBarrierIsErected = true;
+            return _synchronizationContext.AcquireWaitingForSoleRemainingTaskSemaphore();
+        }
+
+        public void DismantleNewActionsBarrierAndWaitForQueuedActionsToStart()
+        {
+            Preconditions.Assert(_newActionsBarrierIsErected, "New actions barrier was not erected");
+            _newActionsBarrierIsErected = false;
+            var queuedActions = _actionsToPreformStoppedAtBarrier;
+            _actionsToPreformStoppedAtBarrier = new List<ActionWithNamedCaller>();
+
+            _synchronizationContext.RemoveWaitingForSoleRamainingTaskSemaphore();
+            queuedActions.ForEach(c => PostAction(c.Action, c.CallerName));
+        }
+
         public void PostAction(Func<Task> action, [CallerMemberName] string memberName = "")
         {
             if (!TaskUtils.GetGlobalMultithreading() || TaskUtils.GetMultithreadingOverride())
@@ -129,7 +152,18 @@ namespace Assets.Utils.MT
             }
             else
             {
-                _synchronizationContext.PostNew(()=> action());
+                if (_newActionsBarrierIsErected)
+                {
+                    _actionsToPreformStoppedAtBarrier.Add(new ActionWithNamedCaller()
+                    {
+                        Action = action,
+                        CallerName = memberName
+                    });
+                }
+                else
+                {
+                    _synchronizationContext.PostNew(()=> action());
+                }
             }
         }
 

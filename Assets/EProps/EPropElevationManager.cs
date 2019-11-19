@@ -14,6 +14,7 @@ using Assets.Trees.RuntimeManagement.SubjectsInstancesContainer;
 using Assets.Utils;
 using Assets.Utils.Services;
 using UnityEngine;
+using UnityEngine.Experimental.PlayerLoop;
 using Vector3 = UnityEngine.Vector3;
 
 namespace Assets.EProps
@@ -124,6 +125,11 @@ namespace Assets.EProps
                 _configuration.BaseSectorsWorldSpaceLength/_configuration.QuadTreeMaxDepth);
         }
 
+         public Task UpdateAsync(EPropElevationManagerUpdateInputData inputData)
+         {
+             return UpdateAsync(inputData.TravellerFlatPosition, inputData.LevelCentersWorldSpace, inputData.SelectorWithParameters);
+         }
+
         public async Task UpdateAsync(Vector2 travellerFlatPosition, Dictionary<HeightPyramidLevel, Vector2> levelCentersWorldSpace, EPropHotAreaSelectorWithParameters selectorWithParameters)
         {
             var changes = _quadTreeRoots.Values.SelectMany(c => c.RetriveAndClearUpdateOrders()).ToList();
@@ -194,6 +200,13 @@ namespace Assets.EProps
                 }
             }
         }
+    }
+
+    public class EPropElevationManagerUpdateInputData
+    {
+        public Vector2 TravellerFlatPosition;
+        public Dictionary<HeightPyramidLevel, Vector2> LevelCentersWorldSpace;
+        public EPropHotAreaSelectorWithParameters SelectorWithParameters;
     }
 
     public class EPropPointerWithId
@@ -458,6 +471,8 @@ namespace Assets.EProps
         private Func<int, Vector2, Task> _localeRecalculationShaderOrderGenerator;
         private Func<int, Task> _localesCopyShaderOrderGenerator;
 
+        private ComputeShader _eTerrainComputeShader;
+
         public EPropLocaleBufferManager(CommonExecutorUTProxy commonExecutor, UnityThreadComputeShaderExecutorObject shaderExecutorObject, EPropElevationConfiguration configuration
             , EPropConstantPyramidParameters constantPyramidParameters)
         {
@@ -486,6 +501,8 @@ namespace Assets.EProps
 
             GenerateShaderOrderTemplates(ePyramidPerFrameParametersBuffer, ePyramidConfigurationBuffer, heightmapTextures);
 
+            _eTerrainComputeShader = ComputeShaderUtils.LoadComputeShader("eterrain_comp");
+
             return new EPropLocaleBufferManagerInitializedBuffers()
             {
                 EPropIdsBuffer = _ePropIdsBuffer,
@@ -498,9 +515,7 @@ namespace Assets.EProps
         {
             _localeBufferUpdaterShaderOrderGenerator = (ordersCount, travellerPositionWorldSpace) =>
             {
-                var shader = ComputeShaderUtils.LoadComputeShader("eterrain_comp");
-                MultistepComputeShader localeBufferUpdateShader =
-                    new MultistepComputeShader(shader, new IntVector2(ordersCount, 1));
+                MultistepComputeShader localeBufferUpdateShader = new MultistepComputeShader(_eTerrainComputeShader, new IntVector2(ordersCount, 1));
 
                 ComputeShaderParametersContainer parametersContainer = new ComputeShaderParametersContainer() { };
                 var scopesUpdateOrdersBufferId = parametersContainer.AddExistingComputeBuffer(_scopesUpdateOrdersBuffer);
@@ -565,9 +580,8 @@ namespace Assets.EProps
 
             _localesCopyShaderOrderGenerator = (ordersCount) =>
             {
-                var shader = ComputeShaderUtils.LoadComputeShader("eterrain_comp");
                 MultistepComputeShader localeBufferUpdateShader =
-                    new MultistepComputeShader(shader, new IntVector2(ordersCount, 1));
+                    new MultistepComputeShader(_eTerrainComputeShader, new IntVector2(ordersCount, 1));
 
                 ComputeShaderParametersContainer parametersContainer = new ComputeShaderParametersContainer() { };
                 var localesCopyOrdersBufferId = parametersContainer.AddExistingComputeBuffer(_localesCopyOrdersBuffer);
@@ -609,9 +623,8 @@ namespace Assets.EProps
 
             _localeRecalculationShaderOrderGenerator = (ordersCount, travellerPositionWorldSpace) =>
             {
-                var shader = ComputeShaderUtils.LoadComputeShader("eterrain_comp");
                 MultistepComputeShader localeBufferUpdateShader =
-                    new MultistepComputeShader(shader, new IntVector2(ordersCount, 1));
+                    new MultistepComputeShader(_eTerrainComputeShader, new IntVector2(ordersCount, 1));
 
                 ComputeShaderParametersContainer parametersContainer = new ComputeShaderParametersContainer() { };
 
@@ -749,7 +762,11 @@ namespace Assets.EProps
 
         public async Task ProcessDivisionChangesAsync(EPropIdChangeOrder idChangeOrder)
         {
-            await CopyLocalesAsync(idChangeOrder.IdChanges);
+            if (idChangeOrder.IdChanges.Any())
+            {
+                await CopyLocalesAsync(idChangeOrder.IdChanges);
+            }
+
             FreeScopes(idChangeOrder.ScopesToFree);
         }
 
@@ -958,13 +975,13 @@ namespace Assets.EProps
     public class EPropLocaleBufferScopeRegistry
     {
         private EPropElevationConfiguration _configuration;
-        private ConstantSizeClaimableContainer<Vector2> _localeArray;
+        private ConstantSizeClaimableContainer<Vector2?> _localeArray;
         private List<EPropLocaleBufferScopeUpdateOrder> _updateOrders;
 
         public EPropLocaleBufferScopeRegistry(EPropElevationConfiguration configuration)
         {
             _configuration = configuration;
-            _localeArray = ConstantSizeClaimableContainer<Vector2>.CreateEmpty(configuration.ScopeLength);
+            _localeArray = ConstantSizeClaimableContainer<Vector2?>.CreateEmpty(configuration.ScopeLength);
             _updateOrders = new List<EPropLocaleBufferScopeUpdateOrder>();
         }
 
@@ -990,7 +1007,12 @@ namespace Assets.EProps
             Preconditions.Assert(IsEmpty, "Cannot claim for group, registry is not empty");
             Preconditions.Assert(positions.Count <= _configuration.ScopeLength, "Group count is bigger than  scopeLength, count is " + positions.Count);
 
-            _localeArray = ConstantSizeClaimableContainer<Vector2>.CreateFull(_configuration.ScopeLength);
+            _localeArray = ConstantSizeClaimableContainer<Vector2?>.CreateFull(_configuration.ScopeLength);
+            for (int i = 0; i < positions.Count; i++)
+            {
+                _localeArray.SetElementWithoutClaimedSpaceChanges(positions[i],i);
+            }
+
             var outList = new List<uint>();
             for (uint i = 0; i < positions.Count; i++)
             {
@@ -1017,9 +1039,9 @@ namespace Assets.EProps
 
         public List<InScopeIndexTypeWithFlatPosition> RetriveAllLocales()
         {
-            return _localeArray.RetriveAllElements().Select(c => new InScopeIndexTypeWithFlatPosition()
+            return _localeArray.RetriveAllElements().Where(c=>c.Element.HasValue).Select(c => new InScopeIndexTypeWithFlatPosition()
             {
-                FlatPosition = c.Element,
+                FlatPosition = c.Element.Value,
                 InScopeIndex = c.Index
             }).ToList();
         }

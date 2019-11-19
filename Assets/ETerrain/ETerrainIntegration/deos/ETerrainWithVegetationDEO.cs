@@ -141,21 +141,19 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
              _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
 
-            if (Time.frameCount < 5)
-            {
-                var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
-                    _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
-                _elevationManager.UpdateAsync(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters).Wait();
-            }
+             if (Time.frameCount > 100 && Time.frameCount % 50 == 0)
+             {
+                 var selectorWithParameters = EPropHotAreaSelectorWithParameters.Create(_ePropHotAreaSelector,
+                     _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, travellerFlatPosition);
+                 _elevationManager.UpdateAsync(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel, selectorWithParameters)
+                     .Wait();
+                 if (Time.frameCount % 100 == 0)
+                 {
+                     //var propLocaleChanges = _elevationManager.RecalculateSectorsDivisionAsync(travellerFlatPosition);
+                 }
+             }
 
-            if (Time.frameCount % 100 == 0)
-            {
-                if (false)
-                {
-                    var propLocaleChanges = _elevationManager.RecalculateSectorsDivisionAsync(travellerFlatPosition);
-                }
-            }
-            if (!_wasFirstUpdateDone)
+             if (!_wasFirstUpdateDone)
             {
                 Debug.Log("FIRST UPDATE RESULT " + msw.CollectResults());
                 _wasFirstUpdateDone = true;

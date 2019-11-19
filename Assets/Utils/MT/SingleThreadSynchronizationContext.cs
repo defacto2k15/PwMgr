@@ -20,6 +20,7 @@ namespace Assets.Utils.MT
         private int _nonCompletedTasks = 0;
 
         private Action _perEveryOrderAction;
+        private TcsSemaphore _waitingForSoleRemainingTaskSemaphore;
 
         public override void Send(SendOrPostCallback codeToRun, object state)
         {
@@ -70,6 +71,8 @@ namespace Assets.Utils.MT
                 {
                     _perEveryOrderAction();
                 }
+
+                CheckWaitingForSoleRemainingTaskSemaphore();
             }
         }
 
@@ -140,6 +143,39 @@ namespace Assets.Utils.MT
                 ContinuingTasksCount = statistics.ContinuationsToProcessCount,
                 BlockedTasksCount = _nonCompletedTasks - statistics.ContinuationsToProcessCount - addonToQueue
             };
+        }
+
+        public TcsSemaphore AcquireWaitingForSoleRemainingTaskSemaphore()
+        {
+            Preconditions.Assert( _waitingForSoleRemainingTaskSemaphore == null, "Semaphore is arleady present. ");
+            Preconditions.Assert(_nonCompletedTasks>0,"There are no non-completed task present");
+            var newSemaphore = new TcsSemaphore();
+            _waitingForSoleRemainingTaskSemaphore = newSemaphore; 
+            CheckWaitingForSoleRemainingTaskSemaphore();
+            return newSemaphore;
+        }
+
+        private void CheckWaitingForSoleRemainingTaskSemaphore()
+        {
+            if (_waitingForSoleRemainingTaskSemaphore != null)
+            {
+                if (!_waitingForSoleRemainingTaskSemaphore.SemaphoreIsSet())
+                {
+                    Preconditions.Assert(_nonCompletedTasks > 0, "There are no non-completed task present");
+                    Debug.Log("Checking is semaphore is up: " + _nonCompletedTasks + " " + _workContainer.CalculateStatistics().ContinuationsToProcessCount +
+                              " " + _workContainer.CalculateStatistics().NewTasksToProcessCount);
+                    if (_nonCompletedTasks == 1 && !_workContainer.AnyWorkToDo())
+                    {
+                        _waitingForSoleRemainingTaskSemaphore.Set();
+                    }
+                }
+            }
+        }
+
+        public void RemoveWaitingForSoleRamainingTaskSemaphore()
+        {
+            Preconditions.Assert( _waitingForSoleRemainingTaskSemaphore != null, "Semaphore is not present. ");
+            _waitingForSoleRemainingTaskSemaphore = null;
         }
     }
 

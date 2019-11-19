@@ -31,8 +31,7 @@
 		UNITY_INSTANCING_BUFFER_END(Props)
 
          half4 LightingSimpleLambert (SurfaceOutput s, half3 lightDir, half atten) {
-			float3 normal = lerp(s.Normal, -normalize(float3(lightDir.x, 0, lightDir.z) + float3(0, -0.7, 0)), s.Alpha);
-			half NdotL = (dot(normal, lightDir));
+			 half NdotL = lerp(dot(s.Normal, lightDir), 0.5, s.Alpha);
 			 half4 c;
 			 c.rgb = s.Albedo * _LightColor0.rgb * (NdotL * atten);
 			 c.a = 1; 
@@ -41,7 +40,6 @@
 
 		#include "GenericBillboard.hlsl"
 		#include "eterrain_EPropLocaleHeightAccessing.hlsl"
-
 
 		void evegetation_billboard_vert (inout float4 vertex, out Input o){
 			fixed2 oldPos = vertex.xy + 0.5;

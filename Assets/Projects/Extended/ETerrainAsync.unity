@@ -20,11 +20,11 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.71645373, g: 0.754717, b: 0.28835887, a: 1}
+  m_AmbientSkyColor: {r: 0.43529412, g: 0.4745098, b: 0.34117648, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
-  m_AmbientIntensity: 1
-  m_AmbientMode: 0
+  m_AmbientIntensity: 4.5
+  m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
   m_HaloStrength: 0.5
@@ -343,7 +343,7 @@ MonoBehaviour:
     ReferencedAssets:
       EVegetationMainTexture: {fileID: 2800000, guid: 5e22907918eb369488fa0311cd2eb070,
         type: 3}
-      GrassMaterial: {fileID: 2100000, guid: 36d1a39fa5c20db43b6cca83a962b849, type: 2}
+      GrassMaterial: {fileID: 2100000, guid: 8217e3156c4e716438eb7c88f47e7be1, type: 2}
       Prefabs:
       - {fileID: 186700, guid: 35d5e3901b785d74fb02e626a6eb3a5f, type: 3}
       - {fileID: 158626, guid: 1017ed3fa26cf0743bc990a16b64a8f9, type: 3}
@@ -351,9 +351,9 @@ MonoBehaviour:
       - {fileID: 189768, guid: 9a79a8d2a2d1a5d4291ebfcda284e94b, type: 3}
       - {fileID: 193400, guid: 3addedb4ce9735b44b416709f5bf528e, type: 3}
     Mode: 1
-    GenerateTrees: 0
-    GenerateBigBushes: 0
-    GenerateGrass: 0
+    GenerateTrees: 1
+    GenerateBigBushes: 1
+    GenerateGrass: 1
     GenerateSmallBushes: 0
     BigTreesSupportedDetailLevels: 000000000200000001000000
     ShaderNames:

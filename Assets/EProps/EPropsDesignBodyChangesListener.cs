@@ -61,7 +61,32 @@ namespace Assets.EProps
 
         public Task RegisterDesignBodiesGroupAsync(SpotId id, List<Vector2> bodiesPositions)
         {
-            var pointers = _elevationManager.RegisterPropsGroup(bodiesPositions.Select(c => _repositioner.Move(c)).ToList());
+            if (!bodiesPositions.Any())
+            {
+                _spotIdToGroupElevationIdDict = new Dictionary<SpotId, List<EPropElevationPointer>>();
+                return TaskUtils.EmptyCompleted();
+            }
+            var repositionedBodiesPositions = bodiesPositions.Select(c => _repositioner.Move(c)).ToList();
+            var mins = new Vector2(repositionedBodiesPositions.Select(c=>c.x).Min(), repositionedBodiesPositions.Select(c=>c.y).Min());
+            var maxs = new Vector2(repositionedBodiesPositions.Select(c=>c.x).Max(), repositionedBodiesPositions.Select(c=>c.y).Max());
+
+            var minimalAlignmentLength = 32f;
+            var minimumQuantIndex = new IntVector2(Mathf.FloorToInt(mins.x/minimalAlignmentLength), Mathf.FloorToInt(mins.y/minimalAlignmentLength));
+            var maximumQuantIndex = new IntVector2(Mathf.FloorToInt(maxs.x/minimalAlignmentLength), Mathf.FloorToInt(maxs.y/minimalAlignmentLength));
+
+            var perAlignmentBuckets = new Dictionary<IntVector2, List<Vector2>>();
+            foreach (var aPosition in repositionedBodiesPositions)
+            {
+                var alignedBucketPosition = new IntVector2(Mathf.FloorToInt(aPosition.x / minimalAlignmentLength), Mathf.FloorToInt(aPosition.y / minimalAlignmentLength) );
+                if (!perAlignmentBuckets.ContainsKey(alignedBucketPosition))
+                {
+                    perAlignmentBuckets[alignedBucketPosition] = new List<Vector2>();
+                }
+                perAlignmentBuckets[alignedBucketPosition].Add(aPosition);
+            }
+
+            var pointers =perAlignmentBuckets.Values.Where(c => c.Any()).SelectMany(c => _elevationManager.RegisterPropsGroup(c)).ToList();
+
             _spotIdToGroupElevationIdDict[id] = pointers;
             _changesListener.SpotGroupsWereChanged(new Dictionary<SpotId, List<DesignBodySpotModification>>()
             {
@@ -74,7 +99,6 @@ namespace Assets.EProps
         {
             //TODO IMPLEMENT
         }
-
 
         public Task UpdateBodiesSpotsAsync(UpdatedTerrainTextures newHeightTexture)
         {

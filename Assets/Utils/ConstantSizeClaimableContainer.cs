@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Assets.Utils
 {
@@ -37,6 +38,11 @@ namespace Assets.Utils
             return freeIndex;
         }
 
+        public void SetElementWithoutClaimedSpaceChanges(T element, int index)
+        {
+            _internalArray[index] = element;
+        }
+
         public List<ElementWithIndex<T>> RetriveAllElements()
         {
             return _takenIndexes.Select(i => new ElementWithIndex<T>() {Index = i, Element = _internalArray[i]}).ToList();
@@ -59,6 +65,7 @@ namespace Assets.Utils
                 new Queue<uint>(Enumerable.Range(0, size).Select(c => (uint) c).ToList())
             );
         } 
+
     }
 
     public class ElementWithIndex<T>

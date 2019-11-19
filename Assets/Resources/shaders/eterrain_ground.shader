@@ -109,7 +109,7 @@
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
-				v.vertex.y = 0 - levelAndRingIndexes.levelIndex*0.00002f; // terrainOut.finalHeight;
+				v.vertex.y = - levelAndRingIndexes.levelIndex*0.00002f + terrainOut.finalHeight;
 
 				v2f_o.inSegmentSpaceUv = inSegmentSpaceUv;
 				v2f_o.uv = uv;

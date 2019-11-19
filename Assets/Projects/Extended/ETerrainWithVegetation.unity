@@ -341,7 +341,7 @@ MonoBehaviour:
     ReferencedAssets:
       EVegetationMainTexture: {fileID: 2800000, guid: 5e22907918eb369488fa0311cd2eb070,
         type: 3}
-      GrassMaterial: {fileID: 2100000, guid: 36d1a39fa5c20db43b6cca83a962b849, type: 2}
+      GrassMaterial: {fileID: 2100000, guid: 8217e3156c4e716438eb7c88f47e7be1, type: 2}
       Prefabs:
       - {fileID: 186700, guid: 35d5e3901b785d74fb02e626a6eb3a5f, type: 3}
       - {fileID: 158626, guid: 1017ed3fa26cf0743bc990a16b64a8f9, type: 3}
@@ -350,8 +350,8 @@ MonoBehaviour:
       - {fileID: 193400, guid: 3addedb4ce9735b44b416709f5bf528e, type: 3}
     Mode: 1
     GenerateTrees: 1
-    GenerateBigBushes: 0
-    GenerateGrass: 0
+    GenerateBigBushes: 1
+    GenerateGrass: 1
     GenerateSmallBushes: 0
     BigTreesSupportedDetailLevels: 02000000
     ShaderNames:

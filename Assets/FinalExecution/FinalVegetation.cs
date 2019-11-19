@@ -16,6 +16,7 @@ using Assets.Grass2.Types;
 using Assets.Habitat;
 using Assets.Heightmaps;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
+using Assets.MeshGeneration;
 using Assets.Repositioning;
 using Assets.Ring2;
 using Assets.Roads;
@@ -355,8 +356,13 @@ namespace Assets.FinalExecution
         {
             var meshGenerator = new GrassMeshGenerator();
             var mesh = meshGenerator.GetGrassBladeMesh(1);
+            MeshGenerationUtils.SetYBoundsToInfinity(mesh);
 
             var instancingMaterial = _veConfiguration.ReferencedAssets.GrassMaterial;
+            if (_materialCommonPack != null)
+            {
+                _materialCommonPack.SetToMaterial(instancingMaterial);
+            }
 
             var commonUniforms = new UniformsPack();
             commonUniforms.SetUniform("_BendingStrength", 0.6f);

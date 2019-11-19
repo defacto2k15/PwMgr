@@ -85,7 +85,7 @@ namespace Assets.EProps
                                 LocaleBufferScopeIndex = c.Key
                             }
                         });
-                    });
+                    }).ToList();
                     var complexNode = new EPropQuadTreeComplex(_rectangle, _localeBufferManager);
                     var complexNodeDivisionResult = complexNode.ResolveDivision(decider.ChildElementDecider());
 

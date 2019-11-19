@@ -1,4 +1,4 @@
-﻿Shader "Custom/EVegetation/Grass.Instanced" {
+﻿Shader "Custom/EVegetation/GrassLocaledInstanced" {
 	Properties{
 		_Color("Color", Color) = (1,1,1,1)
 		_BendingStrength("BendingStrength", Range(0,1)) = 0.0
@@ -22,6 +22,7 @@
 
 	fixed _BendingStrength; 
 	fixed4 _WindDirection;  
+		int _ScopeLength;    
 
 		UNITY_INSTANCING_BUFFER_START(Props)    
 			UNITY_DEFINE_INSTANCED_PROP(fixed4,_Color)  
@@ -36,6 +37,7 @@
 #define _RandSeed_arr Props
 			UNITY_DEFINE_INSTANCED_PROP(half4, _DbgColor) 
 #define _DbgColor_arr Props
+			UNITY_DEFINE_INSTANCED_PROP(float, _Pointer)
 		UNITY_INSTANCING_BUFFER_END(Props) 
 
 		fixed4 LightingNoLighting(SurfaceOutput s, fixed3 lightDir, fixed atten)
@@ -51,6 +53,8 @@
 			float3 plantNormal;
 		};
 
+		#include "eterrain_EPropLocaleHeightAccessing.hlsl"
+
 		void vert(inout appdata_full v, out Input o) {
 			float3 plantNormalWorldSpace = mul(unity_ObjectToWorld, float3(0, 0, 1));
 
@@ -58,6 +62,10 @@
 
 			o.vertexWorldSpacePos = worldSpacePos;
 			o.plantNormal = plantNormalWorldSpace;
+
+			float heightOffset =  RetriveHeight();
+			float3 objectOffset = mul((float3x3)unity_WorldToObject, float3(0,heightOffset,0));
+			v.vertex.xyz += objectOffset;
 		}
 
 		void surf(Input i, inout SurfaceOutput o) {
@@ -68,7 +76,7 @@
 			float grassRemovalFactor = min(max(0, distanceToCamera - 10) / 50, 0.3);
 
 			//clip(cameraToPlantAngle - grassRemovalFactor);
-			o.Albedo = UNITY_ACCESS_INSTANCED_PROP(_Color_arr, _Color);
+			o.Albedo = UNITY_ACCESS_INSTANCED_PROP(_Color_arr, _Color)*0.6;
 			o.Normal = i.plantNormal;
 		}
 		ENDCG

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Assets.Utils.MT
 {
@@ -23,6 +24,11 @@ namespace Assets.Utils.MT
         public void Set()
         {
             _tcs.SetResult(null);
+        }
+
+        public bool SemaphoreIsSet()
+        {
+            return _tcs.Task.IsCompleted;
         }
     }
 }
