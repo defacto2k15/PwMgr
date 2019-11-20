@@ -88,7 +88,6 @@ namespace Assets.Grass2.Planting
 
         public void GrassGroupSpotChanged(SpotId spotId, List< DesignBodySpotModification> spotDatas)
         {
-            Debug.Log(" GrassGroupSpotChanged "+spotDatas.Count);
             MyProfiler.BeginSample("GrassGroupsPlanter. GrassGroupSpotChanged");
             var groupId = _spotIdToGrassGroupId.Get(spotId);
             if (!_groupsAspectInfos.ContainsKey(groupId))

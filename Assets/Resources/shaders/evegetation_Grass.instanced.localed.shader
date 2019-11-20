@@ -96,8 +96,6 @@
 				seed,  
 				1); 
 
-
-
 			float3 plantNormalWorldSpace = mul(unity_ObjectToWorld, float3(0, 0, 1));
 
 			float4 worldSpacePos = mul(unity_ObjectToWorld, v.vertex);
