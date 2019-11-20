@@ -277,18 +277,6 @@
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				int levelIndex = levelAndRingIndexes.levelIndex;
 				int ringIndex = levelAndRingIndexes.ringIndex;
-				levelIndex = ringIndex;
-				if (levelIndex == 0) {
-					finalColor = float4(1, 0, 0, 1);
-				}
-				else if (levelIndex == 1) {
-					finalColor = float4(0, 1, 0, 1);
-				} else if (levelIndex == 2) {
-					finalColor = float4(0, 0, 1, 1);
-				}
-				else {
-					finalColor = float4(1, 1, 1, 1);
-				}
 
 				TriangulatedSurfaceInfo surfaceInfo = CalculateTriangulatedSurfaceInfo(i.inSegmentSpaceUv, levelAndRingIndexes, perRingParameters, terrainParameters);
 
@@ -307,6 +295,24 @@
 				float3 worldNormal = surfaceInfo.worldNormal;
 				o.Albedo = finalColor;
 				o.Normal = float3(worldNormal.x, -worldNormal.z, worldNormal.y);// mul((float3x3)unity_WorldToObject, float3(worldNormal)).zyx;
+
+
+				//finalColor = 0;
+				//if (levelIndex == 0) {
+				//	finalColor = float4(1, 0, 0, 1);
+				//}
+				//else if (levelIndex == 1) {
+				//	finalColor = float4(0, 1, 0, 1);
+				//}
+				//else {
+				//	finalColor = float4(0, 0, 1, 1);
+				//}
+
+				//finalColor /= (ringIndex + 1.0f);
+				//if (i.terrainMergingLerpParam > 0.02 && i.terrainMergingLerpParam < 0.98) {
+				//	finalColor = float4(1, 1, 1, 1) *i.terrainMergingLerpParam;
+				//}
+				//o.Albedo = finalColor;
 			} 
 
 			ENDCG

@@ -185,6 +185,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             //Debug.Log("MOVEMENT POSSIBILITY "+_movementCustodian.IsMovementPossible());
             Traveller.SetActive(_movementCustodian.IsMovementPossible());
             _movementCustodian.Update();
+            Overlay.SetMovementPossibilityDetails(_movementCustodian.GenerateMovementPossibilityDetails());
+
             var msw = new MyStopWatch();
             msw.StartSegment("FIRST UPDATE");
 
@@ -274,8 +276,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
                     var fillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor);
                     var travellerCustodian = initializationFields.Retrive<TravellerMovementCustodian>();
-                    travellerCustodian.AddLimiter(() => fillingListener.AreRequiredSegmentsPresent());
-                    initializationFields.Retrive<InitialSegmentsGenerationInspector>().SetConditionToCheck(() => fillingListener.AreRequiredSegmentsPresent());
+                    travellerCustodian.AddLimiter(() => new MovementBlockingProcess(){ProcessName = "HeightSegmentsGenerationProcess "+level, BlockCount = fillingListener.BlockingProcessesCount()});
+                    initializationFields.Retrive<InitialSegmentsGenerationInspector>().SetConditionToCheck(() => fillingListener.BlockingProcessesCount() == 0);
                     return new SegmentFillingListenerWithCeilTexture()
                     {
                         CeilTexture = ceilTexture,
@@ -389,7 +391,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     ultraUpdatableContainer.AddOtherThreadProxy(otherThreadExecutor);
                     var fillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor);
                     var travellerCustodian = gameInitializationFields.Retrive<TravellerMovementCustodian>();
-                    travellerCustodian.AddLimiter(() => fillingListener.AreRequiredSegmentsPresent());
+                    travellerCustodian.AddLimiter(() => new MovementBlockingProcess(){ BlockCount = fillingListener.BlockingProcessesCount(), ProcessName = "SurfaceSegmentsGeneration "+level});
                     return new SegmentFillingListenerWithCeilTexture()
                     {
                         CeilTexture = ceilTexture,
@@ -504,22 +506,28 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             }
         }
 
-        public bool AreRequiredSegmentsPresent()
+        public int BlockingProcessesCount()
         {
             if (!_tokensDict.Any(c => c.Value.ShouldBeFilled))
             {
-                return false;
+                return 0;
             }
-            return _tokensDict.Select(c => c.Value).All(c =>
+
+            return _tokensDict.Select(c => c.Value).Sum(c =>
             {
                 if (c.ShouldBeFilled)
                 {
-                    return c.Situation == SegmentGenerationProcessSituation.Filled;
+                    if (c.Situation == SegmentGenerationProcessSituation.Filled)
+                    {
+                        return 0;
+                    }
+                    else
+                    {
+                        return 1;
+                    }
                 }
-                else
-                {
-                    return true;
-                }
+
+                return 0;
             });
         }
     }

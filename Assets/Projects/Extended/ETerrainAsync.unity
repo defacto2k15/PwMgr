@@ -252,7 +252,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Param1: 0
   Param2: 0
-  WindStrength: {x: 0.02, y: 0.02, z: 0.01}
+  WindStrength: {x: 0.1, y: 0.02, z: 0.01}
 --- !u!114 &253636896
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -537,6 +537,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6db9fe1f7b3864d4d8a360a5aa6b0e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Traveller: {fileID: 185176292}
+  Cam: {fileID: 253636893}
 --- !u!4 &895884225
 Transform:
   m_ObjectHideFlags: 0

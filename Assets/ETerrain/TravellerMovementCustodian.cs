@@ -11,23 +11,23 @@ namespace Assets.ETerrain
     public class TravellerMovementCustodian 
     {
         private readonly GameObject _traveller;
-        private List<Func<bool>> _travelLimiters;
+        private List<Func<MovementBlockingProcess>> _travelLimiters;
         private Vector3? _lastFramePositon;
 
         public TravellerMovementCustodian(GameObject traveller)
         {
             _traveller = traveller;
-            _travelLimiters = new List<Func<bool>>();
+            _travelLimiters = new List<Func<MovementBlockingProcess>>();
         }
 
-        public void AddLimiter(Func<bool> limiter)
+        public void AddLimiter(Func<MovementBlockingProcess> limiter)
         {
             _travelLimiters.Add(limiter);
         }
 
         public bool IsMovementPossible()
         {
-            return _travelLimiters.All(c => c());
+            return _travelLimiters.All(c => c().BlockCount==0);
         }
 
         public void Update()
@@ -48,5 +48,16 @@ namespace Assets.ETerrain
                 }
             }
         }
+
+        public List<MovementBlockingProcess> GenerateMovementPossibilityDetails()
+        {
+            return _travelLimiters.Select(c => c()).Where(c => c.BlockCount > 0).ToList();
+        }
+    }
+
+    public class MovementBlockingProcess
+    {
+        public string ProcessName;
+        public int BlockCount;
     }
 }
