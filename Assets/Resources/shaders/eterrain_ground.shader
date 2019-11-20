@@ -158,7 +158,11 @@
 				float2 textureSamplingUv = frac(inSegmentSpaceUv + MainPyramidCenterUv(levelAndRingIndexes, terrainParameters));
 
 				float2 sampleCenteredHighQualityUv = textureSamplingUv + 1.0/ (mainHeightTextureResolution * 2.0); //This is to align UV to sample center of heightmap pixels
-				return sampleSurfaceTexture(levelAndRingIndexes.levelIndex, float4(sampleCenteredHighQualityUv,0,lod));
+				float4 currentColor = sampleSurfaceTexture(levelAndRingIndexes.levelIndex, float4(sampleCenteredHighQualityUv,0,lod));
+
+				float4 secondChanceColor =sampleSurfaceTexture(1, float4(sampleCenteredHighQualityUv,0,lod));
+				float secondChanceMarker = saturate(0.01+currentColor.a / 0.025);
+				return lerp(secondChanceColor, currentColor, secondChanceMarker) ;
 			}
 
 
@@ -301,14 +305,6 @@
 				finalColor = calculateESurfaceColor(surfaceInfo.downLeftVerticleInSegmentSpaceUv, levelAndRingIndexes, terrainParameters, surfaceColorLod);
 
 				float3 worldNormal = surfaceInfo.worldNormal;
-				//finalColor = float4(randomColor(squareIndex), 1);
-				//finalColor = float4(worldNormal, 1);
-
-				half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
-				//finalColor = nl*finalColor;
-
-				//finalColor = tex2Dlod(_SurfaceTexture2, float4(i.uv,0,0));
-
 				o.Albedo = finalColor;
 				o.Normal = float3(worldNormal.x, -worldNormal.z, worldNormal.y);// mul((float3x3)unity_WorldToObject, float3(worldNormal)).zyx;
 			} 

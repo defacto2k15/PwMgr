@@ -190,13 +190,13 @@ GEN_fractalNoise3D( cloudNoise, 5, snoise3D, 0, 1)
 				
 				float3 rd = normalize(i.worldDirection);
 				float3 outColor;
-				if ((rd.y < -0.2) && depth > 40000) {
+				if ((rd.y < -0.2) && depth > 14000) {
 					outColor = tex2D(_MainTex, i.projPos.xy-float2(0.01, 0.01)).rgb;
 				}
 				else {
 					float3 skyColor =  GetSky(rd, _WorldSpaceCameraPos);
 					outColor = skyColor;
-					if (depth > 40000) {
+					if (depth > 10000) {
 						outColor = skyColor;
 					}
 					else {
@@ -204,7 +204,8 @@ GEN_fractalNoise3D( cloudNoise, 5, snoise3D, 0, 1)
 					}
 				}
 
-					return float4(outColor, 1);
+				return float4(outColor, 1);
+				return depth/10000.0;
 			}
 			ENDCG
 		}

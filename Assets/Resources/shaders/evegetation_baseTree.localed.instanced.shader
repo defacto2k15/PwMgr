@@ -57,7 +57,7 @@
 				}
 
 				float4 propColor = UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
-				float3 finalColor = EVegetationCalculateColor(colorMarker, propColor);
+				float3 finalColor = EVegetationCalculateColor(colorMarker, propColor)*0.7;
 
 				o.Albedo = finalColor;
 

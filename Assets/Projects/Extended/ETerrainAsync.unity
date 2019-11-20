@@ -163,6 +163,8 @@ GameObject:
   - component: {fileID: 253636894}
   - component: {fileID: 253636893}
   - component: {fileID: 253636892}
+  - component: {fileID: 253636895}
+  - component: {fileID: 253636896}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -187,7 +189,7 @@ Camera:
   m_GameObject: {fileID: 253636891}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
+  m_ClearFlags: 2
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -202,7 +204,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 20000
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -228,13 +230,49 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 253636891}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: -0.012874817, y: 0.2352572, z: 0.0031166489, w: 0.97184294}
+  m_LocalPosition: {x: 1174.841, y: 677.8538, z: 472.9348}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -1.518, y: 27.216, z: 0}
+--- !u!114 &253636895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 253636891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 001521f2aee23a34ba94c2df785fca75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Param1: 0
+  Param2: 0
+  WindStrength: {x: 0.02, y: 0.02, z: 0.01}
+--- !u!114 &253636896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 253636891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 5fa1b5b4020c71b4394ff1ced1164196, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraSensitivity: 90
+  climbSpeed: 4
+  normalMoveSpeed: 10
+  slowMoveFactor: 0.1
+  zRotationSpeed: 1
+  fastMoveFactor: 3
+  RotationEnabled: 0
 --- !u!1 &449942670
 GameObject:
   m_ObjectHideFlags: 0
@@ -351,9 +389,9 @@ MonoBehaviour:
       - {fileID: 189768, guid: 9a79a8d2a2d1a5d4291ebfcda284e94b, type: 3}
       - {fileID: 193400, guid: 3addedb4ce9735b44b416709f5bf528e, type: 3}
     Mode: 1
-    GenerateTrees: 0
-    GenerateBigBushes: 0
-    GenerateGrass: 0
+    GenerateTrees: 1
+    GenerateBigBushes: 1
+    GenerateGrass: 1
     GenerateSmallBushes: 0
     BigTreesSupportedDetailLevels: 000000000200000001000000
     ShaderNames:

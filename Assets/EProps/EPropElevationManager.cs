@@ -712,6 +712,7 @@ namespace Assets.EProps
         public async Task UpdateBuffersAsync(List<EPropSectorSoleUpdateOrder> updateOrders, Vector2 travellerPositionWorldSpace)
         {
             var passesCount = Mathf.CeilToInt(updateOrders.Count / ((float) _configuration.MaxScopeUpdateOrdersInBuffer));
+            Debug.Log("UpdateBufefrsCount: "+passesCount);
             for (int i = 0; i < passesCount; i++)
             {
                 var scopeUpdateOrdersArray = new GpuSoleUpdateOrder[_configuration.MaxScopeUpdateOrdersInBuffer];
@@ -744,6 +745,7 @@ namespace Assets.EProps
         public async Task RecalculateLocalesAsync(Vector2 travellerPositionWorldSpace, List<LocaleBufferScopeIndexType> scopesToRecalculate)
         {
             var passesCount = Mathf.CeilToInt(scopesToRecalculate.Count / ((float) _configuration.MaxScopesToRecalculatePerPass));
+            Debug.Log("Recalculating pass count: "+passesCount);
             for (int i = 0; i < passesCount; i++)
             {
                 var offset = i * _configuration.MaxScopesToRecalculatePerPass;
@@ -869,8 +871,8 @@ namespace Assets.EProps
         public  int ScopeLength = 256;
         public  int MaxScopesCount = 1024*8;
         public int LocalesCount => ScopeLength * MaxScopesCount;
-        public  int MaxScopeUpdateOrdersInBuffer = 1024;
-        public int MaxScopesToRecalculatePerPass = 32;
+        public  int MaxScopeUpdateOrdersInBuffer = 1024*8;
+        public int MaxScopesToRecalculatePerPass = 64;
         public int QuadTreeMaxDepth = 6;
         public float QuadTreeDivisionMultiplier = 4f*4;
         public int MaxLocalesToCopyInBuffer = 1024;

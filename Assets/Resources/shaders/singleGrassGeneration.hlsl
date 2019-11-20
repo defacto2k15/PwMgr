@@ -4,11 +4,11 @@
 #define SINGLE_GRASS_GENERATION_INC
 
 
-half3 calculateNormal(half yPos, half zPos ){
-	zPos = max(zPos, 0.001); // not to divide by 0
-	half angle = atan( yPos / zPos );
-	return normalize( half3(1.0, cos(angle), -sin(angle)));
-}
+		half3 calculateNormal(half yPos, half zPos ){
+			zPos = max(zPos, 0.001); // not to divide by 0
+			half angle = atan( yPos / zPos );
+			return normalize( half3(1.0, cos(angle), -sin(angle)));
+		}
 
 		struct Input {
 			float2 objectSpacePos;

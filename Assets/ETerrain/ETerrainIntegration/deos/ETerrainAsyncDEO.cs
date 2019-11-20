@@ -144,6 +144,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                             //Debug.Log("RRT 0");
                             var updateInput = await _elevationManagerUpdateInputData.RetriveValue();
                             await _elevationManager.UpdateAsync(updateInput);
+                            await Task.Delay(3000);
 
                             //propsMsw.StartSegment("RecalculateSectorsDivision");
                             //Debug.Log("RRT 1");

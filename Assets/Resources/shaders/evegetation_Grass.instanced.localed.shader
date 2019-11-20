@@ -54,8 +54,50 @@
 		};
 
 		#include "eterrain_EPropLocaleHeightAccessing.hlsl"
+#include "grassGeneration.hlsl"  
+
+		half3 calculateNormal(half yPos, half zPos ){
+			zPos = max(zPos, 0.001); // not to divide by 0
+			half angle = atan( yPos / zPos );
+			return normalize( half3(1.0, cos(angle), -sin(angle)));
+		}
+
+		void grass_vert(inout appdata_full v, out Input o, 
+				half l_BendingStrength, half l_InitialBendingValue, half l_PlantBendingStiffness, 
+				half4 l_WindDirection, half4 l_PlantDirection, fixed4 l_Color, half l_RandSeed, half distanceScale  ){
+			UNITY_INITIALIZE_OUTPUT(Input, o);
+
+			float l = v.texcoord[1]; // height of vertex from 0 to 1
+
+			half2 strengths = generateStrengths( l_BendingStrength, l_InitialBendingValue, l_PlantBendingStiffness, 
+				l_WindDirection, l_PlantDirection, l_RandSeed);
+			half xBendStrength = strengths.x;
+			half yBendStrength = strengths.y;
+
+			
+			v.vertex.z = calculateZ(xBendStrength, l) * distanceScale; //forth-back bending
+			v.vertex.y = calculateY(xBendStrength, l) * distanceScale; // top-down bending
+			v.vertex.x = calculateX(yBendStrength, v.vertex.x, v.vertex.y) * distanceScale;
+
+			// calculating normals
+			 v.normal = calculateNormal(v.vertex.y, v.vertex.z);
+		}
 
 		void vert(inout appdata_full v, out Input o) {
+			float seed = UNITY_MATRIX_MVP[0] + UNITY_MATRIX_MVP[1] + UNITY_MATRIX_MVP[2];
+			grass_vert(v, o,  
+				(_BendingStrength),
+				UNITY_ACCESS_INSTANCED_PROP(_InitialBendingValue_arr, _InitialBendingValue), 
+				UNITY_ACCESS_INSTANCED_PROP(_PlantBendingStiffness_arr, _PlantBendingStiffness), 
+				(_WindDirection), 
+				UNITY_ACCESS_INSTANCED_PROP(_PlantDirection_arr, _PlantDirection),
+				UNITY_ACCESS_INSTANCED_PROP(_Color_arr, _Color),
+				//UNITY_ACCESS_INSTANCED_PROP(_RandSeed),
+				seed,  
+				1); 
+
+
+
 			float3 plantNormalWorldSpace = mul(unity_ObjectToWorld, float3(0, 0, 1));
 
 			float4 worldSpacePos = mul(unity_ObjectToWorld, v.vertex);
