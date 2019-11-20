@@ -204,7 +204,8 @@ namespace Assets.Grass2.IntenstityDb
                 int r = 0;
                 foreach (var habitatTex in habitatTexturesDict.Values)
                 {
-                    textureArray.SetPixels(habitatTex.GetPixels(), r);
+                    var originalPixels = habitatTex.GetPixels();
+                    textureArray.SetPixels(originalPixels, r);
                     r++;
                 }
                 textureArray.Apply(false);

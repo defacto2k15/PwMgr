@@ -7,53 +7,56 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 0
     path: 
-    guid: 99c9720ab356a0642a771bea13969a05
+    guid: 00000000000000000000000000000000
   - enabled: 0
     path: Assets/Projects/old/p4.unity
     guid: a79f3e7bcaf2c4b448aa19cac03491dd
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/ProgramPitch/pp_menu.unity
     guid: 162fa4b70b827de449816e0dd78a56bf
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/Measurements/m-performance.unity
     guid: 5b8c957d8bc5a8647b24b3b2a4ec6230
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/Measurements/m-consistency.unity
     guid: f4ecb233fa2f8724d88ea0edd7a4ae6a
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-Breslav.unity
     guid: 657413c658c02094482f80a2d6e77842
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-Jordane.unity
     guid: 73b208598df442a49aeb797f4ff4dc04
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-mmGeometric.unity
     guid: 104ebdfbd59268546aa420126562ead4
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-mmStandard.unity
     guid: 4549b5a217f235b4dafa447a3d256cc2
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-NoTemporalCoherency.unity
     guid: 32d8ced06a498994393552c50cdd3f09
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-ShowerDoor.unity
     guid: 76749e94f5fd66242a592992bb666b99
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-Szecsi.unity
     guid: a4c5c4b9c51310849ba68c356e82efe7
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-tam.unity
     guid: 64dfe77d73d149247bc108c8c2a6f7b2
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-tamiss.unity
     guid: 45252ec66dcfef645b8224a34a7786b9
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/mf/mf-Wolowski.unity
     guid: 9c4b39c1074805b4c947112ce23650df
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/hype-hatching/hh-mmGeoShadow.unity
     guid: 40b01a64a7b63354a8b85defebd554f9
-  - enabled: 1
+  - enabled: 0
     path: Assets/Projects/hype-hatching/hh-mmTamShadow.unity
     guid: a9a07dd407e59f348a9d956faa1d21d0
+  - enabled: 1
+    path: Assets/Projects/Extended/ETerrainAsync.unity
+    guid: 73725745996d93243bbda75a42b010e4
   m_configObjects: {}

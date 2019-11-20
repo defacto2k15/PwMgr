@@ -346,6 +346,7 @@ namespace Assets.Trees.Generation
 
         public ETreeClanTemplate ELoadCompleteTreeClan(string clanName)
         {
+            return ELoadCompleteTreeClanFromResources(clanName);
 #if UNITY_EDITOR
             var path = TREE_COMPLETED_GENERATED_PREFABS_DIRECTORY + $"/treeClan-{clanName}.asset";
             var so = AssetDatabase.LoadAssetAtPath<ETreeClanScriptableObject>(path);
@@ -367,6 +368,17 @@ namespace Assets.Trees.Generation
             {
                 new ETreePyramidTemplate(null, mesh, null)
             });
+        }
+
+
+        public ETreeClanTemplate ELoadCompleteTreeClanFromResources(string clanName)
+        {
+            var path =  "treePrefabs/completedGenerated"+ $"/treeClan-{clanName}"; //todo parametrize
+            var so = (ETreeClanScriptableObject)Resources.Load(path);
+            Preconditions.Assert(so!=null, "Cannot load resource ETreeClan SO at path "+path);
+            return new ETreeClanTemplate(so.Pyramids.Select(c =>
+                new ETreePyramidTemplate(billboardTextureArray: new EBillboardTextureArray(c.BillboardArray, c.ScaleOffsets), fullTreeMesh: c.FullTreeMesh,
+                    simplifiedTreeMesh: c.SimplifiedTreeMesh)).ToList());
         }
     }
 

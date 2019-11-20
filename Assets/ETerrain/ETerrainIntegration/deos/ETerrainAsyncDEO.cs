@@ -54,6 +54,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         private EPropHotAreaSelector _ePropHotAreaSelector;
         private InitialSegmentsGenerationInspector _segmentsGenerationInspector;
 
+        private bool _initializationWasSuccessfull;
+
         public void Start()
         {
             var msw = new MyStopWatch();
@@ -174,6 +176,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             });
 
             Debug.Log("Init time "+msw.CollectResults());
+            _initializationWasSuccessfull = true;
         }
 
         private bool _wasFirstUpdateDone = false;
@@ -182,6 +185,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public void Update()
         {
+            if (!_initializationWasSuccessfull)
+            {
+                return;
+            }
             //Debug.Log("MOVEMENT POSSIBILITY "+_movementCustodian.IsMovementPossible());
             Traveller.SetActive(_movementCustodian.IsMovementPossible());
             _movementCustodian.Update();

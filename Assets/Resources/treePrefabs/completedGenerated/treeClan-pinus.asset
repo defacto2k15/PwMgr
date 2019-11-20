@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 43aeba191e02da346b485f722b2a2baf, type: 3}
+  m_Name: treeClan-pinus
+  m_EditorClassIdentifier: 
+  Pyramids:
+  - FullTreeMesh: {fileID: 4300000, guid: d3656fa8ed856744c8fec90854b6c907, type: 3}
+    SimplifiedTreeMesh: {fileID: 4300000, guid: d3656fa8ed856744c8fec90854b6c907,
+      type: 3}
+    BillboardArray: {fileID: 18700000, guid: b44bbfc4425b867428343a9857f0f4fd, type: 2}
+    ScaleOffsets: {x: 2.1609292, y: 3.8417263, z: 0.5743039}
+  - FullTreeMesh: {fileID: 4300000, guid: 9658f6ca8f6ae9445b3093feaed09aa2, type: 3}
+    SimplifiedTreeMesh: {fileID: 4300000, guid: 9658f6ca8f6ae9445b3093feaed09aa2,
+      type: 3}
+    BillboardArray: {fileID: 18700000, guid: f5912639eb4c4414e9f81c90bb1858da, type: 2}
+    ScaleOffsets: {x: 1.576783, y: 1.0847292, z: 1.7440219}
