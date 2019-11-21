@@ -3,14 +3,7 @@
 	Properties
 	{
 		_HeightMap("_HeightMap", 2DArray) = "pink"{}
-		_HeightMap0("_HeightMap0", 2D) = "pink"{}
-		_HeightMap1("_HeightMap1", 2D) = "pink"{}
-		_HeightMap2("_HeightMap2", 2D) = "pink"{}
-
-		_SurfaceTexture0("_SurfaceTexture0", 2D) = "pink"{}
-		_SurfaceTexture1("_SurfaceTexture1", 2D) = "pink"{}
-		_SurfaceTexture2("_SurfaceTexture2", 2D) = "pink"{}
-
+		_SurfaceTexture("_SurfaceTexture", 2DArray) = "pink"{}
 
 		_SegmentCoords("_SegmentCoords", Vector) = (0.0, 0.0, 1.0, 1.0)
 		_HighQualityMipMap("_HighQualityMipMap", Range(0,5)) = 0
@@ -35,13 +28,7 @@
 
 			float4 _SegmentCoords;
 			UNITY_DECLARE_TEX2DARRAY(_HeightMap);
-			sampler2D _HeightMap0;
-			sampler2D _HeightMap1;
-			sampler2D _HeightMap2;
-
-			sampler2D _SurfaceTexture0;
-			sampler2D _SurfaceTexture1;
-			sampler2D _SurfaceTexture2;
+			UNITY_DECLARE_TEX2DARRAY(_SurfaceTexture);
 
 			float _HighQualityMipMap;
 
@@ -131,18 +118,11 @@
 			}
 
 			float4 sampleSurfaceTexture(int level, float4 uv) { //TODO VERY UNOPTIMAL
-				if (level == 0) {
-					return tex2Dlod(_SurfaceTexture0, uv);
-				}
-				else if (level == 1) {
-					return tex2Dlod(_SurfaceTexture1, uv);
-				}
-				else if (level == 2) {
-					return tex2Dlod(_SurfaceTexture2, uv);
-				}
-				else {
-					return 1000;
-				}
+#ifdef SHADER_API_D3D11  
+				return _SurfaceTexture.SampleLevel(sampler_SurfaceTexture, float3(uv.xy, level), uv.w);
+#else
+				return UNITY_SAMPLE_TEX2DARRAY_LOD(_SurfaceTexture, float3(uv.xy, level), uv.w);
+#endif
 			}
 
 			float4 calculateESurfaceColor(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, float lod ) {

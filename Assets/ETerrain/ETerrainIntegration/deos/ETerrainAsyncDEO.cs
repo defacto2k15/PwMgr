@@ -118,8 +118,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     {
                         [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
                             startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
-                        //[EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
-                        //    _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
+                        [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+                            _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
@@ -242,8 +242,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     },
                 SegmentFillingListenerGeneratorFunc = (level, ceilTextureArray) =>
                 {
-                    //var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTextureArray, level.GetIndex()
-                    //    , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
                     var segmentsPlacer = new HeightSegmentPlacer(
                         textureRendererProxy, initializationFields.Retrive<CommonExecutorUTProxy>(), ceilTextureArray
                         , level.GetIndex(), startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize
@@ -298,119 +296,117 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             };
         }
 
-        //public static OneGroundTypeLevelTextureEntitiesGenerator GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
-        //    FEConfiguration configuration, ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields gameInitializationFields
-        //    , UltraUpdatableContainer ultraUpdatableContainer)
-        //{
-        //    var repositioner = gameInitializationFields.Retrive<Repositioner>();
-        //    var surfaceTextureFormat = RenderTextureFormat.ARGB32;
-        //    var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
+        public static OneGroundTypeLevelTextureEntitiesGenerator GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+            FEConfiguration configuration, ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields gameInitializationFields
+            , UltraUpdatableContainer ultraUpdatableContainer)
+        {
+            var repositioner = gameInitializationFields.Retrive<Repositioner>();
+            var surfaceTextureFormat = RenderTextureFormat.ARGB32;
+            var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
 
-        //    var feRing2PatchConfiguration = new FeRing2PatchConfiguration(configuration);
-        //    feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
-        //    {
-        //        [0] = 3f,
-        //        [1] = 3 / 8f,
-        //        [2] = 3 / 64f
-        //    };
-        //    feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit = new Dictionary<int, float>()
-        //    {
-        //        [0] = 1 / 3f,
-        //        [1] = 1 / (3 * 8f),
-        //        [2] = 1 / (3f * 64f)
-        //    };
+            var feRing2PatchConfiguration = new FeRing2PatchConfiguration(configuration);
+            feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
+            {
+                [0] = 3f,
+                [1] = 3 / 8f,
+                [2] = 3 / 64f
+            };
+            feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit = new Dictionary<int, float>()
+            {
+                [0] = 1 / 3f,
+                [1] = 1 / (3 * 8f),
+                [2] = 1 / (3f * 64f)
+            };
 
-        //    int mipmapLevelToExtract = 1;
-        //    feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit =
-        //        feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit.ToDictionary(
-        //            c => c.Key,
-        //            c => c.Value * Mathf.Pow(2, mipmapLevelToExtract)
-        //        );
+            int mipmapLevelToExtract = 1;
+            feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit =
+                feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit.ToDictionary(
+                    c => c.Key,
+                    c => c.Value * Mathf.Pow(2, mipmapLevelToExtract)
+                );
 
-        //    var patchInitializer = new Ring2PatchInitialization(gameInitializationFields, ultraUpdatableContainer, feRing2PatchConfiguration);
-        //    patchInitializer.Start();
+            var patchInitializer = new Ring2PatchInitialization(gameInitializationFields, ultraUpdatableContainer, feRing2PatchConfiguration);
+            patchInitializer.Start();
 
-        //    var mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
-        //    var patchesCreatorProxy = gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
-        //    var patchStamperOverseerFinalizer = gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
-        //    var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, commonExecutor,
-        //        mipmapExtractor, mipmapLevelToExtract);
+            var mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
+            var patchesCreatorProxy = gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
+            var patchStamperOverseerFinalizer = gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
+            var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, commonExecutor,
+                mipmapExtractor, mipmapLevelToExtract);
 
-        //    var cachedSurfacePatchProvider =
-        //        new CachedESurfacePatchProvider(surfacePatchProvider
-        //            , new InMemoryAssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>(
-        //                FETerrainShapeDbInitialization.CreateLevel2AssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>(
-        //                    cachingConfiguration: new CachingConfiguration()
-        //                    {
-        //                        SaveAssetsToFile = true,
-        //                        UseFileCaching = true,
-        //                    }
-        //                    , new InMemoryCacheConfiguration() /*{ MaxTextureMemoryUsed = 0}*/
-        //                    , new ESurfaceTexturesPackEntityActionsPerformer(commonExecutor)
-        //                    , new ESurfaceTexturesPackFileManager(commonExecutor, configuration.FilePathsConfiguration.SurfacePatchCachePath))));
-        //    cachedSurfacePatchProvider.Initialize().Wait();
+            var cachedSurfacePatchProvider =
+                new CachedESurfacePatchProvider(surfacePatchProvider
+                    , new InMemoryAssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>(
+                        FETerrainShapeDbInitialization.CreateLevel2AssetsCache<ESurfaceTexturesPackToken, NullableESurfaceTexturesPack>(
+                            cachingConfiguration: new CachingConfiguration()
+                            {
+                                SaveAssetsToFile = true,
+                                UseFileCaching = true,
+                            }
+                            , new InMemoryCacheConfiguration() /*{ MaxTextureMemoryUsed = 0}*/
+                            , new ESurfaceTexturesPackEntityActionsPerformer(commonExecutor)
+                            , new ESurfaceTexturesPackFileManager(commonExecutor, configuration.FilePathsConfiguration.SurfacePatchCachePath))));
+            cachedSurfacePatchProvider.Initialize().Wait();
 
-        //    var cachedSurfacePatchDbProxy = new ESurfacePatchDbProxy(cachedSurfacePatchProvider);
-        //    ultraUpdatableContainer.AddOtherThreadProxy(cachedSurfacePatchDbProxy);
+            var cachedSurfacePatchDbProxy = new ESurfacePatchDbProxy(cachedSurfacePatchProvider);
+            ultraUpdatableContainer.AddOtherThreadProxy(cachedSurfacePatchDbProxy);
 
-        //    var textureRendererProxy = gameInitializationFields.Retrive<UTTextureRendererProxy>();
+            var textureRendererProxy = gameInitializationFields.Retrive<UTTextureRendererProxy>();
 
-        //    return new OneGroundTypeLevelTextureEntitiesGenerator()
-        //    {
-        //        SegmentFillingListenerGeneratorFunc = (level) =>
-        //        {
-        //            var ceilTexture =
-        //                EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize, surfaceTextureFormat);
-        //            var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
-        //                , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
-        //            var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
-        //            var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+            return new OneGroundTypeLevelTextureEntitiesGenerator()
+            {
+                CeilTextureArrayGenerator =  () =>
+                    {
+                        return EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize,
+                            startConfiguration.HeightPyramidLevels.Count, surfaceTextureFormat);
+                    },
+                SegmentFillingListenerGeneratorFunc = (level, ceilTextureArray) =>
+                {
+                    var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTextureArray, level.GetIndex()
+                        , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                    var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                    var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 
-        //            var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("ESurface-" + level.ToString(),
-        //                new CompoundSegmentOrdersFillingExecutor<TokenizedESurfaceTexturesPackToken>(
-        //                    async (sap) =>
-        //                    {
-        //                        var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
-        //                            startConfiguration.PerLevelConfigurations[level], sap);
-        //                        var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
-        //                        return await cachedSurfacePatchDbProxy.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle), lod);
-        //                    },
-        //                    async (sap, packAndToken) =>
-        //                    {
-        //                        var pack = packAndToken.Pack;
-        //                        if (pack != null)
-        //                        {
-        //                            var mainTexture = pack.MainTexture;
-        //                            await segmentModificationManager.AddSegmentAsync(mainTexture, sap);
-        //                        }
-        //                    },
-        //                    segmentRemovalFunc: async (packAndToken) =>
-        //                    {
-        //                        if (packAndToken != null)
-        //                        {
-        //                            var pack = packAndToken.Pack;
-        //                            if (pack != null)
-        //                            {
-        //                                Preconditions.Assert(packAndToken.Token!=null, "Token is null. Unexpected");
-        //                                cachedSurfacePatchDbProxy.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
-        //                            }
-        //                        }
-        //                    }
-        //                    ));
+                    var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("ESurface-" + level.ToString(),
+                        new CompoundSegmentOrdersFillingExecutor<TokenizedESurfaceTexturesPackToken>(
+                            async (sap) =>
+                            {
+                                var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
+                                    startConfiguration.PerLevelConfigurations[level], sap);
+                                var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
+                                return await cachedSurfacePatchDbProxy.ProvideSurfaceDetail(repositioner.InvMove(surfaceWorldSpaceRectangle), lod);
+                            },
+                            async (sap, packAndToken) =>
+                            {
+                                var pack = packAndToken.Pack;
+                                if (pack != null)
+                                {
+                                    var mainTexture = pack.MainTexture;
+                                    await segmentModificationManager.AddSegmentAsync(mainTexture, sap);
+                                }
+                            },
+                            segmentRemovalFunc: async (packAndToken) =>
+                            {
+                                if (packAndToken != null)
+                                {
+                                    var pack = packAndToken.Pack;
+                                    if (pack != null)
+                                    {
+                                        Preconditions.Assert(packAndToken.Token != null, "Token is null. Unexpected");
+                                        cachedSurfacePatchDbProxy.RemoveSurfaceDetailAsync(pack, packAndToken.Token);
+                                    }
+                                }
+                            }
+                            ));
 
-
-        //            ultraUpdatableContainer.AddOtherThreadProxy(otherThreadExecutor);
-        //            var fillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor);
-        //            var travellerCustodian = gameInitializationFields.Retrive<TravellerMovementCustodian>();
-        //            travellerCustodian.AddLimiter(() => new MovementBlockingProcess(){ BlockCount = fillingListener.BlockingProcessesCount(), ProcessName = "SurfaceSegmentsGeneration "+level});
-        //            return new SegmentFillingListenerWithCeilTexture()
-        //            {
-        //                CeilTexture = ceilTexture,
-        //                SegmentFillingListener = fillingListener
-        //            };
-        //        }
-        //    };
-        //}
+                    ultraUpdatableContainer.AddOtherThreadProxy(otherThreadExecutor);
+                    var fillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor);
+                    var travellerCustodian = gameInitializationFields.Retrive<TravellerMovementCustodian>();
+                    travellerCustodian.AddLimiter(() => new MovementBlockingProcess() { BlockCount = fillingListener.BlockingProcessesCount(), ProcessName = "SurfaceSegmentsGeneration " + level });
+                    return fillingListener;
+                }
+            };
+        }
 
         public EPropLocaleBufferManagerInitializedBuffers InitializeDesignBodySpotUpdater(ETerrainHeightPyramidFacadeStartConfiguration startConfiguration,
             EPropElevationConfiguration ePropLocationConfiguration,
