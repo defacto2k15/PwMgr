@@ -190,9 +190,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 return;
             }
             //Debug.Log("MOVEMENT POSSIBILITY "+_movementCustodian.IsMovementPossible());
-            Traveller.SetActive(_movementCustodian.IsMovementPossible());
             _movementCustodian.Update();
-            Overlay.SetMovementPossibilityDetails(_movementCustodian.GenerateMovementPossibilityDetails());
+            Traveller.SetActive(_movementCustodian.IsMovementPossible());
+            Overlay.SetMovementPossibilityDetails(_movementCustodian.ThisFrameBlockingProcesses);
 
             var msw = new MyStopWatch();
             msw.StartSegment("FIRST UPDATE");
@@ -515,7 +515,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public int BlockingProcessesCount()
         {
-            if (!_tokensDict.Any(c => c.Value.ShouldBeFilled))
+            if (!_tokensDict.Any())
             {
                 return 0;
             }
@@ -546,11 +546,11 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
     public class SegmentGenerationProcessToken
     {
-        private MyConcurrentValue<SegmentGenerationProcessSituation> _situation;
-        private MyConcurrentValue<bool> _shouldBeFilled;
-        private MyConcurrentValue<bool> _shouldBeRemoved;
+        private volatile  SegmentGenerationProcessSituation _situation;
+        private volatile bool _shouldBeFilled;
+        private volatile bool _shouldBeRemoved;
 
-        public SegmentGenerationProcessToken(MyConcurrentValue<SegmentGenerationProcessSituation> situation, MyConcurrentValue<bool> shouldBeFilled, MyConcurrentValue<bool> shouldBeRemoved)
+        public SegmentGenerationProcessToken(SegmentGenerationProcessSituation situation, bool shouldBeFilled, bool shouldBeRemoved)
         {
             _situation = situation;
             _shouldBeFilled = shouldBeFilled;
@@ -559,20 +559,20 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public SegmentGenerationProcessSituation Situation
         {
-            get => _situation.Value;
-            set => _situation.Value = value;
+            get => _situation;
+            set => _situation = value;
         }
 
         public bool ShouldBeFilled
         {
-            get => _shouldBeFilled.Value;
-            set => _shouldBeFilled.Value = value;
+            get => _shouldBeFilled;
+            set => _shouldBeFilled= value;
         }
 
         public bool ShouldBeRemoved
         {
-            get => _shouldBeRemoved.Value;
-            set => _shouldBeRemoved.Value = value;
+            get => _shouldBeRemoved;
+            set => _shouldBeRemoved= value;
         }
     }
 
@@ -589,8 +589,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public SegmentGenerationProcessToken CreateSegmentAsync( IntVector2 alignedPosition)
         {
-            var token = new SegmentGenerationProcessToken(new MyConcurrentValue<SegmentGenerationProcessSituation>(), new MyConcurrentValue<bool>(),
-                new MyConcurrentValue<bool>()) {Situation = SegmentGenerationProcessSituation.BeforeStartOfCreation};
+            var token = new SegmentGenerationProcessToken(SegmentGenerationProcessSituation.BeforeStartOfCreation, false, false);
             PostPureAsyncAction(() => _executor.CreateSegmentAsync(token, alignedPosition));
             return token;
         }

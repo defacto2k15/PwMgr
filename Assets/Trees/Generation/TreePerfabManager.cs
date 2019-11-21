@@ -346,7 +346,6 @@ namespace Assets.Trees.Generation
 
         public ETreeClanTemplate ELoadCompleteTreeClan(string clanName)
         {
-            return ELoadCompleteTreeClanFromResources(clanName);
 #if UNITY_EDITOR
             var path = TREE_COMPLETED_GENERATED_PREFABS_DIRECTORY + $"/treeClan-{clanName}.asset";
             var so = AssetDatabase.LoadAssetAtPath<ETreeClanScriptableObject>(path);
@@ -355,8 +354,7 @@ namespace Assets.Trees.Generation
                 new ETreePyramidTemplate(billboardTextureArray: new EBillboardTextureArray(c.BillboardArray, c.ScaleOffsets), fullTreeMesh: c.FullTreeMesh,
                     simplifiedTreeMesh: c.SimplifiedTreeMesh)).ToList());
 #else
-            Preconditions.Fail("ELoadCompleteTreeClan is not supported outside of editor");
-            return null;
+            return ELoadCompleteTreeClanFromResources(clanName);
 #endif
         }
 

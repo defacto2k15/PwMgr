@@ -16,17 +16,23 @@ namespace Assets.FinalExecution
         public GlobalServicesProfileInfo ServicesProfileInfo;
 
         private float _deltaTime = 0.0f;
-        private bool _overlayEnabled = true;
+        private bool _servicesOverlayEnabled = true;
+        private bool _fpsOverlayEnabled = true;
         private bool _travellerConnectedToCamera;
         private List<MovementBlockingProcess> _movementPossibilityDetails;
 
         public void Update()
         {
             _deltaTime += (Time.unscaledDeltaTime - _deltaTime) * 0.1f;
-            if (Input.GetKeyDown(KeyCode.C))
+            if (Input.GetKeyDown(KeyCode.X))
             {
-                _overlayEnabled = !_overlayEnabled;
+                _servicesOverlayEnabled = !_servicesOverlayEnabled;
             }
+            if (Input.GetKeyDown(KeyCode.V))
+            {
+                _fpsOverlayEnabled = !_fpsOverlayEnabled;
+            }
+            
 
             if (Input.GetKeyDown(KeyCode.V))
             {
@@ -36,12 +42,16 @@ namespace Assets.FinalExecution
 
         }
 
-        private bool debugObce = false;
+        private bool debugObce = false; // TODO better, cleener solution
         public void OnGUI()
         {
-            if (_overlayEnabled)
+            if (_fpsOverlayEnabled)
             {
                 WriteFpsInformation();
+            }
+
+            if (_servicesOverlayEnabled)
+            {
                 if (ServicesProfileInfo != null)
                 {
                     WriteServicesInformation();

@@ -19,6 +19,7 @@
 
 		_RingsPerLevelCount("RingsPerLevelCount", Int) = 3
 		_LevelsCount("LevelsCount", Int) = 3
+		_ThisLevelIndex("ThisLevelIndex",Int) = 0
 		_Debug("Debug", Range(0,1)) = 0
 	}
 
@@ -51,6 +52,7 @@
 
 			int _RingsPerLevelCount;
 			int _LevelsCount;
+			int _ThisLevelIndex;
 			float _Debug;
 
 			struct Input {
@@ -61,6 +63,7 @@
 				float2 worldSpaceLocation;
 				float shouldDiscardMarker;
 			};
+
 
 #include "eterrain_heightMapCommon.hlsl"
 #ifdef SHADER_API_D3D11
@@ -92,17 +95,7 @@
 				float2 uv = v.texcoord.xy;
 				float2 inSegmentSpaceUv = calculateInSegmentSpaceUv(uv);
 
-				//TODO. THIS IS TEMPORARY
-				int levelIndex;
-				if (_MainPyramidLevelWorldSize <= 541) {
-					levelIndex = 0;
-				}
-				else if (_MainPyramidLevelWorldSize < 34550){
-					levelIndex = 1;
-				}
-				else {
-					levelIndex = 2;
-				}
+				int levelIndex = _ThisLevelIndex;
 
 				ELevelAndRingIndexes levelAndRingIndexes = make_ELevelAndRingIndexes(levelIndex, round(_HighQualityMipMap));//TODO
 				ETerrainParameters terrainParameters = init_ETerrainParametersFromUniforms();

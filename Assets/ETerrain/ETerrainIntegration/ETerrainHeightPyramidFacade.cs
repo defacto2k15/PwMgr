@@ -137,8 +137,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                 var shapeGroup = pair.Value.ShapeGroup;
                 var heightPyramidLevel = pair.Key;
                 var ringsPerLevelCount = _startConfiguration.CommonConfiguration.MaxRingsPerLevelCount; //TODO
-                heightmapUniformsSetter.InitializePyramidUniforms( shapeGroup, heightPyramidLevel, pyramidLevelsWorldSizes, heightPyramidMapConfiguration, levelTextures, heightLevels.Count, ringsPerLevelCount);
-                heightmapUniformsSetter.InitializePerRingUniforms(shapeGroup, heightPyramidLevel, levelTextures, pyramidLevelsWorldSizes);
+                heightmapUniformsSetter.InitializePyramidUniforms( shapeGroup, heightPyramidLevel, levelTextures, heightLevels.Count, ringsPerLevelCount);
                 heightmapUniformsSetter.PassPyramidBuffers(shapeGroup, configurationBuffer, bufferReloaderRootGo, ePyramidPerFrameParametersBuffer);
             }
 
