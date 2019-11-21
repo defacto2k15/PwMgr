@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Assets.Utils;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Assets.ETerrain.Pyramid.Map
 {
@@ -40,6 +41,20 @@ namespace Assets.ETerrain.Pyramid.Map
             texture.autoGenerateMips = true;
             texture.filterMode = FilterMode.Bilinear;
             return texture;
+        }
+
+        public static RenderTexture GenerateEmptyGroundTextureArray(IntVector2 textureSize, int textureArrayDepth, RenderTextureFormat format)
+        {
+            var texture = new RenderTexture(textureSize.X, textureSize.Y, 0, format, RenderTextureReadWrite.Linear);
+            texture.dimension = TextureDimension.Tex2DArray;
+            texture.volumeDepth = textureArrayDepth;
+            texture.enableRandomWrite = true;
+            texture.useMipMap = true;
+            texture.autoGenerateMips = true;
+            texture.filterMode = FilterMode.Trilinear;
+            texture.Create();
+            return texture;
+
         }
     }
 }

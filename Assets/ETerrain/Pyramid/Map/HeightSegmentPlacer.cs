@@ -5,6 +5,7 @@ using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Ring2;
 using Assets.ShaderUtils;
 using Assets.Utils;
+using Assets.Utils.Services;
 using UnityEngine;
 
 namespace Assets.ETerrain.Pyramid.Map
@@ -12,12 +13,14 @@ namespace Assets.ETerrain.Pyramid.Map
     public class HeightSegmentPlacer : IGroundTextureSegmentPlacer
     {
         private UTTextureRendererProxy _renderer;
-        private RenderTexture _floorHeightTexture;
-        private RenderTexture _modifiedCornerBuffer;
+        private readonly CommonExecutorUTProxy _commonExecutor;
+        private RenderTexture _heightMap;
+        private readonly int _heightMapSliceIndex;
         private readonly bool _modifyCorners;
         private IntVector2 _floorSlotsCount;
         private IntVector2 _floorTextureSize;
         private float _interSegmentMarginSize;
+        private readonly IntVector2 _modifiedCornerBufferSize;
 
         private Dictionary<SegmentNeighbourhoodCorner, CornerMaskInformation> _cornerMaskInformations =
             new Dictionary<SegmentNeighbourhoodCorner, CornerMaskInformation>()
@@ -52,15 +55,17 @@ namespace Assets.ETerrain.Pyramid.Map
                 },
             };
 
-        public HeightSegmentPlacer(UTTextureRendererProxy renderer, RenderTexture floorHeightTexture,
-            IntVector2 floorSlotsCount, IntVector2 floorTextureSize, float interSegmentMarginSize, RenderTexture modifiedCornerBuffer, bool modifyCorners = true)
+        public HeightSegmentPlacer(UTTextureRendererProxy renderer, CommonExecutorUTProxy commonExecutor, RenderTexture heightMap, int heightMapSliceIndex,
+            IntVector2 floorSlotsCount, IntVector2 floorTextureSize, float interSegmentMarginSize, IntVector2 modifiedCornerBufferSize,  bool modifyCorners = true)
         {
             _renderer = renderer;
-            _floorHeightTexture = floorHeightTexture;
+            _commonExecutor = commonExecutor;
+            _heightMap = heightMap;
+            _heightMapSliceIndex = heightMapSliceIndex;
             _floorSlotsCount = floorSlotsCount;
             _floorTextureSize = floorTextureSize;
             _interSegmentMarginSize = interSegmentMarginSize;
-            _modifiedCornerBuffer = modifiedCornerBuffer;
+            _modifiedCornerBufferSize = modifiedCornerBufferSize;
             _modifyCorners = modifyCorners;
         }
 
@@ -75,34 +80,43 @@ namespace Assets.ETerrain.Pyramid.Map
             {
                 CanMultistep = false,
                 CreateTexture2D = false,
-                RenderTextureToModify = _floorHeightTexture,
+                RenderTextureToModify = _heightMap,
                 ShaderName = "Custom/ETerrain/SegmentPlacer",
                 UniformPack = uniforms0,
                 RenderingRectangle = segmentPlacement0.Pixels,
-                RenderTargetSize = _floorTextureSize
+                RenderTargetSize = _floorTextureSize,
+                RenderTextureArraySlice = _heightMapSliceIndex
             });
 
             if (_modifyCorners)
             {
+                var modifiedCornerBuffer = await _commonExecutor.AddAction( () =>
+                {
+                    var tex = new RenderTexture(_modifiedCornerBufferSize.X, _modifiedCornerBufferSize.Y, 0, _heightMap.format);
+                    tex.Create();
+                    return tex;
+                });
+
                 foreach (var cornerModification in placementDetails.CornersToModify)
                 {
                     var cornerMask = _cornerMaskInformations[cornerModification.Corner];
                     var segmentPlacement1 = CalculateSegmentPlacement(cornerModification.ModuledPositionOfSegment);
 
                     var uniforms1 = new UniformsPack();
-                    uniforms1.SetTexture("_FloorHeightTexture", _floorHeightTexture);
+                    uniforms1.SetTexture("_HeightMap", _heightMap);
                     uniforms1.SetUniform("_WeldingAreaCoords",
                         RectangleUtils.CalculateSubPosition(segmentPlacement1.Uvs, cornerMask.SegmentSubPositionUv)
                             .ToVector4());
                     uniforms1.SetUniform("_MarginSize", _interSegmentMarginSize);
                     uniforms1.SetUniform("_CornerToWeld", cornerMask.CornerToWeldVector);
                     uniforms1.SetUniform("_PixelSizeInUv", 1f / _floorTextureSize.X);
+                    uniforms1.SetUniform("_HeightMapSliceIndex", _heightMapSliceIndex);
 
                     await _renderer.AddOrder(new TextureRenderingTemplate()
                     {
                         CanMultistep = false,
                         CreateTexture2D = false,
-                        RenderTextureToModify = _modifiedCornerBuffer,
+                        RenderTextureToModify = modifiedCornerBuffer,
                         ShaderName = "Custom/ETerrain/GenerateNewCorner",
                         UniformPack = uniforms1,
                         RenderingRectangle = new IntRectangle(0, 0, segmentPlacement1.Pixels.Width, segmentPlacement1.Pixels.Height),
@@ -110,20 +124,23 @@ namespace Assets.ETerrain.Pyramid.Map
                     });
 
                     var uniforms2 = new UniformsPack();
-                    uniforms2.SetTexture("_ModifiedCornerBuffer", _modifiedCornerBuffer);
+                    uniforms2.SetTexture("_ModifiedCornerBuffer", modifiedCornerBuffer);
 
                     await _renderer.AddOrder(new TextureRenderingTemplate()
                     {
                         CanMultistep = false,
                         CreateTexture2D = false,
-                        RenderTextureToModify = _floorHeightTexture,
+                        RenderTextureToModify = _heightMap,
                         ShaderName = "Custom/ETerrain/CornerPlacer",
                         UniformPack = uniforms2,
                         RenderingRectangle = RectangleUtils.CalculateSubPosition(segmentPlacement1.Pixels.ToFloatRectangle(),
                             cornerMask.SegmentSubPositionUv).ToIntRectange(),
-                        RenderTargetSize = _floorTextureSize
+                        RenderTargetSize = _floorTextureSize,
+                        RenderTextureArraySlice = _heightMapSliceIndex
                     });
                 }
+
+                await _commonExecutor.AddAction(() => GameObject.Destroy(modifiedCornerBuffer));
             }
         }
 

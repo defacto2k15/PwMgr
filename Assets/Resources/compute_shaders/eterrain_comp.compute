@@ -10,6 +10,8 @@ cbuffer ConstantGlobalParameters {
 	float g_heightScale;
 };
 
+
+	Texture2DArray _HeightMap; SamplerState sampler_HeightMap;
 	sampler2D _HeightMap0;
 	sampler2D _HeightMap1;
 	sampler2D _HeightMap2;

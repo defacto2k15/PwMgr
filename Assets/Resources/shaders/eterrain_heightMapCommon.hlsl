@@ -240,18 +240,11 @@
 			}
 			
 			float sampleHeightMap(int level, float4 uv) { //TODO VERY UNOPTIMAL
-				if (level == 0) {
-					return tex2Dlod(_HeightMap0, uv).r;
-				}
-				else if (level == 1) {
-					return tex2Dlod(_HeightMap1, uv).r;
-				}
-				else if (level == 2) {
-					return tex2Dlod(_HeightMap2, uv).r;
-				}
-				else {
-					return 1000;
-				}
+#ifdef SHADER_API_D3D11  
+				return _HeightMap.SampleLevel(sampler_HeightMap, float3(uv.xy, level), uv.w);
+#else
+				return UNITY_SAMPLE_TEX2DARRAY_LOD(_HeightMap, float3(uv.xy, level), uv.w);
+#endif
 			}
 
 			ETerrainHeightCalculationOut calculateETerrainHeight2(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {

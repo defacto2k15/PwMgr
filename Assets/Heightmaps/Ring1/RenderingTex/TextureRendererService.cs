@@ -80,6 +80,7 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
             Texture outTexture = null;
             if (template.CreateTexture2D)
             {
+                Preconditions.Assert(!template.RenderTextureArraySlice.HasValue, "E629 RenderTextureArrays are not supported here");
                 RenderTextureInfo renderTextureInfo = new RenderTextureInfo(outTextureInfo.Width, outTextureInfo.Height,
                     renderTextureFormat, template.RenderTextureMipMaps);
                 outTexture = UltraTextureRenderer.RenderTextureAtOnce(material, renderTextureInfo, outTextureInfo);
@@ -88,6 +89,7 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
             {
                 if (template.RenderingRectangle == null)
                 {
+                    Preconditions.Assert(!template.RenderTextureArraySlice.HasValue, "E629 RenderTextureArrays are not supported here");
                     RenderTextureInfo renderTextureInfo = new RenderTextureInfo(outTextureInfo.Width,
                         outTextureInfo.Height,
                         renderTextureFormat, template.RenderTextureMipMaps);
@@ -95,7 +97,17 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
                 }
                 else
                 {
-                    UltraTextureRenderer.ModifyRenderTexture(material, template.RenderingRectangle, template.RenderTargetSize, template.RenderTextureToModify);
+                    if (template.RenderTextureArraySlice.HasValue)
+                    {
+                        UltraTextureRenderer.ModifyRenderTextureArray(material, template.RenderingRectangle, template.RenderTargetSize
+                            , template.RenderTextureToModify, template.RenderTextureArraySlice.Value);
+                    }
+                    else
+                    {
+                        UltraTextureRenderer.ModifyRenderTexture(material, template.RenderingRectangle, template.RenderTargetSize,
+                            template.RenderTextureToModify);
+                    }
+
                     return template.RenderTextureToModify;
                 }
             }
@@ -142,6 +154,7 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
         public IntRectangle RenderingRectangle;
         public RenderTexture RenderTextureToModify;
         public IntVector2 RenderTargetSize;
+        public int? RenderTextureArraySlice;
     }
 
     public class TextureRendererServiceConfiguration

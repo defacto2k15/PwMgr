@@ -225,6 +225,17 @@ namespace Assets.Utils.TextureRendering
             GL.PopMatrix();
             RenderTexture.active = null;
         }
+
+        public static void ModifyRenderTextureArray(Material material, IntRectangle renderingRectangle, IntVector2 targetTextureSize,
+            RenderTexture renderTexture, int sliceIndex)
+        {
+            Graphics.SetRenderTarget(renderTexture,0, CubemapFace.Unknown, sliceIndex);
+            GL.PushMatrix();
+            GL.LoadPixelMatrix(0, targetTextureSize.X, 0, targetTextureSize.Y);
+            Graphics.DrawTexture(renderingRectangle.ToRect(), renderTexture, material);
+            GL.PopMatrix();
+            RenderTexture.active = null;
+        }
     }
 
     public class MultistepTextureRenderingInput

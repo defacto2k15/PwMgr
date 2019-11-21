@@ -172,8 +172,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 HeightScale = startConfiguration.CommonConfiguration.YScale
             };
             _elevationManager = new EPropElevationManager(new CommonExecutorUTProxy(), shaderExecutorObject,ePropLocationConfiguration,ePropConstantPyramidParameters);
+            var heightCeilTextureArray = _eTerrainHeightPyramidFacade.CeilTextureArrays.Where(c => c.TextureType == EGroundTextureType.HeightMap).Select(c => c.Texture).First();
             var elevationBuffers = _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
-                _eTerrainHeightPyramidFacade.CeilTextures.ToDictionary(c => c.Key, c => c.Value.First(r => r.TextureType == EGroundTextureType.HeightMap).Texture as Texture) );
+                heightCeilTextureArray);
 
             var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.PyramidLevelWorldSize.Size);
             var ringMergeRanges = perLevelTemplates.ToDictionary(c => c.Key,

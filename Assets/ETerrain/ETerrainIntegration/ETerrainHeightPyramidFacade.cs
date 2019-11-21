@@ -76,6 +76,9 @@ namespace Assets.ETerrain.ETerrainIntegration
             var perLevelConfigurations = _startConfiguration.PerLevelConfigurations;
 
             _pyramidRootGo = new GameObject("HeightPyramidRoot");
+
+            var ceilTextureArrays = groundEntitiesGenerators.ToDictionary(c => c.Key, c => c.Value.CeilTextureArrayGenerator());
+
             _perLevelEntites = new Dictionary<HeightPyramidLevel, HeightPyramidLevelEntities>();
             foreach (var level in heightLevels)
             {
@@ -86,14 +89,13 @@ namespace Assets.ETerrain.ETerrainIntegration
                     var groundType = c.Key;
                     var generator = c.Value;
 
-                    var textureAndFillingListener = generator.GeneratorFunc(level);
+                    var fillingListener= generator.SegmentFillingListenerGeneratorFunc(level, ceilTextureArrays[groundType]);
 
                     var segmentFiller = new SegmentFiller(heightPyramidMapConfiguration.SlotMapSize, perLevelConfiguration.SegmentFillerStandByMarginsSize,
-                        perLevelConfiguration.BiggestShapeObjectInGroupLength, textureAndFillingListener.SegmentFillingListener);
+                        perLevelConfiguration.BiggestShapeObjectInGroupLength, fillingListener);
 
                     return new PerGroundTypeEntities()
                     {
-                        CeilTexture = new EGroundTexture(textureAndFillingListener.CeilTexture, groundType),
                         Filler = segmentFiller
                     };
                 }).ToList();
@@ -125,10 +127,7 @@ namespace Assets.ETerrain.ETerrainIntegration
             var heightmapUniformsSetter = new HeightPyramidSegmentsUniformsSetter();
             var groupMover = new HeightPyramidGroupMover();
 
-            var pyramidLevelsWorldSizes =
-                perLevelConfigurations.ToDictionary(c => c.Key, c => c.Value.PyramidLevelWorldSize.Width); // TODO works only for square pyramids - i use width
             ComputeBuffer configurationBuffer = _buffersManager.EPyramidConfigurationBuffer;
-            var levelTextures = _perLevelEntites.ToDictionary(c => c.Key, c =>c.Value.PerGroundEntities.Select(k => k.CeilTexture).ToList());
             var bufferReloaderRootGo = Object.FindObjectOfType<BufferReloaderRootGO>();
 
             var ePyramidPerFrameParametersBuffer = _buffersManager.PyramidPerFrameParametersBuffer;
@@ -137,7 +136,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                 var shapeGroup = pair.Value.ShapeGroup;
                 var heightPyramidLevel = pair.Key;
                 var ringsPerLevelCount = _startConfiguration.CommonConfiguration.MaxRingsPerLevelCount; //TODO
-                heightmapUniformsSetter.InitializePyramidUniforms( shapeGroup, heightPyramidLevel, levelTextures, heightLevels.Count, ringsPerLevelCount);
+                heightmapUniformsSetter.InitializePyramidUniforms( shapeGroup, heightPyramidLevel,ceilTextureArrays, heightLevels.Count, ringsPerLevelCount);
                 heightmapUniformsSetter.PassPyramidBuffers(shapeGroup, configurationBuffer, bufferReloaderRootGo, ePyramidPerFrameParametersBuffer);
             }
 
@@ -161,6 +160,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                 HeightPyramidMapConfiguration = heightPyramidMapConfiguration,
                 HeightmapUniformsSetter = heightmapUniformsSetter,
                 GroupMover = groupMover,
+                CeilTextureArrays = ceilTextureArrays
             };
         }
 
@@ -189,8 +189,8 @@ namespace Assets.ETerrain.ETerrainIntegration
 
         public Dictionary<HeightPyramidLevel, Vector2> PyramidCenterWorldSpacePerLevel => _pyramidCenterWorldSpacePerLevel;
 
-        public Dictionary<HeightPyramidLevel, List<EGroundTexture>> CeilTextures =>
-            _perLevelEntites.ToDictionary(c => c.Key, c => c.Value.PerGroundEntities.Select(k => k.CeilTexture).ToList());
+        public List<EGroundTexture> CeilTextureArrays =>
+            _pyramidCommonEntites.CeilTextureArrays.Select(c => new EGroundTexture(c.Value, c.Key)).ToList();
 
         public void DisableShapes()
         {

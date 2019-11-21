@@ -49,41 +49,41 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>()
                 {
-                    {
-                        EGroundTextureType.HeightMap, new OneGroundTypeLevelTextureEntitiesGenerator()
-                        {
-                            GeneratorFunc = (level) =>
-                            {
-                                var ceilTexture =
-                                    EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
-                                        startConfiguration.CommonConfiguration.HeightTextureFormat);
-                                var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
-                                    , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
-                                var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
-                                var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
-                                return new SegmentFillingListenerWithCeilTexture()
-                                {
-                                    CeilTexture = ceilTexture,
-                                    SegmentFillingListener =
-                                        new LambdaSegmentFillingListener(
-                                            (c) =>
-                                            {
-                                                var segmentTexture = CreateDummySegmentTexture(c, level);
-                                                segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
-                                            },
-                                            (c) => { },
-                                            (c) => { })
-                                };
+                    //{
+                    //    EGroundTextureType.HeightMap, new OneGroundTypeLevelTextureEntitiesGenerator()
+                    //    {
+                    //        SegmentFillingListenerGeneratorFunc = (level) =>
+                    //        {
+                    //            var ceilTexture =
+                    //                EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                    //                    startConfiguration.CommonConfiguration.HeightTextureFormat);
+                    //            var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
+                    //                , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                    //            var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                    //            var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+                    //            return new SegmentFillingListenerWithCeilTexture()
+                    //            {
+                    //                CeilTexture = ceilTexture,
+                    //                SegmentFillingListener =
+                    //                    new LambdaSegmentFillingListener(
+                    //                        (c) =>
+                    //                        {
+                    //                            var segmentTexture = CreateDummySegmentTexture(c, level);
+                    //                            segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
+                    //                        },
+                    //                        (c) => { },
+                    //                        (c) => { })
+                    //            };
 
-                            },
-                        }
-                    }
+                    //        },
+                    //    }
+                    //}
                 }
             );
 
             Traveller.transform.position = new Vector3(startConfiguration.InitialTravellerPosition.x, 0, startConfiguration.InitialTravellerPosition.y);
-            _explorer = new HeightPyramidExplorer2(_eTerrainHeightPyramidFacade.CeilTextures
-                .ToDictionary(c => c.Key, c => c.Value.First(r => r.TextureType == EGroundTextureType.HeightMap).Texture as Texture));
+            //_explorer = new HeightPyramidExplorer2(_eTerrainHeightPyramidFacade.CeilTextures
+            //    .ToDictionary(c => c.Key, c => c.Value.First(r => r.TextureType == EGroundTextureType.HeightMap).Texture as Texture));
 
             //_eTerrainHeightPyramidFacade.DisableLevelShapes(HeightPyramidLevel.Bottom);
         }

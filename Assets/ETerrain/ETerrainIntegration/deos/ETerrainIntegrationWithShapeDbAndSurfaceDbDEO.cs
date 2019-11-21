@@ -177,42 +177,42 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             return new OneGroundTypeLevelTextureEntitiesGenerator()
             {
-                GeneratorFunc =
-                    (level) =>
-                    {
-                        var ceilTexture =
-                            EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize, surfaceTextureFormat);
-                        var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
-                            , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
-                        var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
-                        var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+                //SegmentFillingListenerGeneratorFunc =
+                //    (level) =>
+                //    {
+                //        var ceilTexture =
+                //            EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize, surfaceTextureFormat);
+                //        var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
+                //            , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                //        var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                //        var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 
-                        return new SegmentFillingListenerWithCeilTexture()
-                        {
-                            CeilTexture = ceilTexture,
-                            SegmentFillingListener =
-                                new LambdaSegmentFillingListener(
-                                    (c) =>
-                                    {
-                                        {
-                                            var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
-                                                startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
-                                            var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
-                                            var packAndToken = cachedSurfacePatchProvider.ProvideSurfaceDetail(
-                                                repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
-                                            var pack = packAndToken.Pack;
-                                            if (pack != null)
-                                            {
-                                                var mainTexture = pack.MainTexture;
-                                                segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
-                                                cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
-                                            }
-                                        }
-                                    },
-                                    (c) => { },
-                                    (c) => { })
-                        };
-                    },
+                //        return new SegmentFillingListenerWithCeilTexture()
+                //        {
+                //            CeilTexture = ceilTexture,
+                //            SegmentFillingListener =
+                //                new LambdaSegmentFillingListener(
+                //                    (c) =>
+                //                    {
+                //                        {
+                //                            var surfaceWorldSpaceRectangle = ETerrainUtils.SurfaceTextureSegmentAlignedPositionToWorldSpaceArea(level,
+                //                                startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
+                //                            var lod = ETerrainUtils.HeightPyramidLevelToSurfaceTextureFlatLod(level);
+                //                            var packAndToken = cachedSurfacePatchProvider.ProvideSurfaceDetail(
+                //                                repositioner.InvMove(surfaceWorldSpaceRectangle), lod).Result;
+                //                            var pack = packAndToken.Pack;
+                //                            if (pack != null)
+                //                            {
+                //                                var mainTexture = pack.MainTexture;
+                //                                segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
+                //                                cachedSurfacePatchProvider.RemoveSurfaceDetailAsync(pack, packAndToken.Token).Wait();
+                //                            }
+                //                        }
+                //                    },
+                //                    (c) => { },
+                //                    (c) => { })
+                //        };
+                //    },
             };
         }
     }

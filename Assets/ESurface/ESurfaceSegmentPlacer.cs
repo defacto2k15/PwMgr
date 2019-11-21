@@ -11,14 +11,17 @@ namespace Assets.ETerrain.Pyramid.Map
     public class ESurfaceSegmentPlacer : IGroundTextureSegmentPlacer
     {
         private UTTextureRendererProxy _renderer;
-        private RenderTexture _floorHeightTexture;
+        private RenderTexture _ceilTextureArray;
+        private readonly int _ceilArraySliceIndex;
         private IntVector2 _floorSlotsCount;
         private IntVector2 _floorTextureSize;
 
-        public ESurfaceSegmentPlacer(UTTextureRendererProxy renderer, RenderTexture floorHeightTexture, IntVector2 floorSlotsCount, IntVector2 floorTextureSize)
+        public ESurfaceSegmentPlacer(UTTextureRendererProxy renderer, RenderTexture ceilTextureArray
+            , int ceilArraySliceIndex, IntVector2 floorSlotsCount, IntVector2 floorTextureSize)
         {
             _renderer = renderer;
-            _floorHeightTexture = floorHeightTexture;
+            _ceilTextureArray = ceilTextureArray;
+            _ceilArraySliceIndex = ceilArraySliceIndex;
             _floorSlotsCount = floorSlotsCount;
             _floorTextureSize = floorTextureSize;
         }
@@ -26,19 +29,21 @@ namespace Assets.ETerrain.Pyramid.Map
         public Task PlaceSegmentAsync(Texture segmentTexture, PlacementDetails placementDetails)
         {
             var segmentPlacement0 = CalculateSegmentPlacement(placementDetails.ModuledPositionInGrid);
-            UniformsPack uniforms0 = new UniformsPack();
-            uniforms0.SetTexture("_SegmentSurfaceTexture", segmentTexture);
-            uniforms0.SetUniform("_SegmentCoords", segmentPlacement0.Uvs.ToVector4());
+            UniformsPack uniforms = new UniformsPack();
+            uniforms.SetTexture("_SegmentSurfaceTexture", segmentTexture);
+            uniforms.SetUniform("_SegmentCoords", segmentPlacement0.Uvs.ToVector4());
+            uniforms.SetUniform("_TextureArraySliceIndex", _ceilArraySliceIndex);
 
             return _renderer.AddOrder(new TextureRenderingTemplate()
             {
                 CanMultistep = false,
                 CreateTexture2D = false,
-                RenderTextureToModify = _floorHeightTexture,
+                RenderTextureToModify = _ceilTextureArray,
                 ShaderName = "Custom/ESurface/SegmentPlacer",
-                UniformPack = uniforms0,
+                UniformPack = uniforms,
                 RenderingRectangle = segmentPlacement0.Pixels,
-                RenderTargetSize = _floorTextureSize
+                RenderTargetSize = _floorTextureSize,
+                RenderTextureArraySlice = _ceilArraySliceIndex
             });
         }
 

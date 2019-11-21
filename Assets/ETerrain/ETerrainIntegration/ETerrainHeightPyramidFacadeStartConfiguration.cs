@@ -45,7 +45,8 @@ namespace Assets.ETerrain.ETerrainIntegration
                             },
                             MaxLevelsCount = 3,
                             MaxRingsPerLevelCount = 3,
-                            InterSegmentMarginSize = 1/6.0f
+                            InterSegmentMarginSize = 1/36.0f,
+                            ModifyCornersInHeightSegmentPlacer = true
                         },
                     PerLevelConfigurations =
                         new Dictionary<HeightPyramidLevel, HeightPyramidPerLevelConfiguration>()
@@ -109,7 +110,8 @@ namespace Assets.ETerrain.ETerrainIntegration
 
     public class OneGroundTypeLevelTextureEntitiesGenerator
     {
-        public Func<HeightPyramidLevel,SegmentFillingListenerWithCeilTexture> GeneratorFunc;
+        public Func<HeightPyramidLevel, RenderTexture, ISegmentFillingListener> SegmentFillingListenerGeneratorFunc;
+        public Func< RenderTexture> CeilTextureArrayGenerator;
     }
 
     public class SegmentFillingListenerWithCeilTexture
@@ -120,7 +122,6 @@ namespace Assets.ETerrain.ETerrainIntegration
 
     public class PerGroundTypeEntities
     {
-        public EGroundTexture CeilTexture;
         public SegmentFiller Filler;
     }
 }

@@ -2,6 +2,7 @@
 {
 	Properties
 	{
+		_HeightMap("_HeightMap", 2DArray) = "pink"{}
 		_HeightMap0("_HeightMap0", 2D) = "pink"{}
 		_HeightMap1("_HeightMap1", 2D) = "pink"{}
 		_HeightMap2("_HeightMap2", 2D) = "pink"{}
@@ -10,7 +11,6 @@
 		_SurfaceTexture1("_SurfaceTexture1", 2D) = "pink"{}
 		_SurfaceTexture2("_SurfaceTexture2", 2D) = "pink"{}
 
-		_MainPyramidLevelWorldSize( "MainPyramidLevelWorldSize", Float) = 1.0
 
 		_SegmentCoords("_SegmentCoords", Vector) = (0.0, 0.0, 1.0, 1.0)
 		_HighQualityMipMap("_HighQualityMipMap", Range(0,5)) = 0
@@ -34,7 +34,7 @@
 			#include "common.txt"
 
 			float4 _SegmentCoords;
-
+			UNITY_DECLARE_TEX2DARRAY(_HeightMap);
 			sampler2D _HeightMap0;
 			sampler2D _HeightMap1;
 			sampler2D _HeightMap2;
@@ -46,7 +46,6 @@
 			float _HighQualityMipMap;
 
 			float2 _MainPyramidCenterWorldSpace;
-			float _MainPyramidLevelWorldSize;
 
 			float2 _TravellerPositionWorldSpace;
 

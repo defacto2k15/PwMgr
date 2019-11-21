@@ -63,9 +63,9 @@ namespace Assets.EProps
         }
 
         public EPropLocaleBufferManagerInitializedBuffers Initialize(ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer,
-            Dictionary<HeightPyramidLevel, Texture> heightmapTextures ) 
+            Texture heightmapArray) 
         {
-            return _localeBufferManager.Initialize(ePyramidPerFrameParametersBuffer, ePyramidConfigurationBuffer, heightmapTextures);
+            return _localeBufferManager.Initialize(ePyramidPerFrameParametersBuffer, ePyramidConfigurationBuffer, heightmapArray);
         }
 
         public EPropElevationPointer RegisterProp(Vector2 flatPosition)
@@ -483,7 +483,8 @@ namespace Assets.EProps
             _scopes = new EPropLocaleBufferScopeRegistry[configuration.MaxScopesCount];
         }
 
-        public EPropLocaleBufferManagerInitializedBuffers Initialize( ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer, Dictionary<HeightPyramidLevel, Texture> heightmapTextures)
+        public EPropLocaleBufferManagerInitializedBuffers Initialize( ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer
+            , Texture heightmapArray)
         {
             _scopesUpdateOrdersBuffer = new ComputeBuffer(_configuration.MaxScopeUpdateOrdersInBuffer,
                 System.Runtime.InteropServices.Marshal.SizeOf(typeof(GpuSoleUpdateOrder)), ComputeBufferType.Default);
@@ -499,7 +500,7 @@ namespace Assets.EProps
             _ePropIdsBuffer = new ComputeBuffer(_configuration.MaxLocalePointersCount, 
                 System.Runtime.InteropServices.Marshal.SizeOf(typeof(GpuEPropElevationId)), ComputeBufferType.Default);
 
-            GenerateShaderOrderTemplates(ePyramidPerFrameParametersBuffer, ePyramidConfigurationBuffer, heightmapTextures);
+            GenerateShaderOrderTemplates(ePyramidPerFrameParametersBuffer, ePyramidConfigurationBuffer, heightmapArray);
 
             _eTerrainComputeShader = ComputeShaderUtils.LoadComputeShader("eterrain_comp");
 
@@ -511,7 +512,7 @@ namespace Assets.EProps
         }
 
         private void GenerateShaderOrderTemplates(ComputeBuffer ePyramidPerFrameParametersBuffer, ComputeBuffer ePyramidConfigurationBuffer,
-            Dictionary<HeightPyramidLevel, Texture> heightmapTextures)
+            Texture heightmapArray)
         {
             _localeBufferUpdaterShaderOrderGenerator = (ordersCount, travellerPositionWorldSpace) =>
             {
@@ -539,20 +540,8 @@ namespace Assets.EProps
                 localeBufferUpdateShader.SetGlobalUniform("g_ScopeLength", _configuration.ScopeLength);
                 localeBufferUpdateShader.SetGlobalUniform("g_heightScale", _constantPyramidParameters.HeightScale);
 
-                var expectedLevels = new List<HeightPyramidLevel>() {HeightPyramidLevel.Bottom, HeightPyramidLevel.Mid, HeightPyramidLevel.Top};
-                foreach (var level in expectedLevels) //TODO remove, this is temporary
-                {
-                    if (!heightmapTextures.ContainsKey(level))
-                    {
-                        heightmapTextures[level] = heightmapTextures.Values.Last();
-                    }
-                }
-                foreach(var pair in heightmapTextures)
-                {
-                    var mapId = parametersContainer.AddExistingComputeShaderTexture(pair.Value);
-                    var heightmapTextureName = $"_HeightMap{pair.Key.GetIndex()}";
-                    localeBufferUpdateShader.SetTexture(heightmapTextureName, mapId, kernelHandles);
-                }
+                var mapId = parametersContainer.AddExistingComputeShaderTexture(heightmapArray);
+                localeBufferUpdateShader.SetTexture($"_HeightMap", mapId, kernelHandles); //todo parametrize HeightMap name
 
                 localeBufferUpdateShader.SetGlobalUniform("g_travellerPositionWorldSpace", travellerPositionWorldSpace);
 
@@ -651,20 +640,8 @@ namespace Assets.EProps
                 localeBufferUpdateShader.SetGlobalUniform("g_ScopeLength", _configuration.ScopeLength);
                 localeBufferUpdateShader.SetGlobalUniform("g_heightScale", _constantPyramidParameters.HeightScale);
 
-                var expectedLevels = new List<HeightPyramidLevel>() {HeightPyramidLevel.Bottom, HeightPyramidLevel.Mid, HeightPyramidLevel.Top};
-                foreach (var level in expectedLevels) //TODO remove, this is temporary
-                {
-                    if (!heightmapTextures.ContainsKey(level))
-                    {
-                        heightmapTextures[level] = heightmapTextures.Values.Last();
-                    }
-                }
-                foreach(var pair in heightmapTextures)
-                {
-                    var mapId = parametersContainer.AddExistingComputeShaderTexture(pair.Value);
-                    var heightmapTextureName = $"_HeightMap{pair.Key.GetIndex()}";
-                    localeBufferUpdateShader.SetTexture(heightmapTextureName, mapId, kernelHandles);
-                }
+                var mapId = parametersContainer.AddExistingComputeShaderTexture(heightmapArray);
+                localeBufferUpdateShader.SetTexture($"_HeightMap", mapId, kernelHandles); //todo parametrize HeightMap name
 
                 localeBufferUpdateShader.SetGlobalUniform("g_travellerPositionWorldSpace", travellerPositionWorldSpace);
 

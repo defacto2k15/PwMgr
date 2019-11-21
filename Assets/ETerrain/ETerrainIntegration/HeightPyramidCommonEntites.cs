@@ -1,4 +1,7 @@
-﻿using Assets.ETerrain.Pyramid.Shape;
+﻿using System.Collections.Generic;
+using Assets.ETerrain.GroundTexture;
+using Assets.ETerrain.Pyramid.Shape;
+using UnityEngine;
 
 namespace Assets.ETerrain.ETerrainIntegration
 {
@@ -7,5 +10,6 @@ namespace Assets.ETerrain.ETerrainIntegration
         public HeightPyramidSegmentsUniformsSetter HeightmapUniformsSetter;
         public HeightPyramidGroupMover GroupMover;
         public HeightPyramidCommonConfiguration HeightPyramidMapConfiguration;
+        public Dictionary<EGroundTextureType, RenderTexture> CeilTextureArrays;
     }
 }

@@ -100,46 +100,46 @@ namespace Assets.ESurface
             eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>()
                 {
-                    {
-                        EGroundTextureType.SurfaceTexture, new OneGroundTypeLevelTextureEntitiesGenerator()
-                        {
-                            GeneratorFunc = (level) =>
-                            {
-                                var ceilTexture = EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
-                                    surfaceTextureFormat);
-                                var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
-                                    , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
-                                var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
-                                var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+                    //{
+                    //    EGroundTextureType.SurfaceTexture, new OneGroundTypeLevelTextureEntitiesGenerator()
+                    //    {
+                    //        SegmentFillingListenerGeneratorFunc = (level) =>
+                    //        {
+                    //            var ceilTexture = EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                    //                surfaceTextureFormat);
+                    //            var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
+                    //                , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                    //            var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                    //            var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 
-                                return new SegmentFillingListenerWithCeilTexture()
-                                {
-                                    CeilTexture = ceilTexture,
-                                    SegmentFillingListener =
-                                        new LambdaSegmentFillingListener(
-                                            (c) =>
-                                            {
-                                                var segmentLength = startConfiguration.PerLevelConfigurations[level].BiggestShapeObjectInGroupLength;
-                                                var sap = c.SegmentAlignedPosition;
-                                                MyRectangle surfaceWorldSpaceRectangle = new MyRectangle(sap.X * segmentLength, sap.Y * segmentLength,
-                                                    segmentLength, segmentLength);
-                                                var texturesPack = surfacePatchProvider.ProvideSurfaceDetailAsync(surfaceWorldSpaceRectangle, new FlatLod(1, 1)).Result;
-                                                if (texturesPack != null)
-                                                {
-                                                    var mainTexture = texturesPack.MainTexture;
-                                                    segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
-                                                    GameObject.Destroy(mainTexture);
-                                                }
+                    //            return new SegmentFillingListenerWithCeilTexture()
+                    //            {
+                    //                CeilTexture = ceilTexture,
+                    //                SegmentFillingListener =
+                    //                    new LambdaSegmentFillingListener(
+                    //                        (c) =>
+                    //                        {
+                    //                            var segmentLength = startConfiguration.PerLevelConfigurations[level].BiggestShapeObjectInGroupLength;
+                    //                            var sap = c.SegmentAlignedPosition;
+                    //                            MyRectangle surfaceWorldSpaceRectangle = new MyRectangle(sap.X * segmentLength, sap.Y * segmentLength,
+                    //                                segmentLength, segmentLength);
+                    //                            var texturesPack = surfacePatchProvider.ProvideSurfaceDetailAsync(surfaceWorldSpaceRectangle, new FlatLod(1, 1)).Result;
+                    //                            if (texturesPack != null)
+                    //                            {
+                    //                                var mainTexture = texturesPack.MainTexture;
+                    //                                segmentModificationManager.AddSegmentAsync(mainTexture, c.SegmentAlignedPosition);
+                    //                                GameObject.Destroy(mainTexture);
+                    //                            }
 
-                                                //}
-                                            },
-                                            (c) => { },
-                                            (c) => { })
-                                };
+                    //                            //}
+                    //                        },
+                    //                        (c) => { },
+                    //                        (c) => { })
+                    //            };
 
-                            },
-                        }
-                    }
+                    //        },
+                    //    }
+                    //}
                 }
             );
 

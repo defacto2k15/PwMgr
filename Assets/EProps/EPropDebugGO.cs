@@ -87,36 +87,36 @@ namespace Assets.EProps
             _eTerrainHeightPyramidFacade.Start(perLevelTemplates,
                 new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>()
                 {
-                    {
-                        EGroundTextureType.HeightMap, new OneGroundTypeLevelTextureEntitiesGenerator()
-                        {
-                            GeneratorFunc = (level) =>
-                            {
-                                var ceilTexture =
-                                    EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
-                                        startConfiguration.CommonConfiguration.HeightTextureFormat);
-                                var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
-                                    , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
-                                var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
-                                var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
-                                return new SegmentFillingListenerWithCeilTexture()
-                                {
-                                    CeilTexture = ceilTexture,
-                                    SegmentFillingListener = new LambdaSegmentFillingListener(
-                                        (c) =>
-                                        {
-                                            var segmentTexture = ETerrainIntegrationMultipleSegmentsDEO.CreateDummySegmentTexture(c, level);
-                                            segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
-                                        },
-                                        (c) => { },
-                                        (c) => { }
+                    //{
+                    //    EGroundTextureType.HeightMap, new OneGroundTypeLevelTextureEntitiesGenerator()
+                    //    {
+                    //        SegmentFillingListenerGeneratorFunc = (level) =>
+                    //        {
+                    //            var ceilTexture =
+                    //                EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                    //                    startConfiguration.CommonConfiguration.HeightTextureFormat);
+                    //            var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
+                    //                , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                    //            var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                    //            var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+                    //            return new SegmentFillingListenerWithCeilTexture()
+                    //            {
+                    //                CeilTexture = ceilTexture,
+                    //                SegmentFillingListener = new LambdaSegmentFillingListener(
+                    //                    (c) =>
+                    //                    {
+                    //                        var segmentTexture = ETerrainIntegrationMultipleSegmentsDEO.CreateDummySegmentTexture(c, level);
+                    //                        segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
+                    //                    },
+                    //                    (c) => { },
+                    //                    (c) => { }
 
-                                    )
-                                };
+                    //                )
+                    //            };
 
-                            },
-                        }
-                    }
+                    //        },
+                    //    }
+                    //}
                 }
             );
             //_eTerrainHeightPyramidFacade.DisableShapes();
@@ -132,8 +132,9 @@ namespace Assets.EProps
                 HeightScale =startConfiguration.CommonConfiguration.YScale
             };
             _elevationManager = new EPropElevationManager(new CommonExecutorUTProxy(), shaderExecutorObject, ePropLocationConfiguration, ePropConstantPyramidParameters);
-            var initializedBuffers =  _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
-                _eTerrainHeightPyramidFacade.CeilTextures.ToDictionary(c => c.Key, c => c.Value.First(r => r.TextureType == EGroundTextureType.HeightMap).Texture as Texture) );
+            var heightCeilTextureArray = _eTerrainHeightPyramidFacade.CeilTextureArrays.Where(c => c.TextureType == EGroundTextureType.HeightMap).Select(c => c.Texture).First();
+            var initializedBuffers = _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
+                heightCeilTextureArray);
             var ePropLocaleBuffer = initializedBuffers.EPropLocaleBuffer;
             var ePropIdsBuffer = initializedBuffers.EPropIdsBuffer;
 

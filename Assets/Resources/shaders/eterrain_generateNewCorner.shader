@@ -7,6 +7,7 @@
 		_MarginSize("MarginSize", Range(0,1)) = 0.4
 		_CornerToWeld("CornerToWeld", Vector) = (0.0, 0.0, 0.0, 0.0) //TL TR BR BL
 		_PixelSizeInUv("PixelSizeInUv", Range(0,1)) = 0.01
+		_HeightMapSliceIndex("HeightMapSliceINdex", Float) = 0.0
 	}
 
 	SubShader
@@ -20,11 +21,12 @@
 			#include "UnityCG.cginc" 
 			#include "common.txt"
 
-			sampler2D _FloorHeightTexture;
+			UNITY_DECLARE_TEX2DARRAY(_HeightMap);
 			float4 _WeldingAreaCoords;
 			float _MarginSize;
 			float4 _CornerToWeld;
 			float _PixelSizeInUv;
+			float _HeightMapSliceIndex;
 
 			struct v2f {
 				float4 pos : POSITION; // niezbedna wartosc by dzialal shader
@@ -95,10 +97,10 @@
 				horizontalMasterWeight = saturate(horizontalMasterWeight);
 				verticalMasterWeight= saturate(verticalMasterWeight);
 
-				float horizontalMasterHeight = tex2D(_FloorHeightTexture, horizontalMasterUv);
-				float verticalMasterHeight =  tex2D(_FloorHeightTexture, verticalMasterUv);
+				float horizontalMasterHeight = UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(horizontalMasterUv, round(_HeightMapSliceIndex)));
+				float verticalMasterHeight =  UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(verticalMasterUv, round(_HeightMapSliceIndex)));
 
-				float slaveSegmentHeight = tex2D(_FloorHeightTexture, globalUv);
+				float slaveSegmentHeight = UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(globalUv, round(_HeightMapSliceIndex)));
 				float slaveWeight =  1 - max(horizontalMasterWeight, verticalMasterWeight);
 
 				float outHeight = slaveSegmentHeight*slaveWeight + horizontalMasterHeight*horizontalMasterWeight + verticalMasterHeight*verticalMasterWeight;

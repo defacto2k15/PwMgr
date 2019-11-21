@@ -48,11 +48,11 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
                 HeightTextureFormat = RenderTextureFormat.ARGB32
             };
             
-            var creator = new LegacyHeightPyramidMapCreator();
-            var enties = creator.Create(textureRendererProxy, heightPyramidMapConfiguration);
+            //var creator = new LegacyHeightPyramidMapCreator();
+            //var enties = creator.Create(textureRendererProxy, heightPyramidMapConfiguration);
 
-            _explorer = new LegacyHeightPyramidExplorer(enties.MapManager, heightPyramidMapConfiguration.HeightPyramidLevelsCount, enties.CeilTexture, heightPyramidMapConfiguration.SegmentTextureResolution);
-            _window = new HeightPyramidSegmentExplorerWindow(enties.CeilTexture);
+            //_explorer = new LegacyHeightPyramidExplorer(enties.MapManager, heightPyramidMapConfiguration.HeightPyramidLevelsCount, enties.CeilTexture, heightPyramidMapConfiguration.SegmentTextureResolution);
+            //_window = new HeightPyramidSegmentExplorerWindow(enties.CeilTexture);
         }
 
         public void FillTerrainWithNoise()

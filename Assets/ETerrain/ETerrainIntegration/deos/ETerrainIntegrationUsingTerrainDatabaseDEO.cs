@@ -88,47 +88,47 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         {
             return new OneGroundTypeLevelTextureEntitiesGenerator
             {
-                GeneratorFunc = (level) =>
-                {
-                    var ceilTexture =
-                        EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
-                            startConfiguration.CommonConfiguration.HeightTextureFormat);
-                    var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
-                        , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
-                    var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
-                    var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+                //SegmentFillingListenerGeneratorFunc = (level) =>
+                //{
+                //    var ceilTexture =
+                //        EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                //            startConfiguration.CommonConfiguration.HeightTextureFormat);
+                //    var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
+                //        , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                //    var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                //    var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 
-                    return new SegmentFillingListenerWithCeilTexture()
-                    {
-                        CeilTexture = ceilTexture,
-                        SegmentFillingListener =
-                            new LambdaSegmentFillingListener(
-                                c =>
-                                {
-                                    var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
-                                        startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
+                //    return new SegmentFillingListenerWithCeilTexture()
+                //    {
+                //        CeilTexture = ceilTexture,
+                //        SegmentFillingListener =
+                //            new LambdaSegmentFillingListener(
+                //                c =>
+                //                {
+                //                    var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
+                //                        startConfiguration.PerLevelConfigurations[level], c.SegmentAlignedPosition);
 
-                                    var terrainDetailElementOutput = dbProxy.Query(new TerrainDescriptionQuery()
-                                    {
-                                        QueryArea = repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                        RequestedElementDetails = new List<TerrainDescriptionQueryElementDetail>()
-                                        {
-                                            new TerrainDescriptionQueryElementDetail()
-                                            {
-                                                Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
-                                                RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
-                                                Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
-                                            }
-                                        }
-                                    }).Result.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
-                                    var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
-                                    dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
-                                    segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
-                                },
-                                c => { },
-                                c => { })
-                    };
-                }
+                //                    var terrainDetailElementOutput = dbProxy.Query(new TerrainDescriptionQuery()
+                //                    {
+                //                        QueryArea = repositioner.InvMove(surfaceWorldSpaceRectangle),
+                //                        RequestedElementDetails = new List<TerrainDescriptionQueryElementDetail>()
+                //                        {
+                //                            new TerrainDescriptionQueryElementDetail()
+                //                            {
+                //                                Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
+                //                                RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
+                //                                Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
+                //                            }
+                //                        }
+                //                    }).Result.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
+                //                    var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
+                //                    dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
+                //                    segmentModificationManager.AddSegmentAsync(segmentTexture, c.SegmentAlignedPosition);
+                //                },
+                //                c => { },
+                //                c => { })
+                //    };
+                //}
             };
         }
 
