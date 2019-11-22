@@ -7,7 +7,6 @@
 		_NormalTexture("_NormalTexture", 2DArray) = "pink"{}
 
 		_SegmentCoords("_SegmentCoords", Vector) = (0.0, 0.0, 1.0, 1.0)
-		_HighQualityMipMap("_HighQualityMipMap", Range(0,5)) = 0
 
 		_TravellerPositionWorldSpace("TravellerPositionWorldSpace", Vector) = (0.0, 0.0, 0.0, 0.0)
 
@@ -31,8 +30,6 @@
 			UNITY_DECLARE_TEX2DARRAY(_HeightMap);
 			UNITY_DECLARE_TEX2DARRAY(_SurfaceTexture);
 			UNITY_DECLARE_TEX2DARRAY(_NormalTexture);
-
-			float _HighQualityMipMap;
 
 			float2 _MainPyramidCenterWorldSpace;
 
@@ -79,14 +76,30 @@
 				return _SegmentCoords.xy + float2(uv.x * _SegmentCoords.z, uv.y * _SegmentCoords.w);
 			}
 
+			int findRingIndex(ETerrainParameters terrainParameters, float2 inSegmentSpaceUv) {
+				float4 ringsUvs[3] = { //TODO make configurable
+					float4(0.5 - 1 / 12.0, 0.5 - 1 / 12.0, 1 / 6.0, 1 / 6.0),
+					float4(0.5 - 2 / 12.0, 0.5 - 2 / 12.0, 2 / 6.0, 2 / 6.0),
+					float4(0.5 - 4 / 12.0, 0.5 - 4 / 12.0, 4 / 6.0, 4 / 6.0)
+				};
+				for (int ringIndex = 0; ringIndex < min(terrainParameters.ringsPerLevelCount, MAX_RINGS_PER_LEVEL_COUNT); ringIndex++) {
+					if (isInRectangle(inSegmentSpaceUv, ringsUvs[ringIndex])) {
+						return ringIndex;
+					}
+				}
+				return -1;
+			}
+
 			void vert( inout appdata_full v, out Input v2f_o) {
 				float2 uv = v.texcoord.xy;
 				float2 inSegmentSpaceUv = calculateInSegmentSpaceUv(uv);
 
-				int levelIndex = _ThisLevelIndex;
-
-				ELevelAndRingIndexes levelAndRingIndexes = make_ELevelAndRingIndexes(levelIndex, round(_HighQualityMipMap));//TODO
 				ETerrainParameters terrainParameters = init_ETerrainParametersFromUniforms();
+
+				int levelIndex = _ThisLevelIndex;
+				int ringIndex = findRingIndex(terrainParameters, inSegmentSpaceUv);
+
+				ELevelAndRingIndexes levelAndRingIndexes = make_ELevelAndRingIndexes(levelIndex, ringIndex);
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
@@ -94,29 +107,10 @@
 
 				v2f_o.inSegmentSpaceUv = inSegmentSpaceUv;
 				v2f_o.uv = uv;
-				v2f_o.usedMipMapLevel = _HighQualityMipMap + terrainOut.terrainMergingLerpParam;
+				v2f_o.usedMipMapLevel =  ringIndex+ terrainOut.terrainMergingLerpParam;
 				v2f_o.terrainMergingLerpParam = terrainOut.terrainMergingLerpParam;
 				v2f_o.shouldDiscardMarker = terrainOut.shouldBeDiscarded ? 1 : 0;
 				v2f_o.worldSpaceLocation = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
-			}
-
-			float3 seedColorFrom(float value) {
-				int seed = round(value);
-				if (seed < 0.5) {
-					return float3(1, 0, 0);
-				}
-				else if (seed < 1.5) {
-					return float3(1, 1, 0);
-				}
-				else if (seed < 2.5) {
-					return float3(0, 1, 0);
-				}
-				else if (seed < 3.5) {
-					return float3(0, 1, 1);
-				}
-				else {
-					return float3(0, 0, 1);
-				}
 			}
 
 			float4 sampleSurfaceTexture(int level, float4 uv) { //TODO VERY UNOPTIMAL
@@ -243,6 +237,7 @@
 				o.Normal = decodeNormal(worldNormal);
 
 				//finalColor = 0;
+				//levelIndex = round(i.debug);
 				//if (levelIndex == 0) {
 				//	finalColor = float4(1, 0, 0, 1);
 				//}
@@ -252,12 +247,11 @@
 				//else {
 				//	finalColor = float4(0, 0, 1, 1);
 				//}
-
 				//finalColor /= (ringIndex + 1.0f);
 				//if (i.terrainMergingLerpParam > 0.02 && i.terrainMergingLerpParam < 0.98) {
 				//	finalColor = float4(1, 1, 1, 1) *i.terrainMergingLerpParam;
 				//}
-				//o.Albedo = finalColor;
+				//o.Albedo = i.inSegmentSpaceUv.xyxy;
 			} 
 
 			ENDCG

@@ -158,6 +158,9 @@ namespace Assets.ETerrain.Pyramid.Shape
             var objectsPerRing = pyramidLevelTemplate.PerRingTemplates.Keys.ToDictionary(c => c, c => new List<GameObject>());
 
             GameObject centerObject=null;
+
+            var ring1ElementMesh = _meshGenerator.AddOrder(() => PlaneGenerator.CreateETerrainSegmentMesh(60, 60)).Result; //todo
+            MeshGenerationUtils.SetYBoundsToInfinity(ring1ElementMesh);
             foreach (var shapeTemplate in pyramidLevelTemplate.ShapeTemplates)
             {
                 var ringTemplate = pyramidLevelTemplate.PerRingTemplates[shapeTemplate.RingIndex];
@@ -172,9 +175,7 @@ namespace Assets.ETerrain.Pyramid.Shape
                 }
                 else
                 {
-                    var ringElementMesh = _meshGenerator.AddOrder(() => PlaneGenerator.CreateETerrainSegmentMesh(60, 60)).Result; //todo
-                    MeshGenerationUtils.SetYBoundsToInfinity(ringElementMesh);
-                    var shape = CreateShapeObject(ringElementMesh, ringTemplate, shapeTemplate, "Ring " + shapeTemplate.RingIndex);
+                    var shape = CreateShapeObject(ring1ElementMesh, ringTemplate, shapeTemplate, "Ring " + shapeTemplate.RingIndex);
                     shape.transform.SetParent(parentGO.transform);
                     objectsPerRing[shapeTemplate.RingIndex].Add(shape);
                 }
@@ -204,7 +205,6 @@ namespace Assets.ETerrain.Pyramid.Shape
             renderer.material = new Material(Shader.Find("Custom/ETerrain/Ground"));
             renderer.material.SetVector("_SegmentCoords", segmentUvs.ToVector4());
             renderer.material.SetVector("_HeightMergeRange", perRingTemplate.HeightMergeRange);
-            renderer.material.SetFloat("_HighQualityMipMap", perRingTemplate.HighQualityMipMap);
 
             var mf = go.AddComponent<MeshFilter>();
             mf.sharedMesh = mesh;
