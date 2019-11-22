@@ -35,6 +35,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                             SlotMapSize = new IntVector2(6, 6),
                             SegmentTextureResolution = new IntVector2(240, 240), // rozdzielczosc tekstury segmentow - rowna Ilosci vierzechołkow centralnego mesha
                             HeightTextureFormat = RenderTextureFormat.RFloat,
+                            NormalTextureFormat= RenderTextureFormat.ARGB32,
                             SurfaceTextureFormat = RenderTextureFormat.ARGB32,
                             YScale = 50f,
                             RingsUvRange = new Dictionary<int, Vector2>()
@@ -46,7 +47,8 @@ namespace Assets.ETerrain.ETerrainIntegration
                             MaxLevelsCount = 3,
                             MaxRingsPerLevelCount = 3,
                             InterSegmentMarginSize = 1/36.0f,
-                            ModifyCornersInHeightSegmentPlacer = true
+                            ModifyCornersInHeightSegmentPlacer = true,
+                            UseNormalTextures = true
                         },
                     PerLevelConfigurations =
                         new Dictionary<HeightPyramidLevel, HeightPyramidPerLevelConfiguration>()
@@ -110,14 +112,8 @@ namespace Assets.ETerrain.ETerrainIntegration
 
     public class OneGroundTypeLevelTextureEntitiesGenerator
     {
-        public Func<HeightPyramidLevel, RenderTexture, ISegmentFillingListener> SegmentFillingListenerGeneratorFunc;
-        public Func< RenderTexture> CeilTextureArrayGenerator;
-    }
-
-    public class SegmentFillingListenerWithCeilTexture
-    {
-        public ISegmentFillingListener SegmentFillingListener;
-        public Texture CeilTexture;
+        public Func<HeightPyramidLevel, List<EGroundTexture>, ISegmentFillingListener> SegmentFillingListenerGeneratorFunc;
+        public Func< List<EGroundTexture>> CeilTextureArrayGenerator;
     }
 
     public class PerGroundTypeEntities

@@ -38,7 +38,7 @@
 			fixed4 frag(v2f i) : Color{
 				float2 uv = i.uv;
 				float4 outHeight = tex2D(_ModifiedCornerBuffer, uv);
-				return float4(outHeight.rgb, 1);
+				return outHeight;
 			} 
 
 			ENDCG

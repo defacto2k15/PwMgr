@@ -77,7 +77,7 @@ namespace Assets.ETerrain.ETerrainIntegration
 
             _pyramidRootGo = new GameObject("HeightPyramidRoot");
 
-            var ceilTextureArrays = groundEntitiesGenerators.ToDictionary(c => c.Key, c => c.Value.CeilTextureArrayGenerator());
+            var ceilTextureArrays = groundEntitiesGenerators.SelectMany( c => c.Value.CeilTextureArrayGenerator()).ToList();
 
             _perLevelEntites = new Dictionary<HeightPyramidLevel, HeightPyramidLevelEntities>();
             foreach (var level in heightLevels)
@@ -89,7 +89,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                     var groundType = c.Key;
                     var generator = c.Value;
 
-                    var fillingListener= generator.SegmentFillingListenerGeneratorFunc(level, ceilTextureArrays[groundType]);
+                    var fillingListener= generator.SegmentFillingListenerGeneratorFunc(level, ceilTextureArrays);
 
                     var segmentFiller = new SegmentFiller(heightPyramidMapConfiguration.SlotMapSize, perLevelConfiguration.SegmentFillerStandByMarginsSize,
                         perLevelConfiguration.BiggestShapeObjectInGroupLength, fillingListener);
@@ -189,8 +189,7 @@ namespace Assets.ETerrain.ETerrainIntegration
 
         public Dictionary<HeightPyramidLevel, Vector2> PyramidCenterWorldSpacePerLevel => _pyramidCenterWorldSpacePerLevel;
 
-        public List<EGroundTexture> CeilTextureArrays =>
-            _pyramidCommonEntites.CeilTextureArrays.Select(c => new EGroundTexture(c.Value, c.Key)).ToList();
+        public List<EGroundTexture> CeilTextureArrays => _pyramidCommonEntites.CeilTextureArrays;
 
         public void DisableShapes()
         {

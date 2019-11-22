@@ -36,8 +36,8 @@
 			fixed4 frag(v2f i) : Color{
 				float2 uv = i.uv;
 				uv.y = 1 - uv.y;
-				float height = tex2D(_SegmentHeightTexture, uv);
-				return float4(height, height, height, 1);
+				float4 height = tex2D(_SegmentHeightTexture, uv);
+				return height;
 			} 
 
 			ENDCG

@@ -97,16 +97,16 @@
 				horizontalMasterWeight = saturate(horizontalMasterWeight);
 				verticalMasterWeight= saturate(verticalMasterWeight);
 
-				float horizontalMasterHeight = UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(horizontalMasterUv, round(_HeightMapSliceIndex)));
-				float verticalMasterHeight =  UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(verticalMasterUv, round(_HeightMapSliceIndex)));
+				float4 horizontalMasterHeight = UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(horizontalMasterUv, round(_HeightMapSliceIndex)));
+				float4 verticalMasterHeight =  UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(verticalMasterUv, round(_HeightMapSliceIndex)));
 
-				float slaveSegmentHeight = UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(globalUv, round(_HeightMapSliceIndex)));
+				float4 slaveSegmentHeight = UNITY_SAMPLE_TEX2DARRAY(_HeightMap, float3(globalUv, round(_HeightMapSliceIndex)));
 				float slaveWeight =  1 - max(horizontalMasterWeight, verticalMasterWeight);
 
-				float outHeight = slaveSegmentHeight*slaveWeight + horizontalMasterHeight*horizontalMasterWeight + verticalMasterHeight*verticalMasterWeight;
+				float4 outHeight = slaveSegmentHeight*slaveWeight + horizontalMasterHeight*horizontalMasterWeight + verticalMasterHeight*verticalMasterWeight;
 				outHeight /= (slaveWeight + horizontalMasterWeight + verticalMasterWeight);
 
-				return float4(outHeight,outHeight, outHeight, 1);
+				return outHeight;
 			} 
 
 			ENDCG

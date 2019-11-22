@@ -375,7 +375,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Overlay: {fileID: 895884224}
-  Multithreading: 1
+  Multithreading: 0
   Traveller: {fileID: 185176292}
   VegetationConfiguration:
     ReferencedAssets:

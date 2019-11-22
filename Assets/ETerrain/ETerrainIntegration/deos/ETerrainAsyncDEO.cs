@@ -13,6 +13,7 @@ using Assets.ETerrain.SectorFilling;
 using Assets.FinalExecution;
 using Assets.Heightmaps;
 using Assets.Heightmaps.GRing;
+using Assets.Heightmaps.Ring1.Creator;
 using Assets.Heightmaps.Ring1.MeshGeneration;
 using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.TerrainDescription;
@@ -63,6 +64,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             TaskUtils.ExecuteActionWithOverridenMultithreading(true, () =>
             {
                 _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = Multithreading};
+                _configuration.EngraveTerrainFeatures = false;
+
                 _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
                 _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
                 _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
@@ -229,6 +232,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public static OneGroundTypeLevelTextureEntitiesGenerator GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
             ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields initializationFields, UltraUpdatableContainer updatableContainer, bool modifyCorners = true)
         {
+            //startConfiguration.CommonConfiguration.UseNormalTextures = false;
             var textureRendererProxy = initializationFields.Retrive<UTTextureRendererProxy>();
             var dbProxy = initializationFields.Retrive<TerrainShapeDbProxy>();
             var repositioner = initializationFields.Retrive<Repositioner>();
@@ -237,22 +241,50 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 CeilTextureArrayGenerator = () =>
                     {
-                        return EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize,
-                            startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.HeightTextureFormat);
+                        var outList = new List<EGroundTexture>()
+                        {
+                            new EGroundTexture(
+                                texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize
+                                    , startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.HeightTextureFormat),
+                                textureType:EGroundTextureType.HeightMap
+                                ),
+                        };
+                        if (startConfiguration.CommonConfiguration.UseNormalTextures)
+                        {
+                            outList.Add(
+                                new EGroundTexture(
+                                    texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize
+                                        , startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.NormalTextureFormat),
+                                    textureType: EGroundTextureType.NormalTexture
+                                )
+                            );
+                        }
+                        return outList;
                     },
-                SegmentFillingListenerGeneratorFunc = (level, ceilTextureArray) =>
+                SegmentFillingListenerGeneratorFunc = (level, ceilTextureArrays) =>
                 {
-                    var segmentsPlacer = new HeightSegmentPlacer(
-                        textureRendererProxy, initializationFields.Retrive<CommonExecutorUTProxy>(), ceilTextureArray
-                        , level.GetIndex(), startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize
-                        , startConfiguration.CommonConfiguration.InterSegmentMarginSize, startConfiguration.CommonConfiguration.SegmentTextureResolution
-                        , startConfiguration.CommonConfiguration.ModifyCornersInHeightSegmentPlacer 
-                        );
-                    var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
-                    var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+                    var usedGroundTypes = new List<EGroundTextureType>() {EGroundTextureType.HeightMap};
+                    if (startConfiguration.CommonConfiguration.UseNormalTextures)
+                    {
+                        usedGroundTypes.Add(EGroundTextureType.NormalTexture);
+                    }
+                    var segmentModificationManagers = usedGroundTypes.ToDictionary(groundType => groundType,
+                        groundType =>
+                        {
+                            var groundTexture = ceilTextureArrays.First(c => c.TextureType == groundType);
+
+                            var segmentsPlacer= new HeightSegmentPlacer(
+                                textureRendererProxy, initializationFields.Retrive<CommonExecutorUTProxy>(), groundTexture.Texture
+                                , level.GetIndex(), startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize
+                                , startConfiguration.CommonConfiguration.InterSegmentMarginSize, startConfiguration.CommonConfiguration.SegmentTextureResolution
+                                , false
+                            );
+                            var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
+                            return new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
+                        });
 
                     var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("Height-" + level.ToString(), 
-                        new  CompoundSegmentOrdersFillingExecutor<TerrainDetailElementOutput>(
+                        new  CompoundSegmentOrdersFillingExecutor<TerrainDescriptionOutput>(
                             async (sap) =>
                             {
                                 var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
@@ -268,21 +300,40 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                             Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
                                             RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
                                             Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
-                                        }
+                                        },
+                                        new TerrainDescriptionQueryElementDetail()
+                                        {
+                                            Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
+                                            RequiredMergeStatus = RequiredCornersMergeStatus.NOT_MERGED,
+                                            Type = TerrainDescriptionElementTypeEnum.NORMAL_ARRAY
+                                        },
                                     }
                                 });
 
-                                var terrainDetailElementOutput = terrainDescriptionOutput.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY);
-                                return terrainDetailElementOutput;
+                                return terrainDescriptionOutput;
                             },
-                            (sap, terrainDetailElementOutput) =>
+                            async (sap, terrainDescriptionOutput) =>
                             {
-                                var segmentTexture = terrainDetailElementOutput.TokenizedElement.DetailElement.Texture.Texture;
-                                return segmentModificationManager.AddSegmentAsync(segmentTexture, sap);
+                                var heightSegmentTexture = terrainDescriptionOutput.GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY)
+                                    .TokenizedElement.DetailElement.Texture.Texture;
+                                await segmentModificationManagers[EGroundTextureType.HeightMap].AddSegmentAsync(heightSegmentTexture, sap);
+
+                                if (startConfiguration.CommonConfiguration.UseNormalTextures)
+                                {
+                                    var normalSegmentTexture = terrainDescriptionOutput.GetElementOfType(TerrainDescriptionElementTypeEnum.NORMAL_ARRAY)
+                                        .TokenizedElement.DetailElement.Texture.Texture;
+                                    await segmentModificationManagers[EGroundTextureType.NormalTexture].AddSegmentAsync(normalSegmentTexture, sap);
+                                }
                             },
-                            (terrainDetailElementOutput) =>
+                            async (terrainDescriptionOutput) =>
                             {
-                                return dbProxy.DisposeTerrainDetailElement(terrainDetailElementOutput.TokenizedElement.Token);
+                                await dbProxy.DisposeTerrainDetailElement(terrainDescriptionOutput
+                                    .GetElementOfType(TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY).TokenizedElement.Token);
+                                if (startConfiguration.CommonConfiguration.UseNormalTextures)
+                                {
+                                    await dbProxy.DisposeTerrainDetailElement(terrainDescriptionOutput
+                                        .GetElementOfType(TerrainDescriptionElementTypeEnum.NORMAL_ARRAY).TokenizedElement.Token);
+                                }
                             }
                         ));
                     updatableContainer.AddOtherThreadProxy(otherThreadExecutor);
@@ -356,13 +407,18 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             return new OneGroundTypeLevelTextureEntitiesGenerator()
             {
                 CeilTextureArrayGenerator =  () =>
-                    {
-                        return EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize,
-                            startConfiguration.HeightPyramidLevels.Count, surfaceTextureFormat);
-                    },
-                SegmentFillingListenerGeneratorFunc = (level, ceilTextureArray) =>
                 {
-                    var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTextureArray, level.GetIndex()
+                    return new List<EGroundTexture>()
+                    {
+                        new EGroundTexture( EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize,
+                            startConfiguration.HeightPyramidLevels.Count, surfaceTextureFormat),
+                        EGroundTextureType.SurfaceTexture )
+                    };
+                },
+                SegmentFillingListenerGeneratorFunc = (level, ceilTextureArrays) =>
+                {
+                    var ceilTextureArray = ceilTextureArrays.First(c => c.TextureType == EGroundTextureType.SurfaceTexture);
+                    var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTextureArray.Texture, level.GetIndex()
                         , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
                     var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
                     var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);

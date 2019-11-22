@@ -4,6 +4,7 @@
 	{
 		_HeightMap("_HeightMap", 2DArray) = "pink"{}
 		_SurfaceTexture("_SurfaceTexture", 2DArray) = "pink"{}
+		_NormalTexture("_NormalTexture", 2DArray) = "pink"{}
 
 		_SegmentCoords("_SegmentCoords", Vector) = (0.0, 0.0, 1.0, 1.0)
 		_HighQualityMipMap("_HighQualityMipMap", Range(0,5)) = 0
@@ -29,6 +30,7 @@
 			float4 _SegmentCoords;
 			UNITY_DECLARE_TEX2DARRAY(_HeightMap);
 			UNITY_DECLARE_TEX2DARRAY(_SurfaceTexture);
+			UNITY_DECLARE_TEX2DARRAY(_NormalTexture);
 
 			float _HighQualityMipMap;
 
@@ -125,16 +127,39 @@
 #endif
 			}
 
-			float4 calculateESurfaceColor(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, float lod ) {
+			float4 sampleNormalTexture(int level, float4 uv) { //TODO VERY UNOPTIMAL
+#ifdef SHADER_API_D3D11  
+				return _NormalTexture.SampleLevel(sampler_NormalTexture, float3(uv.xy, level), uv.w);
+#else
+				return UNITY_SAMPLE_TEX2DARRAY_LOD(_NormalTexture, float3(uv.xy, level), uv.w);
+#endif
+			}
+
+			struct ESurfaceInfo {
+				float3 color;
+				float3 normal;
+			};
+
+			ESurfaceInfo  make_ESurfaceInfo(float3 color, float3 normal) {
+				ESurfaceInfo i;
+				i.color = color;
+				i.normal = normal;
+				return i;
+			}
+
+			ESurfaceInfo calculateESurfaceInfo(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, float lod ) {
 				int mainHeightTextureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution;
 				float2 textureSamplingUv = frac(inSegmentSpaceUv + MainPyramidCenterUv(levelAndRingIndexes, terrainParameters));
 
 				float2 sampleCenteredHighQualityUv = textureSamplingUv + 1.0/ (mainHeightTextureResolution * 2.0); //This is to align UV to sample center of heightmap pixels
 				float4 currentColor = sampleSurfaceTexture(levelAndRingIndexes.levelIndex, float4(sampleCenteredHighQualityUv,0,lod));
+				float4 secondChanceColor = sampleSurfaceTexture(1, float4(sampleCenteredHighQualityUv,0,lod));
 
-				float4 secondChanceColor =sampleSurfaceTexture(1, float4(sampleCenteredHighQualityUv,0,lod));
+				float4 currentNormal = sampleNormalTexture(levelAndRingIndexes.levelIndex, float4(sampleCenteredHighQualityUv,0,lod));
+				float4 secondChanceNormal = sampleNormalTexture(1, float4(sampleCenteredHighQualityUv,0,lod));
+
 				float secondChanceMarker = saturate(0.01+currentColor.a / 0.025);
-				return lerp(secondChanceColor, currentColor, secondChanceMarker) ;
+				return make_ESurfaceInfo(lerp(secondChanceColor.xyz, currentColor.xyz, secondChanceMarker), currentNormal);// normalize(lerp(secondChanceNormal.xyz, currentNormal.xyz, secondChanceMarker)));
 			}
 
 
@@ -177,65 +202,19 @@
 				return squareIndex / ((float)gridResolution);
 			}
 
-			float3 calculateNormal(float3 vertices[3]) {
-				float3 u = vertices[1] - vertices[0];
-				float3 v = vertices[2] - vertices[0];
-				return normalize(cross(u, v));
-			}
-
-			struct TriangulatedSurfaceInfo {
-				float3 worldNormal;
-				InTriangleGridPosition gridPosition;
-				float2 downLeftVerticleInSegmentSpaceUv;
-			};
-
-			TriangulatedSurfaceInfo make_TriangulatedSurfaceInfo(float3 worldNormal, InTriangleGridPosition gridPosition, float2 downLeftVerticleInSegmentSpaceUv) {
-				TriangulatedSurfaceInfo o;
-				o.worldNormal = worldNormal;
-				o.gridPosition = gridPosition;
-				o.downLeftVerticleInSegmentSpaceUv = downLeftVerticleInSegmentSpaceUv;
-				return o;
-			}
-
-			TriangulatedSurfaceInfo CalculateTriangulatedSurfaceInfo(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, EPerRingParameters perRingParameters, ETerrainParameters terrainParameters) {
+			float2 CalculateDownLeftVerticleInSegmentSpaceUv(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, EPerRingParameters perRingParameters, ETerrainParameters terrainParameters) {
 				float subRingMultiplier = pow(2, perRingParameters.highQualityMipMap);
 				int gridResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution / subRingMultiplier;
 				float levelWorldSize = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].levelWorldSize;
 				float worldSpaceGridCellsLength = levelWorldSize / gridResolution;
 				InTriangleGridPosition gridPosition = calculateInTriangleGridPosition(inSegmentSpaceUv, gridResolution);
-				int2  squareIndex= gridPosition.squareIndex;
+				int2  squareIndex = gridPosition.squareIndex;
 
 				float2 downLeftVerticleInSegmentSpaceUv = squareIndexToDownLeftVerticlePlateUv(squareIndex, gridResolution);
-
-				float2 segmentSpaceUvOffsets[4] = { float2(0,0), float2(1.0f / gridResolution,0), float2(0,1.0f / gridResolution), float2(1.0f/gridResolution, 1.0/gridResolution) };
-				float2 worldSpaceOffsetsDelta[4] = { float2(0,0), float2(worldSpaceGridCellsLength,0), float2(0, worldSpaceGridCellsLength), float2(worldSpaceGridCellsLength, worldSpaceGridCellsLength) };
-				int triangleIndexes[3];
-				if (gridPosition.isLowerTriangle) {
-					triangleIndexes[0] = 0;
-					triangleIndexes[1] = 1;
-					triangleIndexes[2] = 3;
-				}
-				else {
-					triangleIndexes[0] = 0;
-					triangleIndexes[1] = 3;
-					triangleIndexes[2] = 2;
-				}
-				
-				float sampledHeights[3];
-				float3 sampledPositions[3];
-				for (int j = 0; j < 3; j++) {
-					int triangleIndex = triangleIndexes[j];
-					float2 sampleSegmentSpaceUv = (downLeftVerticleInSegmentSpaceUv+segmentSpaceUvOffsets[triangleIndex]);
-					ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(sampleSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
-					float height = terrainOut.finalHeight * 2385; //TODO 2385 should got to same parameter
-					sampledHeights[j] = height;
-					sampledPositions[j] = float3(worldSpaceOffsetsDelta[triangleIndex].x,height, worldSpaceOffsetsDelta[triangleIndex].y);
-				}
-				float3 worldNormal = -calculateNormal(sampledPositions);
-
-				return make_TriangulatedSurfaceInfo(worldNormal, gridPosition, downLeftVerticleInSegmentSpaceUv);
+				return downLeftVerticleInSegmentSpaceUv;
 			}
 
+#include "common.txt"
 
 			//Our Fragment Shader
 			void surf(in Input i, inout SurfaceOutput o) {	//TODO add normals coloring
@@ -250,24 +229,18 @@
 				int levelIndex = levelAndRingIndexes.levelIndex;
 				int ringIndex = levelAndRingIndexes.ringIndex;
 
-				TriangulatedSurfaceInfo surfaceInfo = CalculateTriangulatedSurfaceInfo(i.inSegmentSpaceUv, levelAndRingIndexes, perRingParameters, terrainParameters);
-
-				InTriangleGridPosition gridPosition = surfaceInfo.gridPosition;
-				int2 squareIndex = gridPosition.squareIndex;
-				if (gridPosition.isLowerTriangle) {
-					squareIndex.x += 100000;
-				}
-
 				float surfaceColorLod = levelAndRingIndexes.ringIndex + i.terrainMergingLerpParam ;
 				if (levelAndRingIndexes.levelIndex == 2) {
 					surfaceColorLod += 1;
 				}
-				finalColor = calculateESurfaceColor(surfaceInfo.downLeftVerticleInSegmentSpaceUv, levelAndRingIndexes, terrainParameters, surfaceColorLod);
 
-				float3 worldNormal = surfaceInfo.worldNormal;
-				o.Albedo = finalColor;
-				o.Normal = float3(worldNormal.x, -worldNormal.z, worldNormal.y);// mul((float3x3)unity_WorldToObject, float3(worldNormal)).zyx;
+				float2 downLeftVerticleInSegmentSpaceUv = CalculateDownLeftVerticleInSegmentSpaceUv(i.inSegmentSpaceUv, levelAndRingIndexes, perRingParameters, terrainParameters);
+				ESurfaceInfo surfaceInfo = calculateESurfaceInfo(downLeftVerticleInSegmentSpaceUv, levelAndRingIndexes, terrainParameters, surfaceColorLod);
+				finalColor = float4(surfaceInfo.color,1);
 
+				float3 worldNormal = surfaceInfo.normal;
+				o.Albedo =  finalColor;
+				o.Normal = decodeNormal(worldNormal);
 
 				//finalColor = 0;
 				//if (levelIndex == 0) {

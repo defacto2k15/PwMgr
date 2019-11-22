@@ -11,7 +11,7 @@ namespace Assets.ETerrain.ETerrainIntegration
     public class HeightPyramidSegmentsUniformsSetter
     {
         public void InitializePyramidUniforms(HeightPyramidSegmentShapeGroup @group, HeightPyramidLevel groupLevel,
-            Dictionary<EGroundTextureType, RenderTexture> ceilTextureArrays, int levelsCount, int ringsPerLevelCount)
+            List<EGroundTexture> ceilTextureArrays, int levelsCount, int ringsPerLevelCount)
         {
             group.ETerrainMaterials.ForEach(c =>
             {
@@ -19,9 +19,9 @@ namespace Assets.ETerrain.ETerrainIntegration
                 c.SetInt("_RingsPerLevelCount", ringsPerLevelCount);
                 c.SetInt("_ThisLevelIndex", groupLevel.GetIndex());
 
-                foreach (var pair in ceilTextureArrays)
+                foreach (var aCeilTextureArray in ceilTextureArrays)
                 {
-                    c.SetTexture("_"+ pair.Key.GetName(), pair.Value);
+                    c.SetTexture("_"+ aCeilTextureArray.TextureType.GetName(), aCeilTextureArray.Texture);
                 }
             });
         }

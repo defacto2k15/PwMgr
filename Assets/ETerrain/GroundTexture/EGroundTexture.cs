@@ -10,16 +10,16 @@ namespace Assets.ETerrain.GroundTexture
 {
     public class EGroundTexture
     {
-        private Texture _texture;
+        private RenderTexture _texture;
         private EGroundTextureType _textureType;
 
-        public EGroundTexture(Texture texture, EGroundTextureType textureType)
+        public EGroundTexture(RenderTexture texture, EGroundTextureType textureType)
         {
             _texture = texture;
             _textureType = textureType;
         }
 
-        public Texture Texture => _texture;
+        public RenderTexture Texture => _texture;
 
         public string Name => _textureType.GetName();
 
@@ -28,7 +28,7 @@ namespace Assets.ETerrain.GroundTexture
 
     public enum EGroundTextureType
     {
-        HeightMap, SurfaceTexture
+        HeightMap, SurfaceTexture, NormalTexture
     }
 
     public static class EGroundTextureTypeUtils
@@ -41,6 +41,8 @@ namespace Assets.ETerrain.GroundTexture
                     return "HeightMap";
                 case EGroundTextureType.SurfaceTexture:
                     return "SurfaceTexture";
+                case EGroundTextureType.NormalTexture:
+                    return "NormalTexture";
             }
             Preconditions.Fail("Not supproted texture type "+type);
             return "ERROR E951";

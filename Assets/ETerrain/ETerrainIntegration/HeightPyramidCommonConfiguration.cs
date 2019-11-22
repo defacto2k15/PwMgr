@@ -10,6 +10,7 @@ namespace Assets.ETerrain.ETerrainIntegration
         public IntVector2 SegmentTextureResolution { get; set; }
         public float InterSegmentMarginSize { get; set; }
         public RenderTextureFormat HeightTextureFormat { get; set; }
+        public RenderTextureFormat NormalTextureFormat { get; set; }
         public RenderTextureFormat SurfaceTextureFormat { get; set; }
 
         public IntVector2 CeilTextureSize => SlotMapSize * SegmentTextureResolution;
@@ -20,5 +21,7 @@ namespace Assets.ETerrain.ETerrainIntegration
 
         public int MaxLevelsCount;
         public int MaxRingsPerLevelCount;
+
+        public bool UseNormalTextures;
     }
 }
