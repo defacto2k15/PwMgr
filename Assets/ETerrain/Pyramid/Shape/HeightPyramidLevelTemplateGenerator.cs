@@ -75,7 +75,7 @@ namespace Assets.ETerrain.Pyramid.Shape
                 }
             }
 
-            var levelFlatSize = new Vector2(4 * centerObjectLength, 4 * centerObjectLength); //todo
+            var levelFlatSize = perLevelConfiguration.CeilTextureWorldSize;
 
             return new HeightPyramidLevelTemplate()
             {
@@ -238,9 +238,7 @@ namespace Assets.ETerrain.Pyramid.Shape
                 _meshGenerator.AddOrder(() => PlaneGenerator.CreateETerrainSegmentMesh(
                     _perLevelConfiguration.RingObjectMeshVertexLength.X, _perLevelConfiguration.RingObjectMeshVertexLength.Y)).Result; //todo
             ring1ElementMesh.RecalculateBounds();
-            Debug.Log(ring1ElementMesh.bounds);
             MeshGenerationUtils.SetYBounds(ring1ElementMesh, 0f, 1f);
-            Debug.Log(ring1ElementMesh.bounds);
             foreach (var shapeTemplate in pyramidLevelTemplate.ShapeTemplates)
             {
                 if (shapeTemplate.RingIndex == 0) //center
@@ -286,6 +284,10 @@ namespace Assets.ETerrain.Pyramid.Shape
 
             renderer.material = new Material(Shader.Find("Custom/ETerrain/Ground"));
             renderer.material.SetVector("_SegmentCoords", segmentUvs.ToVector4());
+
+            var segmentLevelUvs = RectangleUtils.CalculateSubelementUv(_perLevelConfiguration.CeilTextureZeroCenteredWorldArea.SubRectangle(new MyRectangle(1/6.0f, 1/6.0f, 4/6.0f, 4/6.0f)),
+                new MyRectangle(flatStartPos.x, flatStartPos.y, flatSize.x, flatSize.y));
+            renderer.material.SetVector("_SegmentLevelCoords", segmentLevelUvs.ToVector4());
 
             var mf = go.AddComponent<MeshFilter>();
             mf.sharedMesh = mesh;

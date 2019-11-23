@@ -7,6 +7,7 @@
 		_NormalTexture("_NormalTexture", 2DArray) = "pink"{}
 
 		_SegmentCoords("_SegmentCoords", Vector) = (0.0, 0.0, 1.0, 1.0)
+		_SegmentLevelCoords("_SegmentLevelCoords", Vector) = (0.0, 0.0, 1.0, 1.0)
 
 		_TravellerPositionWorldSpace("TravellerPositionWorldSpace", Vector) = (0.0, 0.0, 0.0, 0.0)
 
@@ -27,6 +28,7 @@
 			#include "common.txt"
 
 			float4 _SegmentCoords;
+			float4 _SegmentLevelCoords;
 			UNITY_DECLARE_TEX2DARRAY(_HeightMap);
 			UNITY_DECLARE_TEX2DARRAY(_SurfaceTexture);
 			UNITY_DECLARE_TEX2DARRAY(_NormalTexture);
@@ -76,14 +78,18 @@
 				return _SegmentCoords.xy + float2(uv.x * _SegmentCoords.z, uv.y * _SegmentCoords.w);
 			}
 
-			int findRingIndex(ETerrainParameters terrainParameters, float2 inSegmentSpaceUv) {
+			float2 calculateInLevelSpaceUv(float2 uv) {
+				return _SegmentLevelCoords.xy + float2(uv.x * _SegmentLevelCoords.z, uv.y * _SegmentLevelCoords.w);
+			}
+
+			int findRingIndex(ETerrainParameters terrainParameters, float2 inLevelSpaceUv) {
 				float4 ringsUvs[3] = { //TODO make configurable
-					float4(0.5 - 1 / 12.0, 0.5 - 1 / 12.0, 1 / 6.0, 1 / 6.0),
-					float4(0.5 - 2 / 12.0, 0.5 - 2 / 12.0, 2 / 6.0, 2 / 6.0),
-					float4(0.5 - 4 / 12.0, 0.5 - 4 / 12.0, 4 / 6.0, 4 / 6.0)
+					float4(0.5 - 1 / 8.0, 0.5 - 1 / 8.0, 1 / 4.0, 1 / 4.0),
+					float4(0.5 - 2 / 8.0, 0.5 - 2 / 8.0, 2 / 4.0, 2 / 4.0),
+					float4(0.5 - 4 / 8.0, 0.5 - 4 / 8.0, 4 / 4.0, 4 / 4.0)
 				};
 				for (int ringIndex = 0; ringIndex < min(terrainParameters.ringsPerLevelCount, MAX_RINGS_PER_LEVEL_COUNT); ringIndex++) {
-					if (isInRectangle(inSegmentSpaceUv, ringsUvs[ringIndex])) {
+					if (isInRectangle(inLevelSpaceUv, ringsUvs[ringIndex])) {
 						return ringIndex;
 					}
 				}
@@ -93,11 +99,12 @@
 			void vert( inout appdata_full v, out Input v2f_o) {
 				float2 uv = v.texcoord.xy;
 				float2 inSegmentSpaceUv = calculateInSegmentSpaceUv(uv);
+				float2 inLevelSpaceUv = calculateInLevelSpaceUv(uv);
 
 				ETerrainParameters terrainParameters = init_ETerrainParametersFromUniforms();
 
 				int levelIndex = _ThisLevelIndex;
-				int ringIndex = findRingIndex(terrainParameters, inSegmentSpaceUv);
+				int ringIndex = findRingIndex(terrainParameters, inLevelSpaceUv);
 
 				ELevelAndRingIndexes levelAndRingIndexes = make_ELevelAndRingIndexes(levelIndex, ringIndex);
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);

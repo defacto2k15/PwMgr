@@ -33,7 +33,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                         new HeightPyramidCommonConfiguration()
                         {
                             SlotMapSize = new IntVector2(6, 6),
-                            SegmentTextureResolution = new IntVector2(240, 240), // rozdzielczosc tekstury segmentow - rowna Ilosci vierzechołkow centralnego mesha
+                            SegmentTextureResolution = new IntVector2(240, 240), // rozdzielczosc tekstury jednego segmentu
                             HeightTextureFormat = RenderTextureFormat.RFloat,
                             NormalTextureFormat= RenderTextureFormat.ARGB32,
                             SurfaceTextureFormat = RenderTextureFormat.ARGB32,
