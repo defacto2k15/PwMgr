@@ -2,6 +2,7 @@
 using Assets.ETerrain.Pyramid.Shape;
 using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Utils;
+using UnityEngine;
 
 namespace Assets.ETerrain.ETerrainIntegration
 {
@@ -10,9 +11,7 @@ namespace Assets.ETerrain.ETerrainIntegration
         public IntVector2 SegmentFillerStandByMarginsSize;
         public float BiggestShapeObjectInGroupLength;
         public int OneRingShapeObjectsCount =>  HeightPyramidLevelShapeGenerationConfiguration.OneRingShapeObjectsCount;
-        public MyRectangle PyramidLevelWorldSize => (new MyRectangle(0, 0, BiggestShapeObjectInGroupLength * (OneRingShapeObjectsCount + 2), BiggestShapeObjectInGroupLength * (OneRingShapeObjectsCount + 2)))
-            .SubRectangle(new MyRectangle(-0.5f, -0.5f, 1, 1));
-
+        public Vector2 CeilTextureWorldSize => new Vector2( BiggestShapeObjectInGroupLength * (OneRingShapeObjectsCount + 2), BiggestShapeObjectInGroupLength * (OneRingShapeObjectsCount + 2));
         public float TransitionSingleStepPercent;
         public bool CreateCenterObject;
 

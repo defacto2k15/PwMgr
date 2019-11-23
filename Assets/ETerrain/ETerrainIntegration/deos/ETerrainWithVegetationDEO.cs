@@ -17,6 +17,7 @@ using Assets.Heightmaps.Ring1.MeshGeneration;
 using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.TerrainDescription;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
+using Assets.Heightmaps.Ring1.valTypes;
 using Assets.PreComputation.Configurations;
 using Assets.Repositioning;
 using Assets.Ring2.Db;
@@ -82,7 +83,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X,  //TODO i use only X, - works only for squares
                 HeightMergeRanges = perLevelTemplates[c].LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
-                PyramidLevelWorldSize = startConfiguration.PerLevelConfigurations[c].PyramidLevelWorldSize.Width,  // TODO works only for square pyramids - i use width
+                PyramidLevelWorldSize = startConfiguration.PerLevelConfigurations[c].CeilTextureWorldSize.x,  // TODO works only for square pyramids - i use width
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             }),startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
 
@@ -176,7 +177,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var elevationBuffers = _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
                 heightCeilTextureArray);
 
-            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.PyramidLevelWorldSize.Size);
+            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=> c.Value.CeilTextureWorldSize);
             var ringMergeRanges = perLevelTemplates.ToDictionary(c => c.Key,
                 c => c.Value.LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
             _ePropHotAreaSelector = new EPropHotAreaSelector(levelWorldSizes, ringMergeRanges);

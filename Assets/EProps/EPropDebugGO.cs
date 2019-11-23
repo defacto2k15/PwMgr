@@ -79,7 +79,7 @@ namespace Assets.EProps
             {
                 CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X,  //TODO i use only X, - works only for squares
                 HeightMergeRanges = perLevelTemplates[c].LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
-                PyramidLevelWorldSize = startConfiguration.PerLevelConfigurations[c].PyramidLevelWorldSize.Width,  // TODO works only for square pyramids - i use width
+                PyramidLevelWorldSize = startConfiguration.PerLevelConfigurations[c].CeilTextureWorldSize.x,  // TODO works only for square pyramids - i use width
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             });
             buffersManager.InitializeBuffers(ePyramidShaderBuffersGeneratorPerRingInputs, startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
@@ -150,7 +150,7 @@ namespace Assets.EProps
 
             _mergeRingsDisplayer = new EPropDebugMergeRingsDisplayer();
             _mergeRingsDisplayer.Start();
-            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.PyramidLevelWorldSize.Size);
+            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.CeilTextureWorldSize);
             var ringMergeRanges = perLevelTemplates.ToDictionary(c => c.Key,
                 c => c.Value.LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
             _ePropHotAreaSelector = new EPropHotAreaSelector(levelWorldSizes, ringMergeRanges);

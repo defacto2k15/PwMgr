@@ -139,5 +139,9 @@ namespace Assets.Heightmaps.Ring1.valTypes
             return rect.X <= point.x && (rect.X + rect.Width >= point.x) && rect.Y <= point.y && (rect.Y + rect.Height >= point.y);
         }
 
+        public static MyRectangle ZeroCenteredWithSize(Vector2 size)
+        {
+            return (new MyRectangle(0,0,size.x, size.y)).SubRectangle(new MyRectangle(-0.5f,-0.5f,1,1));
+        }
     }
 }

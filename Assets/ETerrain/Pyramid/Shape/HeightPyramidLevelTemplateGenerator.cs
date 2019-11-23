@@ -20,7 +20,7 @@ namespace Assets.ETerrain.Pyramid.Shape
             _configuration = configuration;
         }
 
-        public HeightPyramidLevelTemplate CreateGroup(Vector2 center, bool createCenterObject, Dictionary<int, Vector2> heightMergeRangePerRing)
+        public HeightPyramidLevelTemplate CreateGroup(Vector2 center, bool createCenterObject)
         {
             List<HeightPyramidSegmentShapeTemplate> shapeTemplates = new List<HeightPyramidSegmentShapeTemplate>();
             Dictionary<int, HeightPyramidPerRingTemplate> perRingTemplates = new Dictionary<int, HeightPyramidPerRingTemplate>();
@@ -128,7 +128,7 @@ namespace Assets.ETerrain.Pyramid.Shape
 
     public class HeightPyramidLevelShapeGenerationConfiguration
     {
-        public MyRectangle PyramidLevelWorldSize = new MyRectangle(-3 * 90, -3 * 90, 6 * 90, 6 * 90);
+        public MyRectangle CeilTextureZeroCenteredWorldArea = new MyRectangle(-3 * 90, -3 * 90, 6 * 90, 6 * 90);
         public float YScale = 100;
         public float CenterObjectLength = 90f;
         public float TransitionSingleStepPercent;
@@ -226,7 +226,7 @@ namespace Assets.ETerrain.Pyramid.Shape
             go.transform.localScale = new Vector3(1, 1, 1);
             var renderer = go.AddComponent<MeshRenderer>();
 
-            var segmentUvs = RectangleUtils.CalculateSubelementUv(_configuration.PyramidLevelWorldSize,
+            var segmentUvs = RectangleUtils.CalculateSubelementUv(_configuration.CeilTextureZeroCenteredWorldArea,
                 new MyRectangle(center.x - flatSize.x / 2, center.y - flatSize.y / 2, flatSize.x, flatSize.y));
 
             renderer.material = new Material(Shader.Find("Custom/ETerrain/Ground"));
@@ -306,7 +306,7 @@ namespace Assets.ETerrain.Pyramid.Shape
             go.transform.localScale = new Vector3(flatSize.x, 1, flatSize.y);
             var renderer = go.AddComponent<MeshRenderer>();
 
-            var segmentUvs = RectangleUtils.CalculateSubelementUv(_configuration.PyramidLevelWorldSize,
+            var segmentUvs = RectangleUtils.CalculateSubelementUv(_configuration.CeilTextureZeroCenteredWorldArea,
                 new MyRectangle(flatStartPos.x, flatStartPos.y, flatSize.x, flatSize.y));
 
             renderer.material = new Material(Shader.Find("Custom/ETerrain/Ground"));

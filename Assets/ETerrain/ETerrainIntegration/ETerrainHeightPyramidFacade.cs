@@ -6,6 +6,7 @@ using Assets.ETerrain.Pyramid.Shape;
 using Assets.ETerrain.SectorFilling;
 using Assets.Heightmaps.Ring1.MeshGeneration;
 using Assets.Heightmaps.Ring1.RenderingTex;
+using Assets.Heightmaps.Ring1.valTypes;
 using Assets.Utils;
 using Assets.Utils.ShaderBuffers;
 using UnityEngine;
@@ -48,7 +49,8 @@ namespace Assets.ETerrain.ETerrainIntegration
                 var heightPyramidLevelShapeGenerationConfiguration = new HeightPyramidLevelShapeGenerationConfiguration()
                 {
                     YScale = heightPyramidMapConfiguration.YScale,
-                    PyramidLevelWorldSize = perLevelConfiguration.PyramidLevelWorldSize,
+                    CeilTextureZeroCenteredWorldArea = (new MyRectangle(0,0f,perLevelConfiguration.CeilTextureWorldSize.x, perLevelConfiguration.CeilTextureWorldSize.y))
+                        .SubRectangle(new MyRectangle(-0.5f,-0.5f,1,1)),
                     CenterObjectMeshVertexLength = heightPyramidMapConfiguration.SegmentTextureResolution,
                     CenterObjectLength = perLevelConfiguration.BiggestShapeObjectInGroupLength,
                     TransitionSingleStepPercent = perLevelConfiguration.TransitionSingleStepPercent,
@@ -57,7 +59,7 @@ namespace Assets.ETerrain.ETerrainIntegration
 
                 var templateGenerator = new HeightPyramidLevelTemplateGenerator(heightPyramidLevelShapeGenerationConfiguration);
                 var perLevelTemplate =
-                    templateGenerator.CreateGroup(Vector2.zero, perLevelConfiguration.CreateCenterObject, heightPyramidMapConfiguration.RingsUvRange);
+                    templateGenerator.CreateGroup(Vector2.zero, perLevelConfiguration.CreateCenterObject);
                 return new HeightPyramidLevelTemplateWithShapeConfiguration()
                 {
                     LevelTemplate = perLevelTemplate,
@@ -115,7 +117,6 @@ namespace Assets.ETerrain.ETerrainIntegration
 
                 var heightPyramidLocationParametersUpdaterConfiguration = new HeightPyramidLocationParametersUpdaterConfiguration()
                 {
-                    PyramidLevelWorldSize = perLevelConfiguration.PyramidLevelWorldSize,
                     TransitionSingleStep = perLevelConfiguration.BiggestShapeObjectInGroupLength * perLevelConfiguration.TransitionSingleStepPercent
                 };
                 var updater = new HeightPyramidLocationUniformsGenerator(heightPyramidLocationParametersUpdaterConfiguration);

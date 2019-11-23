@@ -72,7 +72,7 @@ namespace Assets.ESurface
             {
                 CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X, //TODO i use only X, - works only for squares
                 HeightMergeRanges = perLevelTemplates[c].LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
-                PyramidLevelWorldSize = startConfiguration.PerLevelConfigurations[c].PyramidLevelWorldSize.Width, // TODO works only for square pyramids - i use width
+                PyramidLevelWorldSize = startConfiguration.PerLevelConfigurations[c].CeilTextureWorldSize.x, // TODO works only for square pyramids - i use width
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             }), startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
 
