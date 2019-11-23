@@ -61,12 +61,13 @@ namespace Assets.ETerrain.ETerrainIntegration
                                     BiggestShapeObjectInGroupLength = 90f,
                                     TransitionSingleStepPercent = 0.05f / 3.0f,
                                     CreateCenterObject = true,
-                                    PerRingMergeWidths = new Dictionary<int, float>()
+                                    PerRingConfigurations = new Dictionary<int, HeightPyramidPerRingConfiguration>()
                                     {
-                                        {0, 1.5f * 8},
-                                        {1, 1.5f * 8},
-                                        {2, 1.5f * 16},
+                                        [0] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 8 },
+                                        [1] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 8 },
+                                        [2] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 16 },
                                     },
+                                    RingsCount = 3,
                                     CenterObjectMeshVertexLength = new IntVector2(240, 240),
                                     RingObjectMeshVertexLength = new IntVector2(60, 60)
                                 }
@@ -78,12 +79,13 @@ namespace Assets.ETerrain.ETerrainIntegration
                                     BiggestShapeObjectInGroupLength = 90f * 8,
                                     TransitionSingleStepPercent = 0.05f/3.0f,
                                     CreateCenterObject = true,
-                                    PerRingMergeWidths = new Dictionary<int, float>()
+                                    PerRingConfigurations = new Dictionary<int, HeightPyramidPerRingConfiguration>()
                                     {
-                                        {0, 1.5f * 8 * 4 },
-                                        {1, 1.5f * 8 * 4},
-                                        {2, 1.5f * 16 * 4}
+                                        [0] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 8 * 4 },
+                                        [1] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 8 * 4 },
+                                        [2] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 16 * 4 },
                                     },
+                                    RingsCount = 3,
                                     CenterObjectMeshVertexLength = new IntVector2(240, 240),
                                     RingObjectMeshVertexLength = new IntVector2(60, 60)
                                 }
@@ -95,12 +97,13 @@ namespace Assets.ETerrain.ETerrainIntegration
                                     BiggestShapeObjectInGroupLength = 90f * 64,
                                     TransitionSingleStepPercent = 0.05f/3.0f,
                                     CreateCenterObject = true,
-                                    PerRingMergeWidths = new Dictionary<int, float>()
+                                    PerRingConfigurations = new Dictionary<int, HeightPyramidPerRingConfiguration>()
                                     {
-                                        {0, 1.5f * 8 * 4 * 4 },
-                                        {1, 1.5f * 8 * 4 * 4},
-                                        {2, 1.5f * 16 * 4 * 4}
+                                        [0] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 8 * 4 * 4 },
+                                        [1] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 8 * 4 * 4 },
+                                        [2] = new HeightPyramidPerRingConfiguration(){ MergeWidth = 1.5f * 16 * 4 * 4 },
                                     },
+                                    RingsCount = 3,
                                     CenterObjectMeshVertexLength = new IntVector2(240, 240),
                                     RingObjectMeshVertexLength = new IntVector2(60, 60)
                                 }

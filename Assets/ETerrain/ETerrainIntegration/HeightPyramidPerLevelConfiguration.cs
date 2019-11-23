@@ -17,9 +17,16 @@ namespace Assets.ETerrain.ETerrainIntegration
         public float TransitionSingleStepPercent;
         public bool CreateCenterObject;
 
-        public Dictionary<int, float> PerRingMergeWidths;
+        public Dictionary<int, HeightPyramidPerRingConfiguration> PerRingConfigurations;
 
-        public IntVector2 CenterObjectMeshVertexLength = new IntVector2(240, 240);
-        public IntVector2 RingObjectMeshVertexLength = new IntVector2(60, 60);
+        public IntVector2 CenterObjectMeshVertexLength;
+        public IntVector2 RingObjectMeshVertexLength;
+
+        public int RingsCount;
+    }
+
+    public class HeightPyramidPerRingConfiguration
+    {
+        public float MergeWidth;
     }
 }

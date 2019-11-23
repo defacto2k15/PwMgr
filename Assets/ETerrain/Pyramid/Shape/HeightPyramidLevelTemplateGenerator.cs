@@ -23,7 +23,7 @@ namespace Assets.ETerrain.Pyramid.Shape
             var tssMarginOffsetLength = perLevelConfiguration.TransitionSingleStepPercent * centerObjectLength;
             if (createCenterObject)
             {
-                var centerMergeWidth = perLevelConfiguration.PerRingMergeWidths[0];
+                var centerMergeWidth = perLevelConfiguration.PerRingConfigurations[0].MergeWidth;
                 var mergeStart = centerObjectLength * 0.5f;
                 var centerTransitionRange = new Vector2(mergeStart - centerMergeWidth - tssMarginOffsetLength, mergeStart - tssMarginOffsetLength) /
                                             (centerObjectLength * 3f);
@@ -48,23 +48,14 @@ namespace Assets.ETerrain.Pyramid.Shape
                 new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0), new Vector2(3, 0),
             }.Select(c => (c) / 2f + new Vector2(-1, -1)).ToList();
 
-            for (int ringIndex = 1; ringIndex < 3; ringIndex++)
+            for (int ringIndex = 1; ringIndex < perLevelConfiguration.RingsCount; ringIndex++)
             {
                 Vector2 flatSize = Vector2.one * (centerObjectLength * 0.5f) * ringIndex;
-                Vector2 transitionRange;
-                var mergeWidth = perLevelConfiguration.PerRingMergeWidths[ringIndex];
+                var mergeWidth = perLevelConfiguration.PerRingConfigurations[ringIndex].MergeWidth;
                 var mergeStart = Mathf.Pow(2, ringIndex - 1) * centerObjectLength;
 
-                if (ringIndex == 1) //todo parametrize and clear. Should not be if here
-                {
-                    transitionRange = new Vector2(mergeStart - mergeWidth - tssMarginOffsetLength, mergeStart - tssMarginOffsetLength) /
+                Vector2 transitionRange = new Vector2(mergeStart - mergeWidth - tssMarginOffsetLength, mergeStart - tssMarginOffsetLength) /
                                       (centerObjectLength * 3f);
-                }
-                else
-                {
-                    transitionRange = new Vector2(mergeStart - mergeWidth - tssMarginOffsetLength, mergeStart - tssMarginOffsetLength) /
-                                      (centerObjectLength * 3f);
-                }
 
                 perRingTemplates[ringIndex] = new HeightPyramidPerRingTemplate()
                 {

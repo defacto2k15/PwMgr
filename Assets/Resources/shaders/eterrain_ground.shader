@@ -208,6 +208,27 @@
 				return downLeftVerticleInSegmentSpaceUv;
 			}
 
+			float4 GenerateDebugColorFromIndexes(ELevelAndRingIndexes levelAndRingIndexes, float terrainMergingLerpParam) {
+				float4 finalColor = 0;
+				int levelIndex = levelAndRingIndexes.levelIndex;
+				int ringIndex = levelAndRingIndexes.ringIndex;
+
+				if (levelIndex == 0) {
+					finalColor = float4(1, 0, 0, 1);
+				}
+				else if (levelIndex == 1) {
+					finalColor = float4(0, 1, 0, 1);
+				}
+				else {
+					finalColor = float4(0, 0, 1, 1);
+				}
+				finalColor /= (ringIndex + 1.0f);
+				if (terrainMergingLerpParam > 0.02 && terrainMergingLerpParam < 0.98) {
+					finalColor = float4(1, 1, 1, 1) * terrainMergingLerpParam;
+				}
+				return finalColor;
+			}
+
 #include "common.txt"
 
 			//Our Fragment Shader
@@ -236,22 +257,7 @@
 				o.Albedo =  finalColor;
 				o.Normal = decodeNormal(worldNormal);
 
-				//finalColor = 0;
-				//levelIndex = round(i.debug);
-				//if (levelIndex == 0) {
-				//	finalColor = float4(1, 0, 0, 1);
-				//}
-				//else if (levelIndex == 1) {
-				//	finalColor = float4(0, 1, 0, 1);
-				//}
-				//else {
-				//	finalColor = float4(0, 0, 1, 1);
-				//}
-				//finalColor /= (ringIndex + 1.0f);
-				//if (i.terrainMergingLerpParam > 0.02 && i.terrainMergingLerpParam < 0.98) {
-				//	finalColor = float4(1, 1, 1, 1) *i.terrainMergingLerpParam;
-				//}
-				//o.Albedo = i.inSegmentSpaceUv.xyxy;
+				o.Albedo = GenerateDebugColorFromIndexes(levelAndRingIndexes, i.terrainMergingLerpParam);
 			} 
 
 			ENDCG
