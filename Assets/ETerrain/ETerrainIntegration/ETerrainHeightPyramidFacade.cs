@@ -37,39 +37,22 @@ namespace Assets.ETerrain.ETerrainIntegration
             _startConfiguration = startConfiguration;
         }
 
-        public Dictionary<HeightPyramidLevel, HeightPyramidLevelTemplateWithShapeConfiguration> GenerateLevelTemplates()
+        public Dictionary<HeightPyramidLevel, HeightPyramidLevelTemplate> GenerateLevelTemplates()
         {
-            var heightPyramidMapConfiguration = _startConfiguration.CommonConfiguration;
             var perLevelConfigurations = _startConfiguration.PerLevelConfigurations;
 
+            var templateGenerator = new HeightPyramidLevelTemplateGenerator();
             return _startConfiguration.HeightPyramidLevels.ToDictionary(c => c, c =>
             {
                 var perLevelConfiguration = perLevelConfigurations[c];
 
-                var heightPyramidLevelShapeGenerationConfiguration = new HeightPyramidLevelShapeGenerationConfiguration()
-                {
-                    YScale = heightPyramidMapConfiguration.YScale,
-                    CeilTextureZeroCenteredWorldArea = (new MyRectangle(0,0f,perLevelConfiguration.CeilTextureWorldSize.x, perLevelConfiguration.CeilTextureWorldSize.y))
-                        .SubRectangle(new MyRectangle(-0.5f,-0.5f,1,1)),
-                    CenterObjectMeshVertexLength = heightPyramidMapConfiguration.SegmentTextureResolution,
-                    CenterObjectLength = perLevelConfiguration.BiggestShapeObjectInGroupLength,
-                    TransitionSingleStepPercent = perLevelConfiguration.TransitionSingleStepPercent,
-                    PerRingMergeWidths = perLevelConfiguration.PerRingMergeWidths
-                };
-
-                var templateGenerator = new HeightPyramidLevelTemplateGenerator(heightPyramidLevelShapeGenerationConfiguration);
-                var perLevelTemplate =
-                    templateGenerator.CreateGroup(Vector2.zero, perLevelConfiguration.CreateCenterObject);
-                return new HeightPyramidLevelTemplateWithShapeConfiguration()
-                {
-                    LevelTemplate = perLevelTemplate,
-                    ShapeConfiguration = heightPyramidLevelShapeGenerationConfiguration
-                };
+                var perLevelTemplate = templateGenerator.CreateGroup( perLevelConfiguration, Vector2.zero, perLevelConfiguration.CreateCenterObject);
+                return perLevelTemplate;
             });
         }
 
         public void Start(
-            Dictionary<HeightPyramidLevel, HeightPyramidLevelTemplateWithShapeConfiguration> templates,
+            Dictionary<HeightPyramidLevel, HeightPyramidLevelTemplate> templates,
             Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator> groundEntitiesGenerators
         )
         {
@@ -101,17 +84,16 @@ namespace Assets.ETerrain.ETerrainIntegration
                     };
                 }).ToList();
 
-                var heightPyramidLevelShapeGenerationConfiguration = templates[level].ShapeConfiguration;
-                var perLevelTemplate = templates[level].LevelTemplate;
+                var perLevelTemplate = templates[level];
 
                 IPyramidShapeInstancer shapeInstancer = null;
                 if (heightPyramidMapConfiguration.MergeShapesInRings)
                 {
-                    shapeInstancer = new MergedMeshesPyramidShapeInstancer(_meshGeneratorUtProxy, heightPyramidLevelShapeGenerationConfiguration);
+                    shapeInstancer = new MergedMeshesPyramidShapeInstancer(_meshGeneratorUtProxy, heightPyramidMapConfiguration, perLevelConfiguration);
                 }
                 else
                 {
-                    shapeInstancer = new SeparateMeshPerTemplateShapeInstancer(_meshGeneratorUtProxy,heightPyramidLevelShapeGenerationConfiguration);
+                    shapeInstancer = new SeparateMeshPerTemplateShapeInstancer(_meshGeneratorUtProxy, heightPyramidMapConfiguration, perLevelConfiguration);
                 }
                 var group = shapeInstancer.CreateGroup(perLevelTemplate,level, _pyramidRootGo);
 

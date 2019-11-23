@@ -66,7 +66,9 @@ namespace Assets.ETerrain.ETerrainIntegration
                                         {0, 1.5f * 8},
                                         {1, 1.5f * 8},
                                         {2, 1.5f * 16},
-                                    }
+                                    },
+                                    CenterObjectMeshVertexLength = new IntVector2(240, 240),
+                                    RingObjectMeshVertexLength = new IntVector2(60, 60)
                                 }
                             },
                             {
@@ -81,7 +83,9 @@ namespace Assets.ETerrain.ETerrainIntegration
                                         {0, 1.5f * 8 * 4 },
                                         {1, 1.5f * 8 * 4},
                                         {2, 1.5f * 16 * 4}
-                                    }
+                                    },
+                                    CenterObjectMeshVertexLength = new IntVector2(240, 240),
+                                    RingObjectMeshVertexLength = new IntVector2(60, 60)
                                 }
                             },
                             {
@@ -96,7 +100,9 @@ namespace Assets.ETerrain.ETerrainIntegration
                                         {0, 1.5f * 8 * 4 * 4 },
                                         {1, 1.5f * 8 * 4 * 4},
                                         {2, 1.5f * 16 * 4 * 4}
-                                    }
+                                    },
+                                    CenterObjectMeshVertexLength = new IntVector2(240, 240),
+                                    RingObjectMeshVertexLength = new IntVector2(60, 60)
                                 }
                             }
                         }
@@ -107,7 +113,6 @@ namespace Assets.ETerrain.ETerrainIntegration
 
     public class HeightPyramidLevelTemplateWithShapeConfiguration
     {
-        public HeightPyramidLevelShapeGenerationConfiguration ShapeConfiguration;
         public HeightPyramidLevelTemplate LevelTemplate;
     }
 

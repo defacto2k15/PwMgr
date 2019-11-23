@@ -285,30 +285,30 @@ namespace Assets.EProps
 
     public class EPropHotAreaSelector
     {
-        private Dictionary<HeightPyramidLevel, Vector2> _levelWorldSizes;
+        private Dictionary<HeightPyramidLevel, Vector2> _ceilTextureWorldSizes;
         private Dictionary<HeightPyramidLevel, Dictionary<int, Vector2>> _ringMergeRanges;
 
-        public EPropHotAreaSelector(Dictionary<HeightPyramidLevel, Vector2> levelWorldSizes, Dictionary<HeightPyramidLevel, Dictionary<int, Vector2>> ringMergeRanges)
+        public EPropHotAreaSelector(Dictionary<HeightPyramidLevel, Vector2> ceilTextureWorldSizes, Dictionary<HeightPyramidLevel, Dictionary<int, Vector2>> ringMergeRanges)
         {
-            _levelWorldSizes = levelWorldSizes;
+            _ceilTextureWorldSizes = ceilTextureWorldSizes;
             _ringMergeRanges = ringMergeRanges;
         }
 
         private Vector2 TravellerWorldPositionToConstantLevelUv(Vector2 travellerPositionWorldSpace, ELevelAndRingIndexes levelAndRingIndexes)
         {
-            Vector2 levelWorldSize = _levelWorldSizes[levelAndRingIndexes.LevelIndex];
+            Vector2 levelWorldSize = _ceilTextureWorldSizes[levelAndRingIndexes.LevelIndex];
             return VectorUtils.MemberwiseDivide(travellerPositionWorldSpace, levelWorldSize).Add(0.5f);
         }
 
         private Vector2 ConstantLevelUvSpaceToWorldSpace(Vector2 levelUv, ELevelAndRingIndexes levelAndRingIndexes)
         {
-            Vector2 levelWorldSize = _levelWorldSizes[levelAndRingIndexes.LevelIndex];
+            Vector2 levelWorldSize = _ceilTextureWorldSizes[levelAndRingIndexes.LevelIndex];
             return VectorUtils.MemberwiseMultiply(levelUv.Add(-0.5f), levelWorldSize);
         }
 
         private Vector2 LevelUvSpaceToWorldSpace(Vector2 levelUv, ELevelAndRingIndexes levelAndRingIndexes, Dictionary<HeightPyramidLevel, Vector2> levelCentersWorldSpace)
         {
-            Vector2 levelWorldSize = _levelWorldSizes[levelAndRingIndexes.LevelIndex];
+            Vector2 levelWorldSize = _ceilTextureWorldSizes[levelAndRingIndexes.LevelIndex];
             Vector2 pyramidCenterWorldSize = levelCentersWorldSpace[levelAndRingIndexes.LevelIndex];
             Vector2 offset = (levelUv.Add(-0.5f)) * levelWorldSize;
             return (pyramidCenterWorldSize + offset);
@@ -316,7 +316,7 @@ namespace Assets.EProps
 
         private Vector2 WorldSpaceToLevelUvSpace(Vector2 worldSpace, HeightPyramidLevel levelIndex, Dictionary<HeightPyramidLevel, Vector2> levelCentersWorldSpace)
         {
-            Vector2 levelWorldSize = _levelWorldSizes[levelIndex];
+            Vector2 levelWorldSize = _ceilTextureWorldSizes[levelIndex];
             Vector2 pyramidCenterWorldSize = levelCentersWorldSpace[levelIndex];
             return ((worldSpace - pyramidCenterWorldSize) / (levelWorldSize)).Add(0.5f);
         }

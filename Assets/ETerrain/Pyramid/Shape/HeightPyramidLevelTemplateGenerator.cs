@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Assets.ETerrain.ETerrainIntegration;
 using Assets.ETerrain.Pyramid.Map;
 using Assets.Heightmaps.Ring1.MeshGeneration;
 using Assets.Heightmaps.Ring1.valTypes;
@@ -13,23 +14,16 @@ namespace Assets.ETerrain.Pyramid.Shape
 {
     public class HeightPyramidLevelTemplateGenerator
     {
-        private HeightPyramidLevelShapeGenerationConfiguration _configuration;
-
-        public HeightPyramidLevelTemplateGenerator(HeightPyramidLevelShapeGenerationConfiguration configuration)
+        public HeightPyramidLevelTemplate CreateGroup( HeightPyramidPerLevelConfiguration perLevelConfiguration, Vector2 center, bool createCenterObject)
         {
-            _configuration = configuration;
-        }
+            var shapeTemplates = new List<HeightPyramidSegmentShapeTemplate>();
+            var perRingTemplates = new Dictionary<int, HeightPyramidPerRingTemplate>();
 
-        public HeightPyramidLevelTemplate CreateGroup(Vector2 center, bool createCenterObject)
-        {
-            List<HeightPyramidSegmentShapeTemplate> shapeTemplates = new List<HeightPyramidSegmentShapeTemplate>();
-            Dictionary<int, HeightPyramidPerRingTemplate> perRingTemplates = new Dictionary<int, HeightPyramidPerRingTemplate>();
-
-            var centerObjectLength = _configuration.CenterObjectLength;
-            var tssMarginOffsetLength = _configuration.TransitionSingleStepPercent * centerObjectLength;
+            var centerObjectLength = perLevelConfiguration.BiggestShapeObjectInGroupLength;
+            var tssMarginOffsetLength = perLevelConfiguration.TransitionSingleStepPercent * centerObjectLength;
             if (createCenterObject)
             {
-                var centerMergeWidth = _configuration.PerRingMergeWidths[0];
+                var centerMergeWidth = perLevelConfiguration.PerRingMergeWidths[0];
                 var mergeStart = centerObjectLength * 0.5f;
                 var centerTransitionRange = new Vector2(mergeStart - centerMergeWidth - tssMarginOffsetLength, mergeStart - tssMarginOffsetLength) /
                                             (centerObjectLength * 3f);
@@ -58,8 +52,8 @@ namespace Assets.ETerrain.Pyramid.Shape
             {
                 Vector2 flatSize = Vector2.one * (centerObjectLength * 0.5f) * ringIndex;
                 Vector2 transitionRange;
-                var mergeWidth = _configuration.PerRingMergeWidths[ringIndex];
-                var mergeStart = Mathf.Pow(2, ringIndex - 1) * _configuration.CenterObjectLength;
+                var mergeWidth = perLevelConfiguration.PerRingMergeWidths[ringIndex];
+                var mergeStart = Mathf.Pow(2, ringIndex - 1) * centerObjectLength;
 
                 if (ringIndex == 1) //todo parametrize and clear. Should not be if here
                 {
@@ -125,20 +119,6 @@ namespace Assets.ETerrain.Pyramid.Shape
         public Vector2 HeightMergeRange;
     }
 
-
-    public class HeightPyramidLevelShapeGenerationConfiguration
-    {
-        public MyRectangle CeilTextureZeroCenteredWorldArea = new MyRectangle(-3 * 90, -3 * 90, 6 * 90, 6 * 90);
-        public float YScale = 100;
-        public float CenterObjectLength = 90f;
-        public float TransitionSingleStepPercent;
-        public Dictionary<int, float> PerRingMergeWidths;
-
-        public static int OneRingShapeObjectsCount = 4;
-        public IntVector2 CenterObjectMeshVertexLength = new IntVector2(240, 240);
-        public IntVector2 RingObjectMeshVertexLength = new IntVector2(60, 60);
-    }
-
     public interface IPyramidShapeInstancer
     {
         HeightPyramidSegmentShapeGroup CreateGroup(HeightPyramidLevelTemplate pyramidLevelTemplate, HeightPyramidLevel level, GameObject pyramidRootGo);
@@ -147,12 +127,14 @@ namespace Assets.ETerrain.Pyramid.Shape
     public class MergedMeshesPyramidShapeInstancer : IPyramidShapeInstancer
     {
         private MeshGeneratorUTProxy _meshGenerator;
-        private HeightPyramidLevelShapeGenerationConfiguration _configuration;
+        private HeightPyramidCommonConfiguration _commonConfiguration;
+        private HeightPyramidPerLevelConfiguration _perLevelConfiguration;
 
-        public MergedMeshesPyramidShapeInstancer(MeshGeneratorUTProxy meshGenerator, HeightPyramidLevelShapeGenerationConfiguration configuration)
+        public MergedMeshesPyramidShapeInstancer(MeshGeneratorUTProxy meshGenerator, HeightPyramidCommonConfiguration commonConfiguration, HeightPyramidPerLevelConfiguration perLevelConfiguration)
         {
             _meshGenerator = meshGenerator;
-            _configuration = configuration;
+            _commonConfiguration = commonConfiguration;
+            _perLevelConfiguration = perLevelConfiguration;
         }
 
         public HeightPyramidSegmentShapeGroup CreateGroup(HeightPyramidLevelTemplate pyramidLevelTemplate, HeightPyramidLevel level, GameObject pyramidRootGo)
@@ -162,10 +144,10 @@ namespace Assets.ETerrain.Pyramid.Shape
             parentGO.transform.localPosition = new Vector3(center.x, 0, center.y);
 
             var ringTemplateElementMesh = _meshGenerator.AddOrder(() =>
-                    PlaneGenerator.CreateETerrainSegmentMesh(_configuration.RingObjectMeshVertexLength.X, _configuration.RingObjectMeshVertexLength.Y))
+                    PlaneGenerator.CreateETerrainSegmentMesh( _perLevelConfiguration.RingObjectMeshVertexLength.X, _perLevelConfiguration.RingObjectMeshVertexLength.Y))
                 .Result; //todo
             var centerMesh = _meshGenerator.AddOrder(() =>
-                    PlaneGenerator.CreateETerrainSegmentMesh(_configuration.CenterObjectMeshVertexLength.X, _configuration.CenterObjectMeshVertexLength.Y))
+                    PlaneGenerator.CreateETerrainSegmentMesh(_perLevelConfiguration.CenterObjectMeshVertexLength.X, _perLevelConfiguration.CenterObjectMeshVertexLength.Y))
                 .Result; //todo
 
             var shapeMeshesToCombine = new List<CombineInstance>();
@@ -201,7 +183,7 @@ namespace Assets.ETerrain.Pyramid.Shape
             var mainObject = CreateShapeObject(finalMesh, "MainObject", center, pyramidLevelTemplate.FlatSize);
             mainObject.transform.SetParent(parentGO.transform);
 
-            parentGO.transform.localScale = new Vector3(1, _configuration.YScale, 1);
+            parentGO.transform.localScale = new Vector3(1, _commonConfiguration.YScale, 1);
             parentGO.transform.SetParent(pyramidRootGo.transform);
             return new HeightPyramidSegmentShapeGroup()
             {
@@ -226,7 +208,7 @@ namespace Assets.ETerrain.Pyramid.Shape
             go.transform.localScale = new Vector3(1, 1, 1);
             var renderer = go.AddComponent<MeshRenderer>();
 
-            var segmentUvs = RectangleUtils.CalculateSubelementUv(_configuration.CeilTextureZeroCenteredWorldArea,
+            var segmentUvs = RectangleUtils.CalculateSubelementUv( _perLevelConfiguration.CeilTextureZeroCenteredWorldArea,
                 new MyRectangle(center.x - flatSize.x / 2, center.y - flatSize.y / 2, flatSize.x, flatSize.y));
 
             renderer.material = new Material(Shader.Find("Custom/ETerrain/Ground"));
@@ -241,12 +223,14 @@ namespace Assets.ETerrain.Pyramid.Shape
     public class SeparateMeshPerTemplateShapeInstancer : IPyramidShapeInstancer
     {
         private MeshGeneratorUTProxy _meshGenerator;
-        private HeightPyramidLevelShapeGenerationConfiguration _configuration;
+        private HeightPyramidCommonConfiguration _commonConfiguration;
+        private HeightPyramidPerLevelConfiguration _perLevelConfiguration;
 
-        public SeparateMeshPerTemplateShapeInstancer(MeshGeneratorUTProxy meshGenerator, HeightPyramidLevelShapeGenerationConfiguration configuration)
+        public SeparateMeshPerTemplateShapeInstancer(MeshGeneratorUTProxy meshGenerator, HeightPyramidCommonConfiguration commonConfiguration, HeightPyramidPerLevelConfiguration perLevelConfiguration)
         {
             _meshGenerator = meshGenerator;
-            _configuration = configuration;
+            _commonConfiguration = commonConfiguration;
+            _perLevelConfiguration = perLevelConfiguration;
         }
 
         public HeightPyramidSegmentShapeGroup CreateGroup(HeightPyramidLevelTemplate pyramidLevelTemplate, HeightPyramidLevel level, GameObject pyramidRootGo)
@@ -261,7 +245,7 @@ namespace Assets.ETerrain.Pyramid.Shape
 
             var ring1ElementMesh =
                 _meshGenerator.AddOrder(() => PlaneGenerator.CreateETerrainSegmentMesh(
-                    _configuration.RingObjectMeshVertexLength.X, _configuration.RingObjectMeshVertexLength.Y)).Result; //todo
+                    _perLevelConfiguration.RingObjectMeshVertexLength.X, _perLevelConfiguration.RingObjectMeshVertexLength.Y)).Result; //todo
             ring1ElementMesh.RecalculateBounds();
             Debug.Log(ring1ElementMesh.bounds);
             MeshGenerationUtils.SetYBounds(ring1ElementMesh, 0f, 1f);
@@ -271,8 +255,8 @@ namespace Assets.ETerrain.Pyramid.Shape
                 if (shapeTemplate.RingIndex == 0) //center
                 {
                     var centerMesh = _meshGenerator.AddOrder(() =>
-                            PlaneGenerator.CreateETerrainSegmentMesh(_configuration.CenterObjectMeshVertexLength.X,
-                                _configuration.CenterObjectMeshVertexLength.Y))
+                            PlaneGenerator.CreateETerrainSegmentMesh(_perLevelConfiguration.CenterObjectMeshVertexLength.X,
+                                _perLevelConfiguration.CenterObjectMeshVertexLength.Y))
                         .Result; //todo
                     MeshGenerationUtils.SetYBounds(centerMesh, 0f, 1f);
                     centerObject = CreateShapeObject(centerMesh, shapeTemplate, "Center");
@@ -287,7 +271,7 @@ namespace Assets.ETerrain.Pyramid.Shape
                 }
             }
 
-            parentGO.transform.localScale = new Vector3(1, _configuration.YScale, 1);
+            parentGO.transform.localScale = new Vector3(1, _commonConfiguration.YScale, 1);
             parentGO.transform.SetParent(pyramidRootGo.transform);
             return new HeightPyramidSegmentShapeGroup()
             {
@@ -306,7 +290,7 @@ namespace Assets.ETerrain.Pyramid.Shape
             go.transform.localScale = new Vector3(flatSize.x, 1, flatSize.y);
             var renderer = go.AddComponent<MeshRenderer>();
 
-            var segmentUvs = RectangleUtils.CalculateSubelementUv(_configuration.CeilTextureZeroCenteredWorldArea,
+            var segmentUvs = RectangleUtils.CalculateSubelementUv(_perLevelConfiguration.CeilTextureZeroCenteredWorldArea,
                 new MyRectangle(flatStartPos.x, flatStartPos.y, flatSize.x, flatSize.y));
 
             renderer.material = new Material(Shader.Find("Custom/ETerrain/Ground"));

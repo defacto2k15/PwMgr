@@ -9,6 +9,7 @@ using Assets.EProps;
 using Assets.ESurface;
 using Assets.ETerrain.GroundTexture;
 using Assets.ETerrain.Pyramid.Map;
+using Assets.ETerrain.Pyramid.Shape;
 using Assets.ETerrain.SectorFilling;
 using Assets.FinalExecution;
 using Assets.Heightmaps;
@@ -101,7 +102,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 buffersManager.InitializeBuffers(levels.ToDictionary(c => c, c => new EPyramidShaderBuffersGeneratorPerRingInput()
                 {
                     CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X, //TODO i use only X, - works only for squares
-                    HeightMergeRanges = perLevelTemplates[c].LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
+                    HeightMergeRanges = perLevelTemplates[c].PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
                     PyramidLevelWorldSize =
                         startConfiguration.PerLevelConfigurations[c].CeilTextureWorldSize.x, // TODO works only for square pyramids - i use width
                     RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
@@ -468,7 +469,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public EPropLocaleBufferManagerInitializedBuffers InitializeDesignBodySpotUpdater(ETerrainHeightPyramidFacadeStartConfiguration startConfiguration,
             EPropElevationConfiguration ePropLocationConfiguration,
             UnityThreadComputeShaderExecutorObject shaderExecutorObject, ETerrainHeightBuffersManager buffersManager,
-            Dictionary<HeightPyramidLevel, HeightPyramidLevelTemplateWithShapeConfiguration> perLevelTemplates)
+            Dictionary<HeightPyramidLevel, HeightPyramidLevelTemplate> perLevelTemplates)
         {
             var ePropConstantPyramidParameters = new EPropConstantPyramidParameters()
             {
@@ -481,10 +482,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var elevationBuffers = _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
                 heightCeilTextureArray);
 
-            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=> c.Value.CeilTextureWorldSize);
+            var ceilTextureWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=> c.Value.CeilTextureWorldSize);
             var ringMergeRanges = perLevelTemplates.ToDictionary(c => c.Key,
-                c => c.Value.LevelTemplate.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
-            _ePropHotAreaSelector = new EPropHotAreaSelector(levelWorldSizes, ringMergeRanges);
+                c => c.Value.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
+            _ePropHotAreaSelector = new EPropHotAreaSelector(ceilTextureWorldSizes, ringMergeRanges);
 
             var spotUpdater = new EPropsDesignBodyChangesListener(_elevationManager, VegetationConfiguration.VegetationRepositioner ); // todo get repositioner from other place
             var designBodySpotUpdaterProxy = new DesignBodySpotUpdaterProxy(spotUpdater);
