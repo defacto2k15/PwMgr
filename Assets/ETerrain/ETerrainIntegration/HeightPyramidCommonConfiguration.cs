@@ -15,6 +15,8 @@ namespace Assets.ETerrain.ETerrainIntegration
 
         public IntVector2 CeilTextureSize => SlotMapSize * SegmentTextureResolution;
         public float YScale { get; set; }
+        public bool MergeShapesInRings { get; set; }
+
         public bool ModifyCornersInHeightSegmentPlacer; 
 
         public Dictionary<int, Vector2> RingsUvRange;

@@ -14,21 +14,18 @@ namespace Assets.ETerrain.Pyramid.Shape
         {
             get
             {
-                var z = ShapesPerRing.Values.SelectMany(c=>c).ToList();
+                var gameObjects = new List<GameObject>();
+                if (ShapesPerRing != null)
+                {
+                    gameObjects.AddRange(ShapesPerRing.Values.SelectMany(c=>c).ToList());
+                }
                 if (CentralShape != null)
                 {
-                    z.Add(CentralShape);
+                    gameObjects.Add(CentralShape);
                 }
 
-                return z.Select(c => c.GetComponent<MeshRenderer>().material).ToList();
+                return gameObjects.Select(c => c.GetComponent<MeshRenderer>().material).ToList();
             }
-        }
-
-        public Material CentralShapeMaterial => CentralShape.GetComponent<MeshRenderer>().material;
-
-        public List<Material> GetMaterialsFromRingShapes(int ringIndex)
-        {
-            return ShapesPerRing[ringIndex].Select(c => c.GetComponent<MeshRenderer>().material).ToList();
         }
 
         public void MoveBy(Vector2 delta)

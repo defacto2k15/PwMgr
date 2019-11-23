@@ -11,8 +11,16 @@ namespace Assets.Utils
         private static List<BoundsToDraw> _boundsToDraw = new List<BoundsToDraw>();
         private static Camera _camera;
         public bool IsEnabled = true;
+        public bool DrawBoundsOfAllObjects = false;
 
         public static void AddBoundsToDraw(Bounds bounds, int lodLevel)
+        {
+            Color colorToDraw;
+            colorToDraw = ColorToDrawFromLod(lodLevel);
+            _boundsToDraw.Add(new BoundsToDraw(colorToDraw, bounds));
+        }
+
+        private static Color ColorToDrawFromLod(int lodLevel)
         {
             Color colorToDraw;
             switch (lodLevel)
@@ -33,18 +41,34 @@ namespace Assets.Utils
                     colorToDraw = Color.gray;
                     break;
             }
-            _boundsToDraw.Add(new BoundsToDraw(colorToDraw, bounds));
+
+            return colorToDraw;
         }
 
         public void OnDrawGizmos()
         {
             if (IsEnabled)
             {
-                foreach (BoundsToDraw btd in _boundsToDraw)
+                if (DrawBoundsOfAllObjects)
                 {
-                    Gizmos.color = btd.colorToDraw;
-                    Gizmos.DrawCube(btd.bounds.center, btd.bounds.size);
+                    int i = 0;
+                    foreach (var bounds in FindObjectsOfType<Renderer>().Select(c => c.bounds))
+                    {
+                        Gizmos.color = ColorToDrawFromLod(i%5);
+                        var modifiedBounds = new Bounds(bounds.center,new Vector3(bounds.size.x, bounds.size.y + i, bounds.size.z));
+                        Gizmos.DrawCube(modifiedBounds.center, modifiedBounds.size);
+                        i++;
+                    }
                 }
+                else
+                {
+                    foreach (BoundsToDraw btd in _boundsToDraw)
+                    {
+                        Gizmos.color = btd.colorToDraw;
+                        Gizmos.DrawCube(btd.bounds.center, btd.bounds.size);
+                    }
+                }
+
                 if (_camera != null)
                 {
                     Matrix4x4 old = Gizmos.matrix;

@@ -48,7 +48,8 @@ namespace Assets.ETerrain.ETerrainIntegration
                             MaxRingsPerLevelCount = 3,
                             InterSegmentMarginSize = 1/36.0f,
                             ModifyCornersInHeightSegmentPlacer = true,
-                            UseNormalTextures = true
+                            UseNormalTextures = true,
+                            MergeShapesInRings  = false
                         },
                     PerLevelConfigurations =
                         new Dictionary<HeightPyramidLevel, HeightPyramidPerLevelConfiguration>()

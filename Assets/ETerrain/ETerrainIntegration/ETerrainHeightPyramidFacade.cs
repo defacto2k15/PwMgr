@@ -86,7 +86,6 @@ namespace Assets.ETerrain.ETerrainIntegration
 
                 var perGroundTypesEntities = groundEntitiesGenerators.Select(c =>
                 {
-                    var groundType = c.Key;
                     var generator = c.Value;
 
                     var fillingListener= generator.SegmentFillingListenerGeneratorFunc(level, ceilTextureArrays);
@@ -102,8 +101,17 @@ namespace Assets.ETerrain.ETerrainIntegration
 
                 var heightPyramidLevelShapeGenerationConfiguration = templates[level].ShapeConfiguration;
                 var perLevelTemplate = templates[level].LevelTemplate;
-                var instancer = new HeightPyramidShapeInstancer(_meshGeneratorUtProxy, heightPyramidLevelShapeGenerationConfiguration);
-                var group = instancer.CreateGroup(perLevelTemplate,level, _pyramidRootGo);
+
+                IPyramidShapeInstancer shapeInstancer = null;
+                if (heightPyramidMapConfiguration.MergeShapesInRings)
+                {
+                    shapeInstancer = new MergedMeshesPyramidShapeInstancer(_meshGeneratorUtProxy, heightPyramidLevelShapeGenerationConfiguration);
+                }
+                else
+                {
+                    shapeInstancer = new SeparateMeshPerTemplateShapeInstancer(_meshGeneratorUtProxy,heightPyramidLevelShapeGenerationConfiguration);
+                }
+                var group = shapeInstancer.CreateGroup(perLevelTemplate,level, _pyramidRootGo);
 
                 var heightPyramidLocationParametersUpdaterConfiguration = new HeightPyramidLocationParametersUpdaterConfiguration()
                 {

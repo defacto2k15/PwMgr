@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Assets.Utils;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Assets.MeshGeneration
 {
@@ -121,9 +122,67 @@ namespace Assets.MeshGeneration
             mesh.bounds = new Bounds(oldBounds.center, new Vector3(oldBounds.size.x, 100000000, oldBounds.size.z));
         }
 
+        public static void SetYBounds(Mesh mesh, float min, float max)
+        {
+            var newYCenter = min + (max - min) / 2f;
+            var oldBounds = mesh.bounds;
+            mesh.bounds = new Bounds(new Vector3(oldBounds.center.x, newYCenter, oldBounds.center.z),
+                new Vector3(oldBounds.size.x, (max - min), oldBounds.size.z));
+        }
+
         public static void OffsetVertices(Mesh mesh, Vector3 offset)
         {
             mesh.vertices = mesh.vertices.Select(c => c + offset).ToArray();
+        }
+
+        public static Mesh CreateMeshAsSum(List<CombineInstance> elements)
+        {
+            var vertexCount = elements.Select(c => c.mesh.vertexCount).Sum();
+            var trianglesCount = elements.Select(c => c.mesh.triangles.Length/3).Sum();
+
+            var verticesArray = new Vector3[vertexCount];
+            var trianglesArray = new int[trianglesCount*3];
+            var uvs = new Vector2[vertexCount];
+
+            var vertexOffset = 0;
+            var triangleOffset = 0;
+            foreach (var anElement in elements)
+            {
+                var mesh = anElement.mesh;
+
+                var transformedVertices = mesh.vertices.Select(c => anElement.transform.MultiplyPoint(c)).ToArray();
+                Array.Copy(transformedVertices, 0, verticesArray, vertexOffset, mesh.vertices.Length);
+                var transformedTriangles = mesh.triangles.Select(c => c+ vertexOffset).ToArray();
+                Array.Copy(transformedTriangles, 0, trianglesArray, triangleOffset, mesh.triangles.Length);
+                Array.Copy(mesh.uv, 0, uvs, vertexOffset, mesh.uv.Length);
+
+                vertexOffset += mesh.vertexCount;
+                triangleOffset += mesh.triangles.Length ;
+            }
+
+            var outMesh = new Mesh()
+            {
+                indexFormat = IndexFormat.UInt32,
+                vertices = verticesArray,
+                triangles = trianglesArray,
+                uv =  uvs
+            };
+
+            outMesh.RecalculateNormals();
+            outMesh.RecalculateTangents();
+            outMesh.RecalculateBounds();
+
+            return outMesh;
+        }
+
+        public static void RecalculateUvAsInPlane(Mesh mesh)
+        {
+            var xRange = new Vector2(mesh.vertices.Select(c => c.x).Min(), mesh.vertices.Select(c => c.x).Max());
+            var zRange = new Vector2(mesh.vertices.Select(c => c.z).Min(), mesh.vertices.Select(c => c.z).Max());
+
+            Debug.Log("XR is "+xRange+" yr is "+zRange);
+            mesh.uv = mesh.vertices.Select(c => new Vector2((c.x - xRange[0]) / (xRange[1] - xRange[0]), (c.z - zRange[0]) / (zRange[1] - zRange[0])))
+                .ToArray();
         }
     }
 }
