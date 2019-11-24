@@ -134,6 +134,7 @@
 			}
 
 			ELevelAndRingIndexes FindLevelAndIndexFromWorldSpacePosition(float2 worldSpacePosition, ETerrainParameters parameters) {
+				//parameters.levelsCount
 				float4 ringsUvs[3] = { //TODO make configurable
 					float4(0.5 - 1 / 12.0, 0.5 - 1 / 12.0, 1 / 6.0, 1 / 6.0),
 					float4(0.5 - 2 / 12.0, 0.5 - 2 / 12.0, 2 / 6.0, 2 / 6.0),
@@ -216,18 +217,18 @@
 			struct ETerrainHeightCalculationOut {
 				float finalHeight;
 				float terrainMergingLerpParam;
-				bool shouldBeDiscarded;
+				float shouldBeDiscardedMarker;
 			};
 
 			ETerrainHeightCalculationOut make_ETerrainHeightCalculationOut(
 				float finalHeight,
 				float terrainMergingLerpParam,
-				bool shouldBeDiscarded
+				float shouldBeDiscardedMarker
 			) {
 				ETerrainHeightCalculationOut o;
 				o.finalHeight = finalHeight;
 				o.terrainMergingLerpParam = terrainMergingLerpParam;
-				o.shouldBeDiscarded = shouldBeDiscarded;
+				o.shouldBeDiscardedMarker = shouldBeDiscardedMarker;
 				return o;
 			}
 
@@ -255,21 +256,20 @@
 #endif
 			}
 
-			bool shouldVertexBeDiscarded(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
-				bool shouldBeDiscarded = false;
+			float computeShouldVertexBeDiscardedMarker(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
 				if (perRingParameters.higherLevelAreaCutting) {
-					float addition = 1/240.0;
-					float2 highLevelMinCornerInWS = auxGlobalLevelUvSpaceToWorldSpace(float2(1.0 / 6.0, 1.0 / 6.0) + addition, levelAndRingIndexes, terrainParameters);
+					float2 highLevelMinCornerInWS = auxGlobalLevelUvSpaceToWorldSpace(float2(1.0 / 6.0, 1.0 / 6.0) , levelAndRingIndexes, terrainParameters);
 					float2 highLevelMaxCornerInWS = auxGlobalLevelUvSpaceToWorldSpace(1 - float2(1.0 / 6.0, 1.0 / 6.0), levelAndRingIndexes, terrainParameters);
 					float2 thisLevelPositionInWS = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
 
-					if (thisLevelPositionInWS.x >= highLevelMinCornerInWS.x && thisLevelPositionInWS.x <= highLevelMaxCornerInWS.x) {
-						if (thisLevelPositionInWS.y >= highLevelMinCornerInWS.y && thisLevelPositionInWS.y <= highLevelMaxCornerInWS.y) {
-							return true;
-						}
-					}
+					float xMarker1 =   (thisLevelPositionInWS.x - highLevelMinCornerInWS.x);
+					float xMarker2 = - (thisLevelPositionInWS.x - highLevelMaxCornerInWS.x);
+					float yMarker1 =   (thisLevelPositionInWS.y - highLevelMinCornerInWS.y );
+					float yMarker2 = - (thisLevelPositionInWS.y - highLevelMaxCornerInWS.y);
+
+					return min(min(xMarker1, xMarker2), min(yMarker1, yMarker2));
 				}
-				return false;
+				return 0;
 			}
 
 			struct CeilSliceAndLerpParam {
@@ -368,11 +368,11 @@
 
 				float finalHeight =lerp(highQualityHeight, lowQualityHeight, lerpParam);
 
-				bool shouldBeDiscarded = shouldVertexBeDiscarded(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
-				if (shouldBeDiscarded) {
+				float shouldBeDiscardedMarker = computeShouldVertexBeDiscardedMarker(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
+				if (shouldBeDiscardedMarker > 0) {
 					finalHeight = highQualityHeight;
 				}
-				return  make_ETerrainHeightCalculationOut(finalHeight, lerpParam, shouldBeDiscarded);
+				return  make_ETerrainHeightCalculationOut(finalHeight, lerpParam, shouldBeDiscardedMarker);
 			}
 
 #endif

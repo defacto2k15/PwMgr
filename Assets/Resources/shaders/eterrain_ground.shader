@@ -48,7 +48,7 @@
 				float usedMipMapLevel;
 				float terrainMergingLerpParam;
 				float2 worldSpaceLocation;
-				float shouldDiscardMarker;
+				float shouldBeDiscardedMarker;
 			};
 
 
@@ -110,13 +110,13 @@
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
-				v.vertex.y =  -levelAndRingIndexes.levelIndex*0.00002f + terrainOut.finalHeight;
+				v.vertex.y = 0;// -levelAndRingIndexes.levelIndex*0.00002f * 0 + terrainOut.finalHeight;
 
 				v2f_o.inSegmentSpaceUv = inSegmentSpaceUv;
 				v2f_o.uv = uv;
 				v2f_o.usedMipMapLevel =  ringIndex+ terrainOut.terrainMergingLerpParam;
 				v2f_o.terrainMergingLerpParam = terrainOut.terrainMergingLerpParam;
-				v2f_o.shouldDiscardMarker = terrainOut.shouldBeDiscarded ? 1 : 0;
+				v2f_o.shouldBeDiscardedMarker = terrainOut.shouldBeDiscardedMarker;
 				v2f_o.worldSpaceLocation = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
 			}
 
@@ -240,7 +240,7 @@
 
 			//Our Fragment Shader
 			void surf(in Input i, inout SurfaceOutput o) {	//TODO add normals coloring
-				if (i.shouldDiscardMarker > 0.5) {
+				if (i.shouldBeDiscardedMarker> 0) {
 					discard;
 				}
 
@@ -272,3 +272,4 @@
 	}
 	FallBack "Diffuse"
 }
+
