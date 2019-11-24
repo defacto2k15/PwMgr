@@ -96,8 +96,8 @@
 
 
 			struct EPerRingParameters {
+				int ringIndex; //todo remove
 				bool auxHeightMapMode;
-				int highQualityMipMap;
 				bool higherLevelAreaCutting;
 			};
 
@@ -119,7 +119,7 @@
 			EPerRingParameters init_EPerRingParametersFromBuffers(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters){
 				EPerRingParameters o;
 				o.auxHeightMapMode = calculateAuxHeightMapMode(levelAndRingIndexes, terrainParameters);
-				o.highQualityMipMap = levelAndRingIndexes.ringIndex;
+				o.ringIndex = levelAndRingIndexes.ringIndex;
 				o.higherLevelAreaCutting = calculateHigherLevelAreaCutting(levelAndRingIndexes);
 				return o;
 			}
@@ -161,7 +161,7 @@
 				return 1000;
 			}
 
-			float2 MainPyramidCenterUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
+			float2 MainPyramidCenterUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) { //todo delete
 				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex].levelCenterWorldSpace;
 				return (pyramidCenterWorldSize/ ceilTextureWorldSize) + 0.5;
@@ -272,40 +272,100 @@
 				return false;
 			}
 
-			ETerrainHeightCalculationOut calculateETerrainHeight2(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
-				int mainHeightTextureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution;
-				float2 textureSamplingUv = frac(inSegmentSpaceUv + MainPyramidCenterUv(levelAndRingIndexes, terrainParameters));
+			struct CeilSliceAndLerpParam {
+				int ceilSlice;
+				float lerpParam;
+			};
 
-				float2 sampleCenteredHighQualityUv = textureSamplingUv + pow(2, perRingParameters.highQualityMipMap) / (mainHeightTextureResolution * 2.0); //This is to align UV to sample center of heightmap pixels
-				float highQualityHeight = sampleHeightMap(levelAndRingIndexes.levelIndex, float4(sampleCenteredHighQualityUv, 0, perRingParameters.highQualityMipMap));
+			CeilSliceAndLerpParam make_CeilSliceAndLerpParam  ( int ceilSlice, float lerpParam ){
+				CeilSliceAndLerpParam p;
+				p.ceilSlice = ceilSlice;
+				p.lerpParam = lerpParam;
+				return p;
+			}
 
-				float lowQualityHeight = -100;
+			struct CeilSliceAndMipmap {
+				int slice;
+				int mipmap;
+			};
 
-				bool areWeInLastRing = perRingParameters.auxHeightMapMode; 
-				if (!areWeInLastRing ) {
-					int auxHeightTextureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution;
-					float2 sampleCenteredLowQualityUv = textureSamplingUv + pow(2,  perRingParameters.highQualityMipMap + 1) / (auxHeightTextureResolution * 2.0);
-					lowQualityHeight = sampleHeightMap(levelAndRingIndexes.levelIndex, float4(sampleCenteredLowQualityUv, 0,  perRingParameters.highQualityMipMap+ 1));
-				}
-				else{ // we are in biggest (LAST) ring
-					bool areWeInLastLevel = (levelAndRingIndexes.levelIndex +1) == terrainParameters.levelsCount;
-					if (areWeInLastLevel) {
-						lowQualityHeight = highQualityHeight;
-					}
-					else {
-						float2 globalWorldSpace = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
-						float2 auxGlobalLevelUvSpace = worldSpaceToAuxGlobalLevelUvSpace(globalWorldSpace, levelAndRingIndexes, terrainParameters);
-						float2 auxLevelUvSpace = frac(auxGlobalLevelUvSpace + AuxPyramidCenterUv(levelAndRingIndexes, terrainParameters));
-						float2 samplingCenteredSamplingUv = auxLevelUvSpace + 1.0 / (mainHeightTextureResolution * 2.0); //This is to align UV to sample center of heightmap pixels
-						lowQualityHeight = sampleHeightMap(levelAndRingIndexes.levelIndex + AuxLevelOffset(levelAndRingIndexes, terrainParameters), float4(samplingCenteredSamplingUv, 0, 0));
-					}
-				}
+			CeilSliceAndMipmap make_CeilSliceAndMipmap( int slice, int mipmap){
+				CeilSliceAndMipmap c;
+				c.slice = slice;
+				c.mipmap = mipmap;
+				return c;
+			}
 
+			struct CeilTextureSamplingQuery {
+				CeilSliceAndMipmap ceilSliceAndMipmap;
+				float2 uv;
+			};
+
+			CeilTextureSamplingQuery make_CeilTextureSamplingQuery( CeilSliceAndMipmap ceilSliceAndMipmap, float2 uv){
+				CeilTextureSamplingQuery q;
+				q.ceilSliceAndMipmap = ceilSliceAndMipmap;
+				q.uv = uv;
+				return q;
+			}
+
+			float sampleHeightTextureWithQuery(CeilTextureSamplingQuery query) {
+				return sampleHeightMap(query.ceilSliceAndMipmap.slice, float4(query.uv, 0, query.ceilSliceAndMipmap.mipmap));
+			}
+
+			float2 alignUvToPixelCenter(float2 textureSamplingUv, int levelIndex, int ringIndex, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
+				int textureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelIndex].ceilTextureResolution;
+				return textureSamplingUv + pow(2, ringIndex) / (textureResolution * 2.0); 
+			}
+
+			float2 MainPyramidCenterUv2(int sliceIndex, ETerrainParameters parameters) {
+				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[sliceIndex].ceilTextureWorldSize;
+				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[sliceIndex].levelCenterWorldSpace;
+				return (pyramidCenterWorldSize/ ceilTextureWorldSize) + 0.5;
+			}
+
+			float sampleHeightTextureComplex(float2 inSegmentSpaceUv, CeilSliceAndMipmap ceilSliceAndMipmap,  ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
+				float2 textureSamplingUv = frac(inSegmentSpaceUv + MainPyramidCenterUv2(ceilSliceAndMipmap.slice, terrainParameters));
+				CeilTextureSamplingQuery  query = make_CeilTextureSamplingQuery(
+					ceilSliceAndMipmap,
+					alignUvToPixelCenter(textureSamplingUv, ceilSliceAndMipmap.slice,  ceilSliceAndMipmap.mipmap, terrainParameters, perRingParameters)
+				);
+				return sampleHeightTextureWithQuery(query);
+			}
+
+			float ComputeLerpParam(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
 				float2 pyramidLevelSpaceUv = inSegmentSpaceUv + (MainPyramidCenterUv( levelAndRingIndexes, terrainParameters) - 0.5);
 				float2 transitionRange = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ringsConfiguration[levelAndRingIndexes.ringIndex].mergeRange;
 				float fromCenterDistance = max(abs(pyramidLevelSpaceUv.x - MainTravellerPositionUv( levelAndRingIndexes, terrainParameters).x), abs(pyramidLevelSpaceUv.y - MainTravellerPositionUv( levelAndRingIndexes, terrainParameters).y));
 				fromCenterDistance *= 2; // to make fromCenterDistance seem like uv is from -1 to 1
 				float lerpParam = invLerp(transitionRange.x, transitionRange.y, fromCenterDistance);
+
+				return lerpParam;
+			}
+
+			ETerrainHeightCalculationOut calculateETerrainHeight2(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
+				float lerpParam = ComputeLerpParam(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
+
+				float highQualityHeight = sampleHeightTextureComplex(inSegmentSpaceUv,
+					make_CeilSliceAndMipmap(levelAndRingIndexes.levelIndex, perRingParameters.ringIndex), terrainParameters, perRingParameters);
+
+				float lowQualityHeight = -100;
+
+				bool areWeInLastRing = perRingParameters.auxHeightMapMode; 
+				if (!areWeInLastRing ) {
+					lowQualityHeight = sampleHeightTextureComplex(inSegmentSpaceUv, make_CeilSliceAndMipmap(levelAndRingIndexes.levelIndex, perRingParameters.ringIndex+1), terrainParameters, perRingParameters);
+				}
+				else{ // we are in biggest (LAST) ring
+					bool areWeInLastLevel = (levelAndRingIndexes.levelIndex +1) == terrainParameters.levelsCount;
+					if (areWeInLastLevel) {
+						lerpParam = 0;
+					}
+					else {
+						float2 globalWorldSpace = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
+						float2 auxGlobalLevelUvSpace = worldSpaceToAuxGlobalLevelUvSpace(globalWorldSpace, levelAndRingIndexes, terrainParameters);
+						lowQualityHeight = sampleHeightTextureComplex(auxGlobalLevelUvSpace, make_CeilSliceAndMipmap(levelAndRingIndexes.levelIndex+1, 0), terrainParameters, perRingParameters);
+					}
+				}
+
 				float finalHeight =lerp(highQualityHeight, lowQualityHeight, lerpParam);
 
 				bool shouldBeDiscarded = shouldVertexBeDiscarded(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
