@@ -96,7 +96,6 @@
 
 
 			struct EPerRingParameters {
-				int ringIndex; //todo remove
 				bool auxHeightMapMode;
 				bool higherLevelAreaCutting;
 			};
@@ -119,7 +118,6 @@
 			EPerRingParameters init_EPerRingParametersFromBuffers(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters){
 				EPerRingParameters o;
 				o.auxHeightMapMode = calculateAuxHeightMapMode(levelAndRingIndexes, terrainParameters);
-				o.ringIndex = levelAndRingIndexes.ringIndex;
 				o.higherLevelAreaCutting = calculateHigherLevelAreaCutting(levelAndRingIndexes);
 				return o;
 			}
@@ -134,17 +132,13 @@
 			}
 
 			ELevelAndRingIndexes FindLevelAndIndexFromWorldSpacePosition(float2 worldSpacePosition, ETerrainParameters parameters) {
-				//parameters.levelsCount
-				float4 ringsUvs[3] = { //TODO make configurable
-					float4(0.5 - 1 / 12.0, 0.5 - 1 / 12.0, 1 / 6.0, 1 / 6.0),
-					float4(0.5 - 2 / 12.0, 0.5 - 2 / 12.0, 2 / 6.0, 2 / 6.0),
-					float4(0.5 - 4 / 12.0, 0.5 - 4 / 12.0, 4 / 6.0, 4 / 6.0)
-				};
-
 				for (int levelIndex = 0; levelIndex < min(parameters.levelsCount, MAX_LEVELS_COUNT); levelIndex++) {
 					float2 levelUv = worldSpaceToGlobalLevelUvSpace(worldSpacePosition, levelIndex, parameters);
 					for (int ringIndex = 0; ringIndex < min(parameters.ringsPerLevelCount, MAX_RINGS_PER_LEVEL_COUNT); ringIndex++) {
-						if (isInRectangle(levelUv, ringsUvs[ringIndex])) {
+						float2 ringUvRange = parameters.pyramidConfiguration.levelsConfiguration[levelIndex].ringsConfiguration[ringIndex].uvRange;
+						float4 ringRectangle = float4(0.5 - ringUvRange.y, 0.5 - ringUvRange.y, ringUvRange.y * 2, ringUvRange.y * 2);
+
+						if (isInRectangle(levelUv, ringRectangle)) {
 							return make_ELevelAndRingIndexes(levelIndex, ringIndex);
 						}
 					}
@@ -346,13 +340,13 @@
 				float lerpParam = ComputeLerpParam(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
 				float highQualityHeight = sampleHeightTextureComplex(inSegmentSpaceUv,
-					make_CeilSliceAndMipmap(levelAndRingIndexes.levelIndex, perRingParameters.ringIndex), terrainParameters, perRingParameters);
+					make_CeilSliceAndMipmap(levelAndRingIndexes.levelIndex, levelAndRingIndexes.ringIndex), terrainParameters, perRingParameters);
 
 				float lowQualityHeight = -100;
 
 				bool areWeInLastRing = perRingParameters.auxHeightMapMode; 
 				if (!areWeInLastRing ) {
-					lowQualityHeight = sampleHeightTextureComplex(inSegmentSpaceUv, make_CeilSliceAndMipmap(levelAndRingIndexes.levelIndex, perRingParameters.ringIndex+1), terrainParameters, perRingParameters);
+					lowQualityHeight = sampleHeightTextureComplex(inSegmentSpaceUv, make_CeilSliceAndMipmap(levelAndRingIndexes.levelIndex, levelAndRingIndexes.ringIndex+1), terrainParameters, perRingParameters);
 				}
 				else{ // we are in biggest (LAST) ring
 					bool areWeInLastLevel = (levelAndRingIndexes.levelIndex +1) == terrainParameters.levelsCount;

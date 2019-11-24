@@ -110,7 +110,7 @@
 				EPerRingParameters perRingParameters = init_EPerRingParametersFromBuffers(levelAndRingIndexes, terrainParameters);
 				ETerrainHeightCalculationOut terrainOut = calculateETerrainHeight2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 
-				v.vertex.y = 0;// -levelAndRingIndexes.levelIndex*0.00002f * 0 + terrainOut.finalHeight;
+				v.vertex.y =  -levelAndRingIndexes.levelIndex*0.00002f * 0 + terrainOut.finalHeight;
 
 				v2f_o.inSegmentSpaceUv = inSegmentSpaceUv;
 				v2f_o.uv = uv;
@@ -204,7 +204,7 @@
 			}
 
 			float2 CalculateDownLeftVerticleInSegmentSpaceUv(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, EPerRingParameters perRingParameters, ETerrainParameters terrainParameters) {
-				float subRingMultiplier = pow(2, perRingParameters.ringIndex);
+				float subRingMultiplier = pow(2, levelAndRingIndexes.ringIndex);
 				int gridResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution / subRingMultiplier;
 				float ceilTextureWorldSize = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
 				float worldSpaceGridCellsLength = ceilTextureWorldSize / gridResolution;
