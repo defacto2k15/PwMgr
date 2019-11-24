@@ -103,7 +103,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 {
                     CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X, //TODO i use only X, - works only for squares
                     HeightMergeRanges = perLevelTemplates[c].PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
-                    PyramidLevelWorldSize =
+                    CeilSliceWorldSize =
                         startConfiguration.PerLevelConfigurations[c].CeilTextureWorldSize.x, // TODO works only for square pyramids - i use width
                     RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
                 }), startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);

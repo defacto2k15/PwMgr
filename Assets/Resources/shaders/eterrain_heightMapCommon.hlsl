@@ -4,6 +4,8 @@
 #define MAX_RINGS_PER_LEVEL_COUNT (3)
 #define MAX_LEVELS_COUNT (3)
 
+#define MAX_CEIL_SLICES_COUNT (3)
+
 			struct ERingConfiguration {
 				float2 uvRange;
 				float2 mergeRange;
@@ -18,7 +20,7 @@
 
 			struct ELevelConfiguration {
 				ERingConfiguration ringsConfiguration[MAX_RINGS_PER_LEVEL_COUNT];
-				float levelWorldSize;
+				float ceilTextureWorldSize;
 				float ceilTextureResolution;
 			};
 
@@ -27,10 +29,16 @@
 				for (int i = 0; i < MAX_RINGS_PER_LEVEL_COUNT; i++) {
 					c.ringsConfiguration[i] = null_ERingConfiguration();
 				}
-				c.levelWorldSize = 0;
+				c.ceilTextureWorldSize = 0;
 				c.ceilTextureResolution = 0;
 				return c;
 			}
+
+			//struct ECeilSliceConfiguration {
+			//	int2 segmentCount;
+			//	float sliceWorldSize;
+			//};
+
 
 			struct EPyramidConfiguration {
 				ELevelConfiguration levelsConfiguration[MAX_LEVELS_COUNT];
@@ -118,7 +126,7 @@
 
 			float2 worldSpaceToGlobalLevelUvSpace(float2 worldSpace, int levelIndex, ETerrainParameters parameters) {
 				return (worldSpace - parameters.perFrameConfiguration.levelConfiguration[levelIndex].levelCenterWorldSpace)
-					/ parameters.pyramidConfiguration.levelsConfiguration[levelIndex].levelWorldSize+ 0.5;
+					/ parameters.pyramidConfiguration.levelsConfiguration[levelIndex].ceilTextureWorldSize+ 0.5;
 			}
 
 			bool isInRectangle(float2 pos, float4 rect) {
@@ -154,55 +162,55 @@
 			}
 
 			float2 MainPyramidCenterUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
-				float2  levelWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].levelWorldSize;
+				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex].levelCenterWorldSpace;
-				return (pyramidCenterWorldSize/ levelWorldSize) + 0.5;
+				return (pyramidCenterWorldSize/ ceilTextureWorldSize) + 0.5;
 			}
 
 			float2 MainTravellerPositionUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
-				float2  levelWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].levelWorldSize;
-				return (parameters.travellerPositionWorldSpace / levelWorldSize) + 0.5;
+				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
+				return (parameters.travellerPositionWorldSpace / ceilTextureWorldSize) + 0.5;
 			}
 
 			float2 AuxTravellerPositionUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
 				int auxLevelOffset = AuxLevelOffset(levelAndRingIndexes, parameters);
-				float2  levelWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelWorldSize;
-				return (parameters.travellerPositionWorldSpace / levelWorldSize) + 0.5;
+				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].ceilTextureWorldSize;
+				return (parameters.travellerPositionWorldSpace / ceilTextureWorldSize) + 0.5;
 			}
 
 			float2 AuxPyramidCenterUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
 				int auxLevelOffset = AuxLevelOffset(levelAndRingIndexes, parameters);
-				float2 levelWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelWorldSize;
+				float2 ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].ceilTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelCenterWorldSpace;
-				return (pyramidCenterWorldSize/ levelWorldSize) + 0.5;
+				return (pyramidCenterWorldSize/ ceilTextureWorldSize) + 0.5;
 			}
 
 			float2 auxGlobalLevelUvSpaceToWorldSpace(float2 auxGlobalLevelUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
 				int auxLevelOffset = AuxLevelOffset(levelAndRingIndexes, parameters);
-				float levelWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelWorldSize;
+				float ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].ceilTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelCenterWorldSpace;
-				float2 offset = (auxGlobalLevelUv-0.5) * levelWorldSize;
+				float2 offset = (auxGlobalLevelUv-0.5) * ceilTextureWorldSize;
 				return (pyramidCenterWorldSize+offset);
 			}
 
 			float2 mainGlobalLevelUvSpaceToWorldSpace(float2 auxGlobalLevelUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
-				float2 levelWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].levelWorldSize;
+				float2 ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex].levelCenterWorldSpace;
-				float2 offset = (auxGlobalLevelUv-0.5) * levelWorldSize;
+				float2 offset = (auxGlobalLevelUv-0.5) * ceilTextureWorldSize;
 				return (pyramidCenterWorldSize+offset);
 			}
 
 			float2 worldSpaceToMainGlobalLevelUvSpace(float2 worldSpace, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
-				float2 levelWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].levelWorldSize;
+				float2 ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex].levelCenterWorldSpace;
-				return (worldSpace - pyramidCenterWorldSize) / (levelWorldSize) + 0.5;
+				return (worldSpace - pyramidCenterWorldSize) / (ceilTextureWorldSize) + 0.5;
 			}
 
 			float2 worldSpaceToAuxGlobalLevelUvSpace(float2 worldSpace, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
 				int auxLevelOffset = AuxLevelOffset(levelAndRingIndexes, parameters);
-				float2 levelWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelWorldSize;
+				float2 ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].ceilTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelCenterWorldSpace;
-				return (worldSpace - pyramidCenterWorldSize) / (levelWorldSize) + 0.5;
+				return (worldSpace - pyramidCenterWorldSize) / (ceilTextureWorldSize) + 0.5;
 			}
 
 			struct ETerrainHeightCalculationOut {
@@ -247,6 +255,23 @@
 #endif
 			}
 
+			bool shouldVertexBeDiscarded(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
+				bool shouldBeDiscarded = false;
+				if (perRingParameters.higherLevelAreaCutting) {
+					float addition = 1/240.0;
+					float2 highLevelMinCornerInWS = auxGlobalLevelUvSpaceToWorldSpace(float2(1.0 / 6.0, 1.0 / 6.0) + addition, levelAndRingIndexes, terrainParameters);
+					float2 highLevelMaxCornerInWS = auxGlobalLevelUvSpaceToWorldSpace(1 - float2(1.0 / 6.0, 1.0 / 6.0), levelAndRingIndexes, terrainParameters);
+					float2 thisLevelPositionInWS = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
+
+					if (thisLevelPositionInWS.x >= highLevelMinCornerInWS.x && thisLevelPositionInWS.x <= highLevelMaxCornerInWS.x) {
+						if (thisLevelPositionInWS.y >= highLevelMinCornerInWS.y && thisLevelPositionInWS.y <= highLevelMaxCornerInWS.y) {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+
 			ETerrainHeightCalculationOut calculateETerrainHeight2(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
 				int mainHeightTextureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution;
 				float2 textureSamplingUv = frac(inSegmentSpaceUv + MainPyramidCenterUv(levelAndRingIndexes, terrainParameters));
@@ -283,21 +308,10 @@
 				float lerpParam = invLerp(transitionRange.x, transitionRange.y, fromCenterDistance);
 				float finalHeight =lerp(highQualityHeight, lowQualityHeight, lerpParam);
 
-				bool shouldBeDiscarded = false;
-				if (perRingParameters.higherLevelAreaCutting) {
-					float addition = 1/240.0;
-					float2 highLevelMinCornerInWS = auxGlobalLevelUvSpaceToWorldSpace(float2(1.0 / 6.0, 1.0 / 6.0) + addition, levelAndRingIndexes, terrainParameters);
-					float2 highLevelMaxCornerInWS = auxGlobalLevelUvSpaceToWorldSpace(1 - float2(1.0 / 6.0, 1.0 / 6.0), levelAndRingIndexes, terrainParameters);
-					float2 thisLevelPositionInWS = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
-
-					if (thisLevelPositionInWS.x >= highLevelMinCornerInWS.x && thisLevelPositionInWS.x <= highLevelMaxCornerInWS.x) {
-						if (thisLevelPositionInWS.y >= highLevelMinCornerInWS.y && thisLevelPositionInWS.y <= highLevelMaxCornerInWS.y) {
-							finalHeight = highQualityHeight;
-							shouldBeDiscarded =true;
-						}
-					}
+				bool shouldBeDiscarded = shouldVertexBeDiscarded(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
+				if (shouldBeDiscarded) {
+					finalHeight = highQualityHeight;
 				}
-				//finalHeight = highQualityHeight;
 				return  make_ETerrainHeightCalculationOut(finalHeight, lerpParam, shouldBeDiscarded);
 			}
 

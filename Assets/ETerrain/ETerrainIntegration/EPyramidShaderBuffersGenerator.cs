@@ -17,7 +17,7 @@ namespace Assets.ETerrain.ETerrainIntegration
         struct ELevelConfiguration
         {
             public ERingConfiguration[] RingsConfiguration;
-            public float LevelWorldSize;
+            public float CeilTextureWorldSize;
             public int CeilTextureResolution;
         };
 
@@ -46,7 +46,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                     index += 4;
                 }
 
-                floatsArray[index] = levelConfiguration.LevelWorldSize;
+                floatsArray[index] = levelConfiguration.CeilTextureWorldSize;
                 floatsArray[index + 1] = levelConfiguration.CeilTextureResolution;
                 index += 2;
             }
@@ -79,7 +79,7 @@ namespace Assets.ETerrain.ETerrainIntegration
         private EPyramidConfiguration GenerateConfiguration(Dictionary<HeightPyramidLevel,  EPyramidShaderBuffersGeneratorPerRingInput> input)
         {
             var levels = input.Keys.OrderBy(c => c.GetIndex());
-            var worldSizes = input.Values.Select(c => c.PyramidLevelWorldSize).ToList();
+            var worldSizes = input.Values.Select(c => c.CeilSliceWorldSize).ToList();
             var ceilTextureResolution = input.Values.Select(c => c.CeilTextureResolution).ToList();
 
             return new EPyramidConfiguration()
@@ -94,7 +94,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                                 UvRange = input[i].RingUvRanges[c],
                                 MergeRange = input[i].HeightMergeRanges[c]
                             }).ToArray(),
-                        LevelWorldSize = input[i].PyramidLevelWorldSize,
+                        CeilTextureWorldSize = input[i].CeilSliceWorldSize,
                         CeilTextureResolution = input[i].CeilTextureResolution
                     };
                 }).ToArray()

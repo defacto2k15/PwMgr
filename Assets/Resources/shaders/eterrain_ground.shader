@@ -206,8 +206,8 @@
 			float2 CalculateDownLeftVerticleInSegmentSpaceUv(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, EPerRingParameters perRingParameters, ETerrainParameters terrainParameters) {
 				float subRingMultiplier = pow(2, perRingParameters.highQualityMipMap);
 				int gridResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution / subRingMultiplier;
-				float levelWorldSize = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].levelWorldSize;
-				float worldSpaceGridCellsLength = levelWorldSize / gridResolution;
+				float ceilTextureWorldSize = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
+				float worldSpaceGridCellsLength = ceilTextureWorldSize / gridResolution;
 				InTriangleGridPosition gridPosition = calculateInTriangleGridPosition(inSegmentSpaceUv, gridResolution);
 				int2  squareIndex = gridPosition.squareIndex;
 
