@@ -19,7 +19,7 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
     {
         private MultistepTextureRenderer _multistepTextureRenderer;
         private TextureRendererServiceConfiguration _configuration;
-        private TextureRenderingOrder _multistepOrder;
+        private MultistepRenderingProcessOrder<Texture, TextureRenderingTemplate> _multistepProcessOrder;
 
         public TextureRendererService(MultistepTextureRenderer multistepTextureRenderer,
             TextureRendererServiceConfiguration configuration)
@@ -28,9 +28,9 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
             _configuration = configuration;
         }
 
-        public void AddMultistepOrder(TextureRenderingOrder order)
+        public void AddMultistepOrder(MultistepRenderingProcessOrder<Texture, TextureRenderingTemplate> processOrder)
         {
-            var template = order.Template;
+            var template = processOrder.Order;
             Preconditions.Assert(template.RenderingRectangle==null,"E781: Cannot render multistep when filling RenderTexture!");
 
             var outTextureInfo = template.OutTextureInfo;
@@ -57,7 +57,7 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
                 CreateTexture2D = template.CreateTexture2D
             };
             _multistepTextureRenderer.StartRendering(input);
-            _multistepOrder = order;
+            _multistepProcessOrder = processOrder;
         }
 
         public Texture FufillOrder(TextureRenderingTemplate template)
@@ -75,7 +75,6 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
             pack.SetUniformsToMaterial(material);
 
             var renderTextureFormat = template.RenderTextureFormat;
-
 
             Texture outTexture = null;
             if (template.CreateTexture2D)
@@ -127,8 +126,8 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
                 if (_multistepTextureRenderer.RenderingCompleted())
                 {
                     var texture = _multistepTextureRenderer.RetriveRenderedTexture();
-                    _multistepOrder.Tcs.SetResult(texture);
-                    _multistepOrder = null;
+                    _multistepProcessOrder.Tcs.SetResult(texture);
+                    _multistepProcessOrder = null;
                 }
                 else
                 {
@@ -166,7 +165,7 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
     {
         private TextureRendererService _service;
 
-        public UTTextureRendererProxy(TextureRendererService service) : base(automaticExecution:false)//TODO execution time computing
+        public UTTextureRendererProxy(TextureRendererService service) : base(50, automaticExecution:false)//TODO execution time computing
         {
             _service = service;
         }
@@ -199,10 +198,10 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
                 {
                     if (transformOrder.Order.CanMultistep)
                     {
-                        _service.AddMultistepOrder(new TextureRenderingOrder()
+                        _service.AddMultistepOrder(new MultistepRenderingProcessOrder<Texture, TextureRenderingTemplate>()
                         {
                             Tcs = transformOrder.Tcs,
-                            Template = transformOrder.Order
+                            Order = transformOrder.Order
                         });
                     }
                     else
@@ -219,9 +218,9 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
         }
     }
 
-    public class TextureRenderingOrder
+    public class MultistepRenderingProcessOrder< TOut, TIn>
     {
-        public TaskCompletionSource<Texture> Tcs;
-        public TextureRenderingTemplate Template;
+        public TaskCompletionSource<TOut> Tcs;
+        public TIn Order;
     }
 }

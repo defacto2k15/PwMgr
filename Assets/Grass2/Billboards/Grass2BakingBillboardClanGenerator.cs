@@ -91,7 +91,7 @@ namespace Assets.Grass2.Billboards
                     bladeSeedTextureArray,
                     detailTextureArray
                 });
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 ParametersContainer = parametersContainer,
                 OutParameters = outParameters,

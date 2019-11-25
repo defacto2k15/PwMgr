@@ -545,7 +545,7 @@ namespace Assets.EProps
 
                 localeBufferUpdateShader.SetGlobalUniform("g_travellerPositionWorldSpace", travellerPositionWorldSpace);
 
-                return _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+                return _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
                 {
                     OutParameters = new ComputeBufferRequestedOutParameters(),
                     ParametersContainer = parametersContainer,
@@ -588,7 +588,7 @@ namespace Assets.EProps
                 localeBufferUpdateShader.SetGlobalUniform("g_ScopeLength", _configuration.ScopeLength);
                 localeBufferUpdateShader.SetGlobalUniform("g_heightScale", _constantPyramidParameters.HeightScale);
 
-                return _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+                return _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
                 {
                     OutParameters = new ComputeBufferRequestedOutParameters(),
                     ParametersContainer = parametersContainer,
@@ -645,7 +645,7 @@ namespace Assets.EProps
 
                 localeBufferUpdateShader.SetGlobalUniform("g_travellerPositionWorldSpace", travellerPositionWorldSpace);
 
-                return _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+                return _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
                 {
                     OutParameters = new ComputeBufferRequestedOutParameters(),
                     ParametersContainer = parametersContainer,

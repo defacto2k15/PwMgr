@@ -96,7 +96,7 @@ namespace Assets.Trees.Placement.Domain
                 {
                     outIntensityArray
                 });
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 ParametersContainer = parametersContainer,
                 OutParameters = outParameters,

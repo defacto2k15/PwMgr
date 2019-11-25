@@ -116,7 +116,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
                     outRenderTexture
                 });
 
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 OutParameters = outParameters,
                 ParametersContainer = parametersContainer,

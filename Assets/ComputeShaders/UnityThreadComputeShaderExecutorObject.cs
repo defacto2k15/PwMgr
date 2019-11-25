@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Assets.ComputeShaders.Templating;
+using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Utils;
 using Assets.Utils.UTUpdating;
 using UnityEngine;
@@ -11,16 +12,75 @@ namespace Assets.ComputeShaders
 {
     public class UnityThreadComputeShaderExecutorObject : BaseGpuWorkUTTransformProxy<object, ComputeShaderOrder>
     {
-        public UnityThreadComputeShaderExecutorObject() : base()// TODO other method for execution time computing
+        private readonly bool _multistepExecution;
+        private MultistepComputeShaderExecutorObject _multistepExecutor;
+
+        public UnityThreadComputeShaderExecutorObject(bool multistepExecution = false) : base(30f, automaticExecution:!multistepExecution) // TODO other method for execution time computing
         {
+            _multistepExecution = multistepExecution;
+            _multistepExecutor = new MultistepComputeShaderExecutorObject(); //todo maybe add to configuration
         }
 
-        public Task DispatchComputeShader(ComputeShaderOrder order)
+        public Task<object> AddOrder(ComputeShaderOrder order)
         {
             return BaseUtAddOrder(order);
         }
 
-        protected override object ExecuteOrder(ComputeShaderOrder order) //todo multistep execution
+        public override bool InternalHasWorkToDo()
+        {
+            if (!_multistepExecution)
+            {
+                return false;
+            }
+            return _multistepExecutor.CurrentlyRendering;
+        }
+
+        protected override void InternalUpdate()
+        {
+            if (!_multistepExecution)
+            {
+                return;
+            }
+            if (_multistepExecutor.CurrentlyRendering)
+            {
+                _multistepExecutor.Update();
+            }
+            else
+            {
+                // lets add new order
+                var transformOrder = TryGetNextFromQueue();
+                if (transformOrder != null) { 
+                    _multistepExecutor.AddMultistepOrder(new MultistepRenderingProcessOrder<object, ComputeShaderOrder>()
+                    {
+                        Tcs = transformOrder.Tcs,
+                        Order = transformOrder.Order
+                    });
+                }
+            }
+        }
+
+        protected override object ExecuteOrder(ComputeShaderOrder order)
+        {
+            return _multistepExecutor.FufillOrderWithoutMultistep(order);
+        }
+    }
+
+    public class MultistepComputeShaderExecutionState
+    {
+        public int CurrentWorkPackIndex;
+        public int CurrentDispatchIndex;
+        public int DispatchLoopIndex;
+        public ComputeShaderCreatedParametersContainer CreatedParametersContainer;
+    }
+
+    public class MultistepComputeShaderExecutorObject
+    {
+        private MultistepRenderingProcessOrder<object, ComputeShaderOrder> _currentOrderWithTask;
+        private MultistepComputeShaderExecutionState _executionState;
+
+        public bool CurrentlyRendering => _currentOrderWithTask != null;
+
+        public object FufillOrderWithoutMultistep(ComputeShaderOrder order)
         {
             var parametersContainer = order.ParametersContainer;
             var createdParameters = CreateParameters(parametersContainer);
@@ -45,6 +105,69 @@ namespace Assets.ComputeShaders
             FinalizeParameters(parametersContainer, createdParameters, outParameters);
             return null;
         }
+
+        public void AddMultistepOrder(MultistepRenderingProcessOrder<object, ComputeShaderOrder> order)
+        {
+            Preconditions.Assert(_currentOrderWithTask==null, "There is arleady order set");
+            _currentOrderWithTask = order;
+
+            var computeShaderCreatedParametersContainer = CreateParameters(order.Order.ParametersContainer);
+            var shader = _currentOrderWithTask.Order.WorkPacks[0].Shader;
+            shader.CreateKernelHandleTranslationMap();
+            shader.SetCreatedParameters(computeShaderCreatedParametersContainer);
+
+            _executionState = new MultistepComputeShaderExecutionState()
+            {
+                CurrentDispatchIndex = 0,
+                CurrentWorkPackIndex = 0,
+                DispatchLoopIndex = 0,
+                CreatedParametersContainer = computeShaderCreatedParametersContainer,
+            };
+        }
+
+        public void Update()
+        {
+            Preconditions.Assert(_currentOrderWithTask != null, "There is arleady there is no order set");
+            var order = _currentOrderWithTask.Order;
+            var pack = order.WorkPacks[_executionState.CurrentWorkPackIndex];
+            var dispatchLoop = pack.DispatchLoops[_executionState.DispatchLoopIndex];
+
+            pack.Shader.ImmediatelySetGlobalUniform("g_DispatchLoopIndex",_executionState.CurrentDispatchIndex);
+            pack.Shader.Dispatch(dispatchLoop.KernelHandles);
+
+            _executionState.CurrentDispatchIndex++;
+            if ( _executionState.CurrentDispatchIndex >= dispatchLoop.DispatchCount)
+            {
+                _executionState.CurrentDispatchIndex = 0;
+                _executionState.DispatchLoopIndex++;
+
+                if (_executionState.DispatchLoopIndex >= pack.DispatchLoops.Count)
+                {
+                    _executionState.DispatchLoopIndex = 0;
+                    _executionState.CurrentWorkPackIndex++;
+
+                    if (_executionState.CurrentWorkPackIndex >= order.WorkPacks.Count)
+                    {
+
+                        var outParameters = order.OutParameters;
+                        FinalizeParameters(order.ParametersContainer, _executionState.CreatedParametersContainer, outParameters);
+
+                        var tcs = _currentOrderWithTask.Tcs;
+                        _currentOrderWithTask = null;
+                        _executionState = null;
+                        tcs.SetResult(null);
+                        return;
+                    }
+                    else
+                    {
+                        var shader = _currentOrderWithTask.Order.WorkPacks[_executionState.CurrentWorkPackIndex].Shader;
+                        shader.CreateKernelHandleTranslationMap();
+                        shader.SetCreatedParameters(_executionState.CreatedParametersContainer);
+                    }
+                }
+            }
+        }
+
 
         private static void FinalizeParameters(
             ComputeShaderParametersContainer parametersContainer,
@@ -136,7 +259,8 @@ namespace Assets.ComputeShaders
             texture.Create();
             return texture;
         }
-    }
+
+    }  
 
     public class ComputeShaderOrder
     {

@@ -72,7 +72,7 @@ namespace Assets.Roads.Engraving
                     shderOutHeightTexture
                 });
 
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 OutParameters = outParameters,
                 ParametersContainer = parametersContainer,

@@ -152,7 +152,7 @@ namespace Assets.NPR.Filling.Solid
             computeShader.SetTexture("_OutTexture3D", newTextureId, allKernels);
 
             ComputeBufferRequestedOutParameters outParameters = new ComputeBufferRequestedOutParameters( new List<MyComputeShaderTextureId>() {newTextureId}, new List<MyComputeBufferId> {});
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 ParametersContainer = parametersContainer,
                 OutParameters = outParameters,
@@ -246,7 +246,7 @@ namespace Assets.NPR.Filling.Solid
             computeShader.SetTexture("_CubeTexture", cubeTexId, allKernels);
 
             ComputeBufferRequestedOutParameters outParameters = new ComputeBufferRequestedOutParameters( new List<MyComputeShaderTextureId>() {}, new List<MyComputeBufferId> {});
-            _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 ParametersContainer = parametersContainer,
                 OutParameters = outParameters,

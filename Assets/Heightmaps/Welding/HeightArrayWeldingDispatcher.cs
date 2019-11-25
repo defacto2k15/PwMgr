@@ -1068,7 +1068,7 @@ namespace Assets.Heightmaps.Welding
 
 
             ComputeBufferRequestedOutParameters outParameters = new ComputeBufferRequestedOutParameters();
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 ParametersContainer = parametersContainer,
                 OutParameters = outParameters,

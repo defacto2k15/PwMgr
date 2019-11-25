@@ -327,6 +327,8 @@ namespace Assets.FinalExecution
         {
             MergeMarginSize = 0.1f
         };
+
+        public bool UseMultistepComputeShaderExecution = false;
     }
 
 }

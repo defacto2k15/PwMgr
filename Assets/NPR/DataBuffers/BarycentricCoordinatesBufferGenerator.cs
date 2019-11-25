@@ -109,7 +109,7 @@ namespace Assets.NPR.DataBuffers
             }
 
             ComputeBufferRequestedOutParameters outParameters = new ComputeBufferRequestedOutParameters( new List<MyComputeBufferId> { outBarycentricBufferTemplate});
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 ParametersContainer = parametersContainer,
                 OutParameters = outParameters,

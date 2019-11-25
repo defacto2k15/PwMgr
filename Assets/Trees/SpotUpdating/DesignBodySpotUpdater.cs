@@ -434,7 +434,7 @@ namespace Assets.Trees.SpotUpdating
                     outputDataBuffer
                 });
 
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 OutParameters = outParameters,
                 ParametersContainer = parametersContainer,

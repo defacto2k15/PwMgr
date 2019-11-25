@@ -125,7 +125,7 @@ namespace Assets.Grass2.IntenstityDb
                     outIntensitiesBuffer
                 });
 
-            await _shaderExecutorObject.DispatchComputeShader(new ComputeShaderOrder()
+            await _shaderExecutorObject.AddOrder(new ComputeShaderOrder()
             {
                 OutParameters = outParameters,
                 ParametersContainer = parametersContainer,
