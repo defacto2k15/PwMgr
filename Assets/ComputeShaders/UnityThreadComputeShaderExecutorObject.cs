@@ -9,8 +9,12 @@ using UnityEngine;
 
 namespace Assets.ComputeShaders
 {
-    public class UnityThreadComputeShaderExecutorObject : BaseUTTransformProxy<object, ComputeShaderOrder>
+    public class UnityThreadComputeShaderExecutorObject : BaseGpuWorkUTTransformProxy<object, ComputeShaderOrder>
     {
+        public UnityThreadComputeShaderExecutorObject() : base()// TODO other method for execution time computing
+        {
+        }
+
         public Task DispatchComputeShader(ComputeShaderOrder order)
         {
             return BaseUtAddOrder(order);

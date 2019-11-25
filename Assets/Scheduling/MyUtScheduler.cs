@@ -134,10 +134,10 @@ namespace Assets.Scheduling
                 var freeTimeAmount2 = 2*_configuration.AvgTimePerFrameInMS - trackedAverageUpdateTime;
                 var thisFrameUpdatesTime = thisFrameUsedServiceUpdates.Select(c=>c.TotalMiliseconds).Sum();
                 Debug.Log($"Frame {Time.frameCount} FTA2 {freeTimeAmount2}ms Waiting: {_needyServices.Count} updates count {updatesCount} FrameTime {frameTime}ms updatTime" +
-                          $" {thisFrameUpdatesTime}ms percent {thisFrameUpdatesTime/frameTime*100}%");
+                          $" {thisFrameUpdatesTime}ms percent {thisFrameUpdatesTime/frameTime*100}% FullTime{Time.deltaTime*1000}ms");
 
                 //var tw = new StreamWriter(@"C:\tmp\updateLogs\log1.txt", true); //TODO to benchmarking class
-                //thisFrameUsedServiceUpdates.ForEach(c => tw.WriteLine($"{Time.frameCount},{c.Service.ToString()},{c.TotalMiliseconds}"));
+                //thisFrameUsedServiceUpdates.ForEach(c => tw.WriteLine($"{Time.frameCount},{c.Service.ToString()},{c.TotalMiliseconds},{Time.deltaTime*1000}"));
                 //tw.Dispose();
             }
         }

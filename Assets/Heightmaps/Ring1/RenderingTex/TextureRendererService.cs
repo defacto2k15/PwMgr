@@ -162,11 +162,11 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
         public Vector2 StepSize;
     }
 
-    public class UTTextureRendererProxy : BaseUTTransformProxy<Texture, TextureRenderingTemplate>
+    public class UTTextureRendererProxy : BaseGpuWorkUTTransformProxy<Texture, TextureRenderingTemplate>
     {
         private TextureRendererService _service;
 
-        public UTTextureRendererProxy(TextureRendererService service) : base(false)
+        public UTTextureRendererProxy(TextureRendererService service) : base(automaticExecution:false)//TODO execution time computing
         {
             _service = service;
         }

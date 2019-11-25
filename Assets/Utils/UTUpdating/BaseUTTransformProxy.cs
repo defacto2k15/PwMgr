@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,14 +19,27 @@ namespace Assets.Utils.UTUpdating
 
         private bool _automaticExecution;
         private readonly bool _executeAllOrdersInUpdate;
+        private readonly Func<Action, float> _updateTimeMeasuringFunc;
 
         protected string _derivedName;
 
-        protected BaseUTProxy(bool automaticExecution = true, bool executeAllOrdersInUpdate = false)
+        protected BaseUTProxy(bool automaticExecution = true, bool executeAllOrdersInUpdate = false, Func<Action, float> updateTimeMeasuringFunc = null)
         {
             _automaticExecution = automaticExecution;
             _executeAllOrdersInUpdate = executeAllOrdersInUpdate;
             _derivedName = this.GetType().Name;
+            if (updateTimeMeasuringFunc == null)
+            {
+                updateTimeMeasuringFunc = (action) =>
+                {
+                    var sw = new Stopwatch();
+                    sw.Start();
+                    action();
+                    return sw.ElapsedMilliseconds;
+                };
+            }
+
+            _updateTimeMeasuringFunc = updateTimeMeasuringFunc;
         }
 
         public override UTServiceProfileInfo GetServiceProfileInfo()
@@ -38,37 +52,37 @@ namespace Assets.Utils.UTUpdating
         }
 
         private MyNamedProfiler _updateMethodProfiler;
+
         public override float Update()
         {
-            var sw = new Stopwatch();
-            sw.Start();
-
-            if (_updateMethodProfiler == null)
+            return _updateTimeMeasuringFunc(() =>
             {
-                _updateMethodProfiler = new MyNamedProfiler(_derivedName + " Update");
-            }
-
-            _updateMethodProfiler.BeginSample();
-            if (_automaticExecution)
-            {
-                if (TaskUtils.GetGlobalMultithreading())
+                if (_updateMethodProfiler == null)
                 {
-                    bool dequeued = true;
-                    do
-                    {
-                        OrderWithCallerName<T> order = null;
-                        dequeued = _orders.TryDequeue(out order);
-                        if (dequeued)
-                        {
-                            ExecuteOrderInternal(order);
-                        }
-                    } while (dequeued && _executeAllOrdersInUpdate);
+                    _updateMethodProfiler = new MyNamedProfiler(_derivedName + " Update");
                 }
-            }
-            InternalUpdate();
-            _updateMethodProfiler.EndSample();
 
-            return sw.ElapsedMilliseconds;
+                _updateMethodProfiler.BeginSample();
+                if (_automaticExecution)
+                {
+                    if (TaskUtils.GetGlobalMultithreading())
+                    {
+                        bool dequeued = true;
+                        do
+                        {
+                            OrderWithCallerName<T> order = null;
+                            dequeued = _orders.TryDequeue(out order);
+                            if (dequeued)
+                            {
+                                ExecuteOrderInternal(order);
+                            }
+                        } while (dequeued && _executeAllOrdersInUpdate);
+                    }
+                }
+
+                InternalUpdate();
+                _updateMethodProfiler.EndSample();
+            });
         }
 
         public override bool HasWorkToDo()
@@ -130,9 +144,19 @@ namespace Assets.Utils.UTUpdating
         protected abstract void ExecuteOrder(T order);
     }
 
+    public abstract class BaseGpuWorkUTTransformProxy<TReturn, TOrder> : BaseUTTransformProxy< TReturn, TOrder>
+    {
+        protected BaseGpuWorkUTTransformProxy( float executionTimeInMs=DefaultExecutionTimeInMs, bool automaticExecution = true) : base(automaticExecution, 
+            (a) => { a(); return executionTimeInMs; })
+        {
+        }
+
+        private const int DefaultExecutionTimeInMs = 100;
+    }
+
     public abstract class BaseUTTransformProxy<TReturn, TOrder> : BaseUTProxy<UTProxyTransformOrder<TReturn, TOrder>>
     {
-        protected BaseUTTransformProxy(bool automaticExecution = true) : base(automaticExecution)
+        protected BaseUTTransformProxy(bool automaticExecution = true,  Func<Action,float> updateTimeMeasuringFunc = null) : base(automaticExecution, updateTimeMeasuringFunc: updateTimeMeasuringFunc)
         {
         }
 
