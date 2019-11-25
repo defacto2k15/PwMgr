@@ -49,6 +49,7 @@
 				float terrainMergingLerpParam;
 				float2 worldSpaceLocation;
 				float shouldBeDiscardedMarker;
+				float lp2;
 			};
 
 
@@ -96,6 +97,16 @@
 				return -1;
 			}
 
+			float ComputeLerpParam2(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
+				float2 pyramidLevelSpaceUv = inSegmentSpaceUv + (MainPyramidCenterUv( levelAndRingIndexes, terrainParameters) - 0.5);
+				float2 transitionRange = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ringsConfiguration[levelAndRingIndexes.ringIndex].mergeRange;
+				float fromCenterDistance = max(abs(pyramidLevelSpaceUv.x - MainTravellerPositionUv( levelAndRingIndexes, terrainParameters).x), abs(pyramidLevelSpaceUv.y - MainTravellerPositionUv( levelAndRingIndexes, terrainParameters).y));
+				fromCenterDistance *= 2; // to make fromCenterDistance seem like uv is from -1 to 1
+				float lerpParam = invLerp(transitionRange.x, transitionRange.y, fromCenterDistance);
+
+				return lerpParam;
+			}
+
 			void vert( inout appdata_full v, out Input v2f_o) {
 				float2 uv = v.texcoord.xy;
 				float2 inSegmentSpaceUv = calculateInSegmentSpaceUv(uv);
@@ -115,9 +126,11 @@
 				v2f_o.inSegmentSpaceUv = inSegmentSpaceUv;
 				v2f_o.uv = uv;
 				v2f_o.usedMipMapLevel =  ringIndex+ terrainOut.terrainMergingLerpParam;
-				v2f_o.terrainMergingLerpParam = terrainOut.terrainMergingLerpParam;
+				v2f_o.terrainMergingLerpParam = (terrainOut.terrainMergingLerpParam+ringIndex); //adding to mitigate per-vertex interpolation in pixel during drawing
 				v2f_o.shouldBeDiscardedMarker = terrainOut.shouldBeDiscardedMarker;
 				v2f_o.worldSpaceLocation = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
+
+				v2f_o.lp2 = ComputeLerpParam2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 			}
 
 			float4 sampleSurfaceTexture(int level, float4 uv) { //TODO VERY UNOPTIMAL
@@ -230,7 +243,7 @@
 					finalColor = float4(0, 0, 1, 1);
 				}
 				finalColor /= (ringIndex + 1.0f);
-				if (terrainMergingLerpParam > 0.02 && terrainMergingLerpParam < 0.98) {
+				if (terrainMergingLerpParam >= 0.0001 && terrainMergingLerpParam <= 0.9999) {
 					finalColor = float4(1, 1, 1, 1) * terrainMergingLerpParam;
 				}
 				return finalColor;
@@ -251,7 +264,7 @@
 				int levelIndex = levelAndRingIndexes.levelIndex;
 				int ringIndex = levelAndRingIndexes.ringIndex;
 
-				float surfaceColorLod = levelAndRingIndexes.ringIndex + i.terrainMergingLerpParam ;
+				float surfaceColorLod = levelAndRingIndexes.ringIndex + frac(i.terrainMergingLerpParam);
 				if (levelAndRingIndexes.levelIndex == 2) {
 					surfaceColorLod += 1;
 				}
@@ -264,7 +277,8 @@
 				o.Albedo =  finalColor;
 				o.Normal = decodeNormal(worldNormal);
 
-				o.Albedo = GenerateDebugColorFromIndexes(levelAndRingIndexes, i.terrainMergingLerpParam);
+				o.Albedo = GenerateDebugColorFromIndexes(levelAndRingIndexes, frac(i.terrainMergingLerpParam));
+				//o.Albedo = step(i.lp2,_Debug*2);
 			} 
 
 			ENDCG

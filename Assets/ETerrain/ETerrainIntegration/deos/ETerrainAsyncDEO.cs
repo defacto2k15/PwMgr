@@ -511,8 +511,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public void AddSegment(SegmentInformation segmentInfo)
         {
-            var token = _executor.CreateSegmentAsync(segmentInfo.SegmentAlignedPosition);
-            _executor.FillSegmentWhenReady(token,segmentInfo.SegmentAlignedPosition);
+            var token = new SegmentGenerationProcessToken(SegmentGenerationProcessSituation.BeforeStartOfCreation, RequiredSegmentSituation.Filled);
+            _executor.ExecuteSegmentAction(token,segmentInfo.SegmentAlignedPosition);
         }
 
         public void RemoveSegment(SegmentInformation segmentInfo)
@@ -538,37 +538,45 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public void AddSegment(SegmentInformation segmentInfo)
         {
             var sap = segmentInfo.SegmentAlignedPosition;
+            Preconditions.Assert(!_tokensDict.ContainsKey(sap), $"There arleady is segment of sap {sap}");
+
+            RequiredSegmentSituation requiredSituation;
             if (segmentInfo.SegmentState == SegmentState.Active)
             {
-                _tokensDict[sap] = _executor.CreateSegmentAsync(sap);
-                _executor.FillSegmentWhenReady(_tokensDict[sap], sap);
+                requiredSituation = RequiredSegmentSituation.Filled;
             }
             else
             {
-                _tokensDict[sap] = _executor.CreateSegmentAsync(sap);
+                requiredSituation = RequiredSegmentSituation.Created;
             }
+            var newToken = new SegmentGenerationProcessToken(SegmentGenerationProcessSituation.BeforeStartOfCreation,requiredSituation);
+            _tokensDict[sap] = newToken;
+            _executor.ExecuteSegmentAction(newToken, sap);
         }
 
         public void RemoveSegment(SegmentInformation segmentInfo)
         {
             var sap = segmentInfo.SegmentAlignedPosition;
             Preconditions.Assert(_tokensDict.ContainsKey(sap),"Cannot remove segment, as it was never present in dict "+segmentInfo.SegmentAlignedPosition);
-            _executor.RemoveSegment(_tokensDict[sap], sap);
+            var token = _tokensDict[sap];
+            token.RequiredSituation = RequiredSegmentSituation.Removed;
+            _executor.ExecuteSegmentAction(token, sap);
             _tokensDict.Remove(sap);
         }
 
         public void SegmentStateChange(SegmentInformation segmentInfo)
         {
             var sap = segmentInfo.SegmentAlignedPosition;
+            Preconditions.Assert(_tokensDict.ContainsKey(sap), "During segmentStateChange to Active there is no tokens in dict");
+            var token = _tokensDict[sap];
             if (segmentInfo.SegmentState == SegmentState.Active)
             {
-                Preconditions.Assert(_tokensDict.ContainsKey(sap),
-                    "During segmentStateChange to Active there is no tokens in dict");
-                _executor.FillSegmentWhenReady(_tokensDict[sap], sap);
+                token.RequiredSituation = RequiredSegmentSituation.Filled;
+                _executor.ExecuteSegmentAction(token, sap);
             }
             else
             {
-                _executor.CancelFillingRequirement(_tokensDict[sap]);
+                token.RequiredSituation = RequiredSegmentSituation.Created;
             }
         }
 
@@ -581,9 +589,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             return _tokensDict.Select(c => c.Value).Sum(c =>
             {
-                if (c.ShouldBeFilled)
+                if (c.RequiredSituation == RequiredSegmentSituation.Filled)
                 {
-                    if (c.Situation == SegmentGenerationProcessSituation.Filled)
+                    if (c.CurrentSituation == SegmentGenerationProcessSituation.Filled)
                     {
                         return 0;
                     }
@@ -603,36 +611,38 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         BeforeStartOfCreation, DuringCreation, Created, DuringFilling, Filled
     }
 
+    public enum RequiredSegmentSituation
+    {
+         Created, Filled, Removed
+    }
+
     public class SegmentGenerationProcessToken
     {
-        private volatile  SegmentGenerationProcessSituation _situation;
-        private volatile bool _shouldBeFilled;
-        private volatile bool _shouldBeRemoved;
+        private volatile  SegmentGenerationProcessSituation _currentSituation;
+        private volatile  RequiredSegmentSituation _requiredSituation;
 
-        public SegmentGenerationProcessToken(SegmentGenerationProcessSituation situation, bool shouldBeFilled, bool shouldBeRemoved)
+        public SegmentGenerationProcessToken(SegmentGenerationProcessSituation currentSituation, RequiredSegmentSituation requiredSituation)
         {
-            _situation = situation;
-            _shouldBeFilled = shouldBeFilled;
-            _shouldBeRemoved = shouldBeRemoved;
+            _currentSituation = currentSituation;
+            _requiredSituation = requiredSituation;
         }
 
-        public SegmentGenerationProcessSituation Situation
+        public SegmentGenerationProcessSituation CurrentSituation
         {
-            get => _situation;
-            set => _situation = value;
+            get => _currentSituation;
+            set => _currentSituation = value;
         }
 
-        public bool ShouldBeFilled
+        public RequiredSegmentSituation RequiredSituation
         {
-            get => _shouldBeFilled;
-            set => _shouldBeFilled= value;
+            get => _requiredSituation;
+            set => _requiredSituation = value;
         }
 
-        public bool ShouldBeRemoved
-        {
-            get => _shouldBeRemoved;
-            set => _shouldBeRemoved= value;
-        }
+        public bool ProcessIsOngoing =>
+            (_currentSituation == SegmentGenerationProcessSituation.DuringCreation ||
+             _currentSituation == SegmentGenerationProcessSituation.DuringCreation ||
+             _currentSituation == SegmentGenerationProcessSituation.DuringFilling);
     }
 
 
@@ -646,65 +656,31 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _executor = executor;
         }
 
-        public SegmentGenerationProcessToken CreateSegmentAsync( IntVector2 alignedPosition)
+        public void ExecuteSegmentAction(SegmentGenerationProcessToken token, IntVector2 sap)
         {
-            var token = new SegmentGenerationProcessToken(SegmentGenerationProcessSituation.BeforeStartOfCreation, false, false);
-            PostPureAsyncAction(() => _executor.CreateSegmentAsync(token, alignedPosition));
-            return token;
-        }
-
-        public void FillSegmentWhenReady(SegmentGenerationProcessToken token, IntVector2 alignedPosition)
-        {
-            token.ShouldBeFilled = true;
-            PostPureAsyncAction(() => _executor.FillSegmentWhenReady(alignedPosition));
-        }
-
-        public void RemoveSegment(SegmentGenerationProcessToken token, IntVector2 alignedPosition)
-        {
-            token.ShouldBeRemoved = true;
-            PostPureAsyncAction(() => _executor.RemoveSegmentAsync(alignedPosition));
-        }
-
-        public void CancelFillingRequirement(SegmentGenerationProcessToken token)
-        {
-            Preconditions.Assert(token.ShouldBeFilled, "There is not filling requirement");
-            token.ShouldBeFilled = false;
-            if (token.Situation == SegmentGenerationProcessSituation.Filled)
-            {
-                token.Situation = SegmentGenerationProcessSituation.Created;
-            }
+            PostPureAsyncAction(() => _executor.ExecuteSegmentAction(token, sap));
         }
     }
 
     public interface ISegmentOrdersFillingExecutor
     {
-        Task CreateSegmentAsync(SegmentGenerationProcessToken  token, IntVector2 alignedPosition);
-        Task FillSegmentWhenReady(IntVector2 alignedPosition);
-        Task RemoveSegmentAsync(IntVector2 alignedPosition);
+        Task ExecuteSegmentAction(SegmentGenerationProcessToken token, IntVector2 sap);
     } 
 
     public class LambdaSegmentOrdersFillingExecutor : ISegmentOrdersFillingExecutor
     {
         private Func<IntVector2, Task> _segmentFillingFunc;
 
-        public LambdaSegmentOrdersFillingExecutor(Func<IntVector2, Task> segmentFillingFunc)
+        public Task ExecuteSegmentAction(SegmentGenerationProcessToken token, IntVector2 sap)
         {
-            _segmentFillingFunc = segmentFillingFunc;
-        }
-
-        public Task CreateSegmentAsync( SegmentGenerationProcessToken  token, IntVector2 alignedPosition)
-        {
-            return _segmentFillingFunc(alignedPosition); //automatic filling, this is dummy 
-        }
-
-        public Task FillSegmentWhenReady(IntVector2 alignedPosition)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task RemoveSegmentAsync(IntVector2 alignedPosition)
-        {
-            throw new NotImplementedException();
+            if (token.RequiredSituation == RequiredSegmentSituation.Filled || token.RequiredSituation == RequiredSegmentSituation.Created)
+            {
+                return _segmentFillingFunc(sap);
+            }
+            else
+            {
+                return TaskUtils.EmptyCompleted();
+            }
         }
     } 
 
@@ -713,132 +689,119 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         private Func<IntVector2, Task<T>> _segmentGeneratingFunc;
         private Func<IntVector2,T, Task> _segmentFillingFunc;
         private Func<T, Task> _segmentRemovalFunc;
-        private Dictionary<IntVector2, SegmentWithToken<T>> _segmentsDict;
+        private Dictionary<IntVector2,T > _currentlyCreatedSegments;
 
         public CompoundSegmentOrdersFillingExecutor(Func<IntVector2, Task<T>> segmentGeneratingFunc, Func<IntVector2, T, Task> segmentFillingFunc, Func<T, Task> segmentRemovalFunc)
         {
             _segmentGeneratingFunc = segmentGeneratingFunc;
             _segmentFillingFunc = segmentFillingFunc;
             _segmentRemovalFunc = segmentRemovalFunc;
-            _segmentsDict = new Dictionary<IntVector2, SegmentWithToken<T>>();
+            _currentlyCreatedSegments = new Dictionary<IntVector2, T>();
         }
 
-        public async Task CreateSegmentAsync( SegmentGenerationProcessToken token, IntVector2 alignedPosition)
+        private async Task<bool> SegmentProcessOneLoop(SegmentGenerationProcessToken token, IntVector2 sap)
         {
-            Preconditions.Assert(!_segmentsDict.ContainsKey(alignedPosition), "There arleady is segment of position "+alignedPosition);
-            _segmentsDict[alignedPosition] = new SegmentWithToken<T>()
-            {
-                Token = token
-            };
-            token.Situation = SegmentGenerationProcessSituation.DuringCreation;
-            var segment = await _segmentGeneratingFunc(alignedPosition);
-
-            if (token.ShouldBeRemoved)
-            {
-                await RemoveInternal(alignedPosition);
-                return;
-            }
-
-            switch (token.Situation)
+            switch (token.CurrentSituation)
             {
                 case SegmentGenerationProcessSituation.BeforeStartOfCreation:
-                    Preconditions.Fail("Not expected State: "+token.Situation);
-                    return;
-                case SegmentGenerationProcessSituation.DuringCreation:
-                    break; //normal situation
+                    switch (token.RequiredSituation)
+                    {
+                        case RequiredSegmentSituation.Created:
+                            await GenerateSegment(token, sap);
+                            return true;
+                        case RequiredSegmentSituation.Filled:
+                            if (!_currentlyCreatedSegments.ContainsKey(sap))
+                            {
+                                await GenerateSegment(token, sap);
+                            }
+                            else
+                            {
+                                await FillSegment(token, sap);
+                            }
+                            return true;
+                        case RequiredSegmentSituation.Removed:
+                            await RemoveSegment(token, sap);
+                            return false;
+                        default:
+                            Preconditions.Fail("Unexpected required situation " + token.RequiredSituation);
+                            return false;
+                    }
                 case SegmentGenerationProcessSituation.Created:
-                    Preconditions.Fail("Not expected State: " + token.Situation);
-                    return;
-                case SegmentGenerationProcessSituation.DuringFilling:
-                    Preconditions.Fail("Not expected State: " + token.Situation);
-                    return;
+                    switch (token.RequiredSituation)
+                    {
+                        case RequiredSegmentSituation.Created:
+                            return false;
+                        case RequiredSegmentSituation.Filled:
+                            await FillSegment(token, sap);
+                            return true;
+                        case RequiredSegmentSituation.Removed:
+                            await RemoveSegment(token, sap);
+                            return false;
+                        default:
+                            Preconditions.Fail("Unexpected required situation " + token.RequiredSituation);
+                            return false;
+                    }
                 case SegmentGenerationProcessSituation.Filled:
-                    Preconditions.Fail("Not expected State: " + token.Situation);
-                    return;
-            }
-
-            _segmentsDict[alignedPosition].Segment = segment;
-            token.Situation = SegmentGenerationProcessSituation.Created;
-
-            if (token.ShouldBeFilled)
-            {
-                await Fill(token, alignedPosition, segment);
-            }
-        }
-
-        private async Task Fill(SegmentGenerationProcessToken token, IntVector2 alignedPosition, T segment)
-        {
-            token.Situation = SegmentGenerationProcessSituation.DuringFilling;
-            await _segmentFillingFunc(alignedPosition, segment);
-            token.Situation = SegmentGenerationProcessSituation.Filled;
-        }
-
-        public async Task FillSegmentWhenReady(IntVector2 alignedPosition)
-        {
-            Preconditions.Assert( _segmentsDict.ContainsKey(alignedPosition) ,"Segment of position "+alignedPosition+" is not present nor it is created");
-            var token = _segmentsDict[alignedPosition].Token;
-            if (token.ShouldBeRemoved)
-            {
-                await RemoveInternal(alignedPosition);
-                return;
-            }
-
-            if (!token.ShouldBeFilled)
-            {
-                return;
-            }
-
-            switch (token.Situation)
-            {
-                case SegmentGenerationProcessSituation.BeforeStartOfCreation:
-                    Preconditions.Fail("Not expected State: "+token.Situation);
-                    return;
-                case SegmentGenerationProcessSituation.DuringCreation:
-                    token.ShouldBeFilled = true;
-                    return;
-                case SegmentGenerationProcessSituation.Created:
-                    await Fill(token, alignedPosition, _segmentsDict[alignedPosition].Segment);
-                    return;
-                case SegmentGenerationProcessSituation.DuringFilling:
-                    //Preconditions.Fail("Not expected State: " + token.Situation);
-                    Debug.Log("Not expected State: " + token.Situation);
-                    return;
-                case SegmentGenerationProcessSituation.Filled:
-                    Preconditions.Fail("Not expected State: " + token.Situation);
-                    return;
+                    switch (token.RequiredSituation)
+                    {
+                        case RequiredSegmentSituation.Created:
+                            return false;
+                        case RequiredSegmentSituation.Filled:
+                            return false;
+                        case RequiredSegmentSituation.Removed:
+                            await RemoveSegment(token, sap);
+                            return false;
+                        default:
+                            Preconditions.Fail("Unexpected required situation " + token.RequiredSituation);
+                            return false;
+                    }
+                default:
+                    Preconditions.Fail("Unexpected situation " + token.CurrentSituation);
+                    return false;
             }
         }
 
-        public async Task RemoveSegmentAsync(IntVector2 alignedPosition)
+        public async Task ExecuteSegmentAction(SegmentGenerationProcessToken token, IntVector2 sap)
         {
-            Preconditions.Assert( _segmentsDict.ContainsKey(alignedPosition) ,"Segment of position "+alignedPosition+" is not present nor it is created");
-            var token = _segmentsDict[alignedPosition].Token;
-            Preconditions.Assert(token.ShouldBeRemoved, "Token is not marked as should-be-removed");
-            switch (token.Situation)
-            {
-                case SegmentGenerationProcessSituation.BeforeStartOfCreation:
-                    Preconditions.Fail("Not expected State: "+token.Situation);
-                    return;
-                case SegmentGenerationProcessSituation.DuringCreation:
-                    return;
-                case SegmentGenerationProcessSituation.Created:
-                    _segmentsDict.Remove(alignedPosition);
-                    return;
-                case SegmentGenerationProcessSituation.DuringFilling:
-                    return;
-                case SegmentGenerationProcessSituation.Filled:
-                    _segmentsDict.Remove(alignedPosition);
-                    return;
+            if (!token.ProcessIsOngoing) { 
+                bool shouldContinue = true;
+                while (shouldContinue)
+                {
+                    shouldContinue = await SegmentProcessOneLoop(token, sap);
+                }
             }
-
-            await RemoveInternal(alignedPosition);
         }
 
-        private async Task RemoveInternal(IntVector2 alignedPosition)
+        private async Task RemoveSegment(SegmentGenerationProcessToken token, IntVector2 sap)
         {
-            var segment = _segmentsDict[alignedPosition].Segment;
-            _segmentsDict.Remove(alignedPosition);
-            await _segmentRemovalFunc(segment);
+            Preconditions.Assert(!token.ProcessIsOngoing, "Cannot remove while process in ongoing");
+            Preconditions.Assert(token.RequiredSituation == RequiredSegmentSituation.Removed, "Required situation in not removed but "+token.RequiredSituation);
+            if (_currentlyCreatedSegments.ContainsKey(sap))
+            {
+                var segment = _currentlyCreatedSegments[sap];
+                _currentlyCreatedSegments.Remove(sap);
+                await _segmentRemovalFunc(segment);
+            }
+        }
+
+        private async Task FillSegment(SegmentGenerationProcessToken token, IntVector2 sap)
+        {
+            Preconditions.Assert(token.CurrentSituation == SegmentGenerationProcessSituation.Created, "Unexpected situaton "+token.CurrentSituation);
+            token.CurrentSituation = SegmentGenerationProcessSituation.DuringFilling;
+            await _segmentFillingFunc(sap, _currentlyCreatedSegments[sap]);
+            token.CurrentSituation = SegmentGenerationProcessSituation.Filled;
+        }
+
+        private async Task GenerateSegment(SegmentGenerationProcessToken token, IntVector2 sap)
+        {
+            Preconditions.Assert(token.CurrentSituation == SegmentGenerationProcessSituation.BeforeStartOfCreation, "Unexpected situaton "+token.CurrentSituation);
+            if (!_currentlyCreatedSegments.ContainsKey(sap))
+            {
+                token.CurrentSituation = SegmentGenerationProcessSituation.DuringCreation;
+                var newSegment = await _segmentGeneratingFunc(sap);
+                _currentlyCreatedSegments[sap] = newSegment;
+            }
+            token.CurrentSituation = SegmentGenerationProcessSituation.Created;
         }
     }
 
