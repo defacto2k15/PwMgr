@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Assets.Utils.MT;
+using Assets.Utils.Services;
+using UnityEngine;
 
 namespace Assets.Utils
 {
@@ -53,6 +55,30 @@ namespace Assets.Utils
             }, null);
 
             return tcs.Task;
+        }
+
+        public static async Task SaveTextureToPngFileAsync(string path, Texture2D texture, CommonExecutorUTProxy utProxy)
+        {
+            var pngPayload = await utProxy.AddAction(() => texture.EncodeToPNG());
+            await WriteAllBytesAsync(path, pngPayload);
+        }
+
+        public static async Task<Texture2D> LoadTextureFromPngFileAsync(string path, bool apply, CommonExecutorUTProxy utProxy)
+        {
+            var pngPayload = await ReadAllBytesAsync(path);
+            return await utProxy.AddAction(() =>
+            {
+                MyProfiler.BeginSample("Load png texture from file3");
+                var newTexture = new Texture2D(2, 2);
+                newTexture.LoadImage(pngPayload);
+                if (apply)
+                {
+                    newTexture.Apply();
+                }
+
+                MyProfiler.EndSample();
+                return newTexture;
+            });
         }
     }
 }

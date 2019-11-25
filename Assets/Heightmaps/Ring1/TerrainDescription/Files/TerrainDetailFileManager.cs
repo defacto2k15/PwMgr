@@ -31,18 +31,16 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription
 
         public async Task SaveHeightDetailElementAsync(string filename, TextureWithSize textureWithSize)
         {
-            Debug.Log("G88 Saving!");
             var path = _mainDictionaryPath + filename + _extension;
             var texture2d = await ChangeHeightTextureToTexture2DAsync(textureWithSize.Texture);
-            Debug.Log("R8 Final path:! " + path);
-            await _commonExecutor.AddAction(() => SavingFileManager.SaveTextureToPngFile(path, texture2d));
+            await AsyncFileUtils.SaveTextureToPngFileAsync(path, texture2d, _commonExecutor);
         }
 
         public async Task SaveNormalDetailElementAsync(string filename, TextureWithSize textureWithSize)
         {
             var path = _mainDictionaryPath + filename + _extension;
             var texture2d = await ChangeNormalTextureToTexture2DAsync(textureWithSize.Texture);
-            await _commonExecutor.AddAction(() => SavingFileManager.SaveTextureToPngFile(path, texture2d));
+            await AsyncFileUtils.SaveTextureToPngFileAsync(path, texture2d, _commonExecutor);
         }
 
         private Task<Texture2D> ChangeHeightTextureToTexture2DAsync(Texture inputTexture)

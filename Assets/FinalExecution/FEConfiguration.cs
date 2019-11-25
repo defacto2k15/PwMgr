@@ -313,9 +313,7 @@ namespace Assets.FinalExecution
 
         public MyUtSchedulerConfiguration SchedulerConfiguration = new MyUtSchedulerConfiguration()
         {
-            FreeTimeAmountAllowingForUpdate = 1 / 50f,
-            TargetFrameTime = 1 / 30f,
-            InitialFreeTimePerFrame = 1 / 30f,
+            AvgTimePerFrameInMS = 1000* 1 / 30f,
             FreeTimeSubtractingMultiplier = 1,
             SchedulingEnabled = true, 
         };

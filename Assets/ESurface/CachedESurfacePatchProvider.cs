@@ -185,7 +185,7 @@ namespace Assets.ESurface
 
         private async Task<Texture> LoadTextureFromFile(string path) //todo not remove texture2D but renderTexture
         {
-            return await _commonExecutor.AddAction(() => SavingFileManager.LoadPngTextureFromFile(path, true, true));
+            return await AsyncFileUtils.LoadTextureFromPngFileAsync(path, true, _commonExecutor);
         }
 
         public async Task SaveAssetAsync(string filename, ESurfaceTexturesPackToken query, NullableESurfaceTexturesPack asset)
@@ -209,10 +209,7 @@ namespace Assets.ESurface
         private async Task SaveTextureToFile(Texture texture, string path)
         {
             var tex2d = await ChangeTextureToTexture2DAsync(texture);
-            await _commonExecutor.AddAction(() =>
-            {
-                SavingFileManager.SaveTextureToPngFile(path, tex2d);
-            });
+            await AsyncFileUtils.SaveTextureToPngFileAsync(path, tex2d, _commonExecutor);
         }
 
         private async Task<Texture2D> ChangeTextureToTexture2DAsync(Texture inputTexture)

@@ -14,6 +14,7 @@ namespace Assets.ComputeShaders
 
         public void AddTexture(MyComputeShaderTextureId id, Texture texture)
         {
+            Preconditions.Assert(texture!=null, "Passed texture is null");
             _textures[id] = texture;
         }
 

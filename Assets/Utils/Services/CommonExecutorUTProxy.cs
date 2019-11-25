@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
 using Assets.Random;
 using Assets.Utils.UTUpdating;
-using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace Assets.Utils.Services
 {
@@ -21,11 +22,22 @@ namespace Assets.Utils.Services
             });
         }
 
-        public Task<object> AddAction(Action action)
+        public Task<object> AddAction(Action action,
+                [System.Runtime.CompilerServices.CallerMemberName] string memberName = "",
+                [System.Runtime.CompilerServices.CallerFilePath] string sourceFilePath = "",
+                [System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = 0
+            )
         {
             return AddAction(() =>
             {
-                    action();
+                var sw = new Stopwatch();
+                sw.Start();
+                action();
+                if (sw.ElapsedMilliseconds > 10)
+                {
+                    Debug.Log($"Long common service with time {sw.ElapsedMilliseconds}ms at {sourceFilePath}:{sourceLineNumber} {memberName}");
+                }
+
                 return new object();
             });
         }

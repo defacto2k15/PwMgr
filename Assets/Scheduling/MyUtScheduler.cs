@@ -1,4 +1,5 @@
-﻿using Assets.Utils.UTUpdating;
+﻿using System;
+using Assets.Utils.UTUpdating;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -18,11 +19,13 @@ namespace Assets.Scheduling
         private Queue<BaseUTService> _needyServices = new Queue<BaseUTService>();
 
         private SchedulerStopwatches _stopwatches = new SchedulerStopwatches();
+        private Queue<float> _previousFramesUpdateTime;
         private MySchedulingLogger _logger = new MySchedulingLogger();
 
         public MyUtScheduler( MyUtSchedulerConfiguration configuration)
         {
             _configuration = configuration;
+            _previousFramesUpdateTime = new Queue<float>(Enumerable.Range(0, _configuration.FramesToTrackTimeCount).Select(c=>_configuration.AvgTimePerFrameInMS).ToList());
         }
 
         public void AddService(BaseUTService service)
@@ -88,14 +91,30 @@ namespace Assets.Scheduling
                 }
 
                 //TODO take into account time taken in services before
+
+                var thisFrameUsedServiceUpdates = new List<ServiceWithTime>();
+                
                 var beforeFrameTime = (float) _stopwatches.FrameStopwatch.Elapsed.Milliseconds;
-                var freeTimeAmount = _configuration.InitialFreeTimePerFrame;
+
+                var trackedUsedUpTime = _previousFramesUpdateTime.Sum();
+                var trackedAverageUpdateTime = trackedUsedUpTime / _configuration.FramesToTrackTimeCount;
+
+                var freeTimeAmount = 2 * _configuration.AvgTimePerFrameInMS - trackedAverageUpdateTime;
+
+                int updatesCount = 0;
                 while (_needyServices.Any() &&  freeTimeAmount > 0)
                 {
                     _stopwatches.ServiceStopwatch.Start();
                     var service = _needyServices.Dequeue();
+
                     service.Update();
+
                     _stopwatches.ServiceStopwatch.Stop();
+                    var timeUsed = (float) _stopwatches.ServiceStopwatch.Elapsed.TotalMilliseconds;
+                    freeTimeAmount -= timeUsed * _configuration.FreeTimeSubtractingMultiplier;
+                    _stopwatches.ServiceStopwatch.Reset();
+
+                    thisFrameUsedServiceUpdates.Add(new ServiceWithTime(){Service = service, TotalMiliseconds = timeUsed});
 
                     if (service.HasWorkToDo())
                     {
@@ -106,15 +125,21 @@ namespace Assets.Scheduling
                         _sleepingServices.Add(service);
                     }
 
-                    var timeUsed = (float) _stopwatches.ServiceStopwatch.Elapsed.TotalSeconds;
-                    freeTimeAmount -= timeUsed * _configuration.FreeTimeSubtractingMultiplier;
-
-                    _stopwatches.ServiceStopwatch.Reset();
+                    updatesCount++;
                 }
 
                 var frameTime = (float) _stopwatches.FrameStopwatch.Elapsed.Milliseconds;
-                //Debug.Log($"Frame time {frameTime} Prev Updating: {beforeFrameTime} Serv time {frameTime-beforeFrameTime}");
+                _previousFramesUpdateTime.Dequeue();
+                _previousFramesUpdateTime.Enqueue(frameTime);
 
+                var freeTimeAmount2 = 2*_configuration.AvgTimePerFrameInMS - trackedAverageUpdateTime;
+                var thisFrameUpdatesTime = thisFrameUsedServiceUpdates.Select(c=>c.TotalMiliseconds).Sum();
+                Debug.Log($"Frame {Time.frameCount} FTA2 {freeTimeAmount2}ms Waiting: {_needyServices.Count} updates count {updatesCount} FrameTime {frameTime}ms upTime" +
+                          $" {thisFrameUpdatesTime}ms percent {frameTime/thisFrameUpdatesTime*100}%");
+
+                var tw = new StreamWriter(@"C:\tmp\updateLogs\log1.txt", true); //TODO to benchmarking class
+                thisFrameUsedServiceUpdates.ForEach(c => tw.WriteLine($"{Time.frameCount},{c.Service.ToString()},{c.TotalMiliseconds}"));
+                tw.Dispose();
             }
         }
 
@@ -131,13 +156,18 @@ namespace Assets.Scheduling
         }
     }
 
+    public class ServiceWithTime
+    {
+        public BaseUTService Service;
+        public float TotalMiliseconds;
+    }
+
     public class MyUtSchedulerConfiguration
     {
-        public double FreeTimeAmountAllowingForUpdate = 1 / 50f;
-        public float TargetFrameTime = 1 / 30f;
-        public float InitialFreeTimePerFrame = 1 / 50f;
-        public float FreeTimeSubtractingMultiplier = 1;
+        public float FreeTimeSubtractingMultiplier;
+        public float AvgTimePerFrameInMS = 1000* 1 / 50f;
         public bool SchedulingEnabled = true;
+        public int FramesToTrackTimeCount = 30;
     }
 
     public class MySchedulingLogger
