@@ -102,30 +102,29 @@ namespace Assets.Scheduling
                 var freeTimeAmount = 2 * _configuration.AvgTimePerFrameInMS - trackedAverageUpdateTime;
 
                 int updatesCount = 0;
-                while (_needyServices.Any() &&  freeTimeAmount > 0)
+
+                while (_needyServices.Any() && freeTimeAmount > 0)
                 {
-                    _stopwatches.ServiceStopwatch.Start();
-                    var service = _needyServices.Dequeue();
-
-                    service.Update();
-
-                    _stopwatches.ServiceStopwatch.Stop();
-                    var timeUsed = (float) _stopwatches.ServiceStopwatch.Elapsed.TotalMilliseconds;
-                    freeTimeAmount -= timeUsed * _configuration.FreeTimeSubtractingMultiplier;
-                    _stopwatches.ServiceStopwatch.Reset();
-
-                    thisFrameUsedServiceUpdates.Add(new ServiceWithTime(){Service = service, TotalMiliseconds = timeUsed});
-
-                    if (service.HasWorkToDo())
+                    var currentNeedyService = _needyServices.Dequeue();
+                    while (currentNeedyService.HasWorkToDo() && freeTimeAmount > 0)
                     {
-                        _needyServices.Enqueue(service);
+                        var timeUsedInMs = currentNeedyService.Update();
+
+                        freeTimeAmount -= timeUsedInMs * _configuration.FreeTimeSubtractingMultiplier;
+                        _stopwatches.ServiceStopwatch.Reset();
+
+                        thisFrameUsedServiceUpdates.Add(new ServiceWithTime() {Service = currentNeedyService, TotalMiliseconds = timeUsedInMs});
+                        updatesCount++;
+                    }
+
+                    if (currentNeedyService.HasWorkToDo())
+                    {
+                        _needyServices.Enqueue(currentNeedyService);
                     }
                     else
                     {
-                        _sleepingServices.Add(service);
+                        _sleepingServices.Add(currentNeedyService);
                     }
-
-                    updatesCount++;
                 }
 
                 var frameTime = (float) _stopwatches.FrameStopwatch.Elapsed.Milliseconds;
@@ -134,12 +133,12 @@ namespace Assets.Scheduling
 
                 var freeTimeAmount2 = 2*_configuration.AvgTimePerFrameInMS - trackedAverageUpdateTime;
                 var thisFrameUpdatesTime = thisFrameUsedServiceUpdates.Select(c=>c.TotalMiliseconds).Sum();
-                Debug.Log($"Frame {Time.frameCount} FTA2 {freeTimeAmount2}ms Waiting: {_needyServices.Count} updates count {updatesCount} FrameTime {frameTime}ms upTime" +
-                          $" {thisFrameUpdatesTime}ms percent {frameTime/thisFrameUpdatesTime*100}%");
+                Debug.Log($"Frame {Time.frameCount} FTA2 {freeTimeAmount2}ms Waiting: {_needyServices.Count} updates count {updatesCount} FrameTime {frameTime}ms updatTime" +
+                          $" {thisFrameUpdatesTime}ms percent {thisFrameUpdatesTime/frameTime*100}%");
 
-                var tw = new StreamWriter(@"C:\tmp\updateLogs\log1.txt", true); //TODO to benchmarking class
-                thisFrameUsedServiceUpdates.ForEach(c => tw.WriteLine($"{Time.frameCount},{c.Service.ToString()},{c.TotalMiliseconds}"));
-                tw.Dispose();
+                //var tw = new StreamWriter(@"C:\tmp\updateLogs\log1.txt", true); //TODO to benchmarking class
+                //thisFrameUsedServiceUpdates.ForEach(c => tw.WriteLine($"{Time.frameCount},{c.Service.ToString()},{c.TotalMiliseconds}"));
+                //tw.Dispose();
             }
         }
 

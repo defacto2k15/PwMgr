@@ -66,7 +66,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             TaskUtils.ExecuteActionWithOverridenMultithreading(true, () =>
             {
                 _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = Multithreading};
-                _configuration.EngraveTerrainFeatures = true;
+                _configuration.EngraveTerrainFeatures = false;
 
                 _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
                 _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;

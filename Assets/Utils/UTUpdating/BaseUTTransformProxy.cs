@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -37,8 +38,11 @@ namespace Assets.Utils.UTUpdating
         }
 
         private MyNamedProfiler _updateMethodProfiler;
-        public override void Update()
+        public override float Update()
         {
+            var sw = new Stopwatch();
+            sw.Start();
+
             if (_updateMethodProfiler == null)
             {
                 _updateMethodProfiler = new MyNamedProfiler(_derivedName + " Update");
@@ -63,6 +67,8 @@ namespace Assets.Utils.UTUpdating
             }
             InternalUpdate();
             _updateMethodProfiler.EndSample();
+
+            return sw.ElapsedMilliseconds;
         }
 
         public override bool HasWorkToDo()
@@ -181,12 +187,15 @@ namespace Assets.Utils.UTUpdating
 
     public abstract class LegacyBaseUTProxy : IUpdatable
     {
-        public void Update()
+        public float Update()
         {
+            var sw = new Stopwatch();
+            sw.Start();
             if (TaskUtils.GetGlobalMultithreading())
             {
                 InternalUpdate();
             }
+            return sw.ElapsedMilliseconds;
         }
 
         public abstract void InternalUpdate();
@@ -201,7 +210,7 @@ namespace Assets.Utils.UTUpdating
 
     public abstract class BaseUTService : IUpdatable
     {
-        public abstract void Update();
+        public abstract float Update();
         public abstract bool HasWorkToDo();
 
         public abstract UTServiceProfileInfo GetServiceProfileInfo();

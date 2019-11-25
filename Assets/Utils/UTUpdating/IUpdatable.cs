@@ -9,6 +9,6 @@ namespace Assets.Utils.UTUpdating
 {
     public interface IUpdatable
     {
-        void Update();
+        float Update();
     }
 }
