@@ -75,6 +75,11 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
 
         public void UpdateUniforms(Vector3 travellerPosition, Dictionary<HeightPyramidLevel, Vector2> pyramidCenterWorldSpacePerLevel)
         {
+            ExplorerMaterial.SetVector("_TravellerPosition", travellerPosition);
+            foreach (var pair in pyramidCenterWorldSpacePerLevel)
+            {
+                ExplorerMaterial.SetVector($"_Pyramid{pair.Key.GetIndex()}WorldSpaceCenter", pair.Value);
+            }
         }
     }
 }

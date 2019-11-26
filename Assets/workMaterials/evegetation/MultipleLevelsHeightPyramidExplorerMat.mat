@@ -62,6 +62,8 @@ Material:
     m_Floats:
     - _BumpScale: 1
     - _Cutoff: 0.5
+    - _Debug: -278
+    - _Debug2: 0
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _GlossMapScale: 1
@@ -71,7 +73,7 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _SelectedLevelIndex: 0
+    - _SelectedLevelIndex: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -80,3 +82,6 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _PerLevelCeilTextureWorldSpaceSizes: {r: 540, g: 4320, b: 34560, a: 0}
+    - _RingsUvRange: {r: 0.083333336, g: 0.16666667, b: 0.33333334, a: 0}
+    - _SlotMapSize: {r: 6, g: 6, b: 0, a: 0}

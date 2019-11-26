@@ -7,6 +7,10 @@
 		_SlotMapSize("SlotMapSize", Vector) = (2.0,2.0,0.0,0.0)
 		_RingsUvRange("RingsUvRange", Vector) = (0.0,0.0,0.0,0.0)
 		_PerLevelCeilTextureWorldSpaceSizes("_PerLevelCeilTextureWorldSpaceSizes", Vector) = (0.0,0.0,0.0,0.0)
+		_TravellerPosition("_TravellerPosition", Vector) = (0.0, 0.0, 0.0, 0.0)
+		_Pyramid0WorldSpaceCenter("_Pyramid0WorldSpaceCenter", Vector) = (0.0, 0.0, 0.0, 0.0)
+		_Pyramid1WorldSpaceCenter("_Pyramid1WorldSpaceCenter", Vector) = (0.0, 0.0, 0.0, 0.0)
+		_Pyramid2WorldSpaceCenter("_Pyramid2WorldSpaceCenter", Vector) = (0.0, 0.0, 0.0, 0.0)
 		_Debug("Debug", Range(-1000,1000)) = 0
 		_Debug2("Debug2", Range(-1000,1000)) = 0
 	}
@@ -26,6 +30,12 @@
 			float4 _SlotMapSize;
 			float4 _RingsUvRange;
 			float4 _PerLevelCeilTextureWorldSpaceSizes;
+
+			float4 _TravellerPosition;
+			float4 _Pyramid0WorldSpaceCenter;
+			float4 _Pyramid1WorldSpaceCenter;
+			float4 _Pyramid2WorldSpaceCenter;
+
 			float _Debug;
 			float _Debug2;
 
@@ -41,6 +51,17 @@
 				return o;
 			}
 
+			float2 RetrivePyramidWorldSpaceCenter(int pyramidIndex) {
+				if (pyramidIndex == 0) {
+					return _Pyramid0WorldSpaceCenter.xy;
+				}else if (pyramidIndex == 1) {
+					return _Pyramid1WorldSpaceCenter.xy;
+				}
+				else {
+					return _Pyramid2WorldSpaceCenter.xy;
+				}
+			}
+
 			float maxComponent(float2 i) {
 				return max(i.x, i.y);
 			}
@@ -54,11 +75,12 @@
 				float ceilTextureWorldSpaceSize = _PerLevelCeilTextureWorldSpaceSizes[_SelectedLevelIndex];
 				float4 worldSpaceRingRanges = _RingsUvRange * ceilTextureWorldSpaceSize;
 
+				float2 pyramidCenterWorldSpace = RetrivePyramidWorldSpaceCenter(_SelectedLevelIndex);// float2(_Debug, _Debug2);
+
 				int currentRingIndex = -1;
 				bool weAreInRingBorder = false;
 				for (int ringIndex = 0; ringIndex < 3; ringIndex++) {
 					float thisRingRange = _RingsUvRange[ringIndex];
-					float2 pyramidCenterWorldSpace = float2(_Debug, _Debug2);
 					float2 pyramidCenterUv = frac(pyramidCenterWorldSpace / ceilTextureWorldSpaceSize);
 					float2 loopedPyramidCenterUv = pyramidCenterUv;
 
@@ -108,6 +130,11 @@
 					if (distanceToGrid < 0.005) {
 						outColor = 1;
 					}
+				}
+
+				float2 travellerPositionCeilSpace = frac(_TravellerPosition.xy / ceilTextureWorldSpaceSize);
+				if (length(travellerPositionCeilSpace - uv) < 0.01) {
+					outColor = float4(1, 1, 0, 1);
 				}
 
 
