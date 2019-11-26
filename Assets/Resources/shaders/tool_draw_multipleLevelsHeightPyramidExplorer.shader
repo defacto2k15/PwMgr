@@ -2,6 +2,7 @@
 {
 	Properties
 	{
+		_SegmentsStateFontmap("SegmentsStateFontmap", 2D) = "pink" {}
 		_CeilTexturesArray("HeightTexture", 2DArray) = "" {}
 		_SelectedLevelIndex("HeightTextureMipLevel", Int) = 0
 		_SlotMapSize("SlotMapSize", Vector) = (2.0,2.0,0.0,0.0)
@@ -23,8 +24,10 @@
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma target 5.0
 			#include "UnityCG.cginc" 
 
+			sampler2D _SegmentsStateFontmap;
 			UNITY_DECLARE_TEX2DARRAY(_CeilTexturesArray);
 			int _SelectedLevelIndex;
 			float4 _SlotMapSize;
@@ -38,6 +41,15 @@
 
 			float _Debug;
 			float _Debug2;
+
+			struct GpuSingleSegmentState
+			{
+				int IsProcessOnGoing;
+				int RequiredSituationIndex;
+				int CurrentSituationIndex;
+			};
+
+			StructuredBuffer<GpuSingleSegmentState> _FillingStateBuffer;
 
 			struct v2f {
 				float4 pos : POSITION; // niezbedna wartosc by dzialal shader
@@ -66,10 +78,15 @@
 				return max(i.x, i.y);
 			}
 
+			bool sampleStateFontmap(float2 uv, int characterIndex) {
+				float intensity = tex2D(_SegmentsStateFontmap, float2(uv.x / 3.0 + characterIndex * 1 / 3.0, uv.y)).r;
+				return intensity < 0.5;
+			}
+
 			fixed4 frag(v2f i) : Color{
 				float2 uv = i.uv;
 				float height = UNITY_SAMPLE_TEX2DARRAY_LOD(_CeilTexturesArray, float3(uv, _SelectedLevelIndex), 0);
-					
+
 				float4 outColor = float4(height, height, height, 1);
 
 				float ceilTextureWorldSpaceSize = _PerLevelCeilTextureWorldSpaceSizes[_SelectedLevelIndex];
@@ -100,7 +117,7 @@
 						currentRingIndex = ringIndex;
 					}
 
-					if (abs(mDistanceToCenterUv - thisRingRange) / thisRingRange < 0.05/(ringIndex+1)) {
+					if (abs(mDistanceToCenterUv - thisRingRange) / thisRingRange < 0.05 / (ringIndex + 1)) {
 						weAreInRingBorder = true;
 					}
 				}
@@ -117,6 +134,39 @@
 						outColor.b += ringColorIntensity;
 					}
 				}
+
+				int2 segmentCoords = floor(float2(uv.x * _SlotMapSize.x, uv.y * _SlotMapSize.y));
+				float2 segmentUv = frac(float2(uv.x * _SlotMapSize.x, uv.y * _SlotMapSize.y));
+
+
+				int segmentStateIndex = segmentCoords.x + segmentCoords.y * _SlotMapSize.x;
+				GpuSingleSegmentState segmentState = _FillingStateBuffer[segmentStateIndex];
+				if (segmentState.IsProcessOnGoing > 0) {
+					if (abs(frac((uv.y - uv.x) * 32)) < 0.2) {
+						return float4(1, 0, 1, 0);
+					}
+				}
+					int requiredSituationIndex = segmentState.RequiredSituationIndex;
+					int currentSituationIndex = segmentState.CurrentSituationIndex;
+					if (requiredSituationIndex != 0) {
+						bool requirementFufilled = false;
+						if (sampleStateFontmap(segmentUv, requiredSituationIndex - 1)) {
+							if (requiredSituationIndex == 1) { //created
+								requirementFufilled = currentSituationIndex >= 3; // created
+							}
+							else if (requiredSituationIndex == 2) { //filled
+								requirementFufilled = currentSituationIndex >= 5;
+							}
+
+							if (requirementFufilled) {
+								return float4(0, 1, 0, 1);
+							}
+							else {
+								return float4(1, 0, 0, 1);
+							}
+						}
+					}
+
 
 				if (weAreInRingBorder) {
 					outColor = float4(1, 0, 1, 1);
@@ -137,13 +187,8 @@
 					outColor = float4(1, 1, 0, 1);
 				}
 
-
-				//if (length(inPos - frac(_GlobalTravellerPosition + 0.5)) < 0.04) {
-				//	outColor = float4(1, 0, 0, 1);
-				//}
-
 				return outColor;
-			} 
+			}
 			ENDCG
 		}
 	}

@@ -57,6 +57,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         private EPropElevationManager _elevationManager;
         private EPropHotAreaSelector _ePropHotAreaSelector;
         private InitialSegmentsGenerationInspector _segmentsGenerationInspector;
+        private HeightmapSegmentFillingListenersContainer _heightmapListenersContainer;
 
         private bool _initializationWasSuccessfull;
 
@@ -75,6 +76,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 var containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
                 VegetationConfiguration.FeConfiguration = _configuration;
 
+                _heightmapListenersContainer = new HeightmapSegmentFillingListenersContainer();
                 _gameInitializationFields = new GameInitializationFields();
                 _movementCustodian = new TravellerMovementCustodian(Traveller);
                 _gameInitializationFields.SetField(_movementCustodian);
@@ -129,7 +131,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                     {
                         [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-                            startConfiguration, _gameInitializationFields, _ultraUpdatableContainer),
+                            startConfiguration, _gameInitializationFields, _ultraUpdatableContainer, _heightmapListenersContainer),
                         [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
                             _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
@@ -227,7 +229,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             if (_gameInitializationFields.HasField<MultipleLevelsHeightPyramidExplorerGO>())
             {
-                _gameInitializationFields.Retrive<MultipleLevelsHeightPyramidExplorerGO>().UpdateUniforms(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel);
+                var explorer = _gameInitializationFields.Retrive<MultipleLevelsHeightPyramidExplorerGO>();
+                explorer.UpdateTravellingUniforms(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel);
+                explorer.UpdateHeightmapSegmentFillingState(_heightmapListenersContainer.ListenersDict.ToDictionary(c=>c.Key, c=>c.Value.TokensDict));
             }
 
 
@@ -254,7 +258,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         }
 
         public static OneGroundTypeLevelTextureEntitiesGenerator GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-            ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields initializationFields, UltraUpdatableContainer updatableContainer, bool modifyCorners = true)
+            ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields initializationFields, UltraUpdatableContainer updatableContainer
+            ,  HeightmapSegmentFillingListenersContainer heightmapListenersesContainer, bool modifyCorners = true)
         {
             //startConfiguration.CommonConfiguration.UseNormalTextures = false;
             var textureRendererProxy = initializationFields.Retrive<UTTextureRendererProxy>();
@@ -363,6 +368,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     updatableContainer.AddOtherThreadProxy(otherThreadExecutor);
 
                     var fillingListener = new UnityThreadCompoundSegmentFillingListener(otherThreadExecutor);
+                    heightmapListenersesContainer.AddListener(level, fillingListener);
+
                     var travellerCustodian = initializationFields.Retrive<TravellerMovementCustodian>();
                     travellerCustodian.AddLimiter(() => new MovementBlockingProcess(){ProcessName = "HeightSegmentsGenerationProcess "+level, BlockCount = fillingListener.BlockingProcessesCount()});
                     initializationFields.Retrive<InitialSegmentsGenerationInspector>().SetConditionToCheck(() => fillingListener.BlockingProcessesCount() == 0);
@@ -557,6 +564,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             _tokensDict = new Dictionary<IntVector2, SegmentGenerationProcessToken>();
         }
 
+        public Dictionary<IntVector2, SegmentGenerationProcessToken> TokensDict => _tokensDict;
+
         public void AddSegment(SegmentInformation segmentInfo)
         {
             var sap = segmentInfo.SegmentAlignedPosition;
@@ -630,12 +639,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
     public enum SegmentGenerationProcessSituation
     {
-        BeforeStartOfCreation, DuringCreation, Created, DuringFilling, Filled
+        BeforeStartOfCreation=1, DuringCreation=2, Created=3, DuringFilling=4, Filled=5
     }
 
     public enum RequiredSegmentSituation
     {
-         Created, Filled, Removed
+         Created=1, Filled=2, Removed=3
     }
 
     public class SegmentGenerationProcessToken
@@ -832,4 +841,19 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         public T Segment;
         public SegmentGenerationProcessToken Token;
     }
+
+    public class HeightmapSegmentFillingListenersContainer
+    {
+        private Dictionary<HeightPyramidLevel, UnityThreadCompoundSegmentFillingListener> _listenersDict= new Dictionary<HeightPyramidLevel, UnityThreadCompoundSegmentFillingListener>();
+
+        public void AddListener(HeightPyramidLevel level, UnityThreadCompoundSegmentFillingListener listener)
+        {
+            Preconditions.Assert(!_listenersDict.ContainsKey(level),$"There aelaady is listener from level {level}");
+            _listenersDict[level] = listener;
+        }
+
+        public Dictionary<HeightPyramidLevel, UnityThreadCompoundSegmentFillingListener> ListenersDict => _listenersDict;
+    } 
+
+
 }

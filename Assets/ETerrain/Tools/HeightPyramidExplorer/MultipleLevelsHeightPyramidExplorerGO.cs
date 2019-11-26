@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Assets.ETerrain.ETerrainIntegration.deos;
 using Assets.ETerrain.Pyramid.Map;
 using Assets.Utils;
 using UnityEngine;
@@ -12,7 +13,9 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
 
         private List<HeightPyramidLevel> _levels;
         private Texture _ceilTexturesArray;
+        private IntVector2 _slotMapSize;
         private HeightPyramidLevel _selectedLevel;
+        private ComputeBuffer _fillingStateBuffer;
 
         public void Initialize(List<HeightPyramidLevel> levels, Texture ceilTexturesArray, IntVector2 slotMapSize, Dictionary<int, Vector2> ringsUvRange,
             Dictionary<HeightPyramidLevel, float> perLevelBiggestShapeLengths)
@@ -20,6 +23,7 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
             _levels = levels;
             _selectedLevel = _levels.First();
             _ceilTexturesArray = ceilTexturesArray;
+            _slotMapSize = slotMapSize;
             ExplorerMaterial.SetTexture("_CeilTexturesArray", ceilTexturesArray);
             ExplorerMaterial.SetVector("_SlotMapSize", new Vector4(slotMapSize.X, slotMapSize.Y, 0,0));
 
@@ -39,6 +43,8 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
 
             ExplorerMaterial.SetVector("_PerLevelCeilTextureWorldSpaceSizes", packedSizes);
 
+            _fillingStateBuffer = new ComputeBuffer(slotMapSize.X*slotMapSize.Y*_levels.Count, sizeof(int)*3);
+            ExplorerMaterial.SetBuffer("_FillingStateBuffer", _fillingStateBuffer);
         }
 
         public void OnGUI()
@@ -73,7 +79,7 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
             Debug.Log("HeightPyramidExplorer: selected level "+_selectedLevel);
         }
 
-        public void UpdateUniforms(Vector3 travellerPosition, Dictionary<HeightPyramidLevel, Vector2> pyramidCenterWorldSpacePerLevel)
+        public void UpdateTravellingUniforms(Vector3 travellerPosition, Dictionary<HeightPyramidLevel, Vector2> pyramidCenterWorldSpacePerLevel)
         {
             ExplorerMaterial.SetVector("_TravellerPosition", travellerPosition);
             foreach (var pair in pyramidCenterWorldSpacePerLevel)
@@ -81,5 +87,63 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
                 ExplorerMaterial.SetVector($"_Pyramid{pair.Key.GetIndex()}WorldSpaceCenter", pair.Value);
             }
         }
+
+        public void UpdateHeightmapSegmentFillingState(Dictionary<HeightPyramidLevel, Dictionary<IntVector2, SegmentGenerationProcessToken>> tokens)
+        {
+            var fillingStateArray = new GpuSingleSegmentState[_slotMapSize.X * _slotMapSize.Y * _levels.Count];
+
+            foreach (var pair in tokens.OrderBy(c => c.Key.GetIndex()))
+            {
+                FillStateArrayFromSoleLevelData(pair.Value, fillingStateArray, pair.Key.GetIndex()*_slotMapSize.X*_slotMapSize.Y);
+            }
+
+            _fillingStateBuffer.SetData(fillingStateArray);
+        }
+
+        private void FillStateArrayFromSoleLevelData(Dictionary<IntVector2, SegmentGenerationProcessToken> tokens, GpuSingleSegmentState[] fillingStateArray, int fillingStateArrayOffset)
+        {
+            var tokensArray = new SegmentGenerationProcessToken[_slotMapSize.X * _slotMapSize.Y];
+            foreach (var pair in tokens)
+            {
+                var moddedCoords = new IntVector2((pair.Key.X + _slotMapSize.X * 32) % _slotMapSize.X, (pair.Key.Y + _slotMapSize.Y * 32) % _slotMapSize.Y);
+                tokensArray[moddedCoords.X + moddedCoords.Y * _slotMapSize.X] = pair.Value;
+            }
+
+            for (int x = 0; x < _slotMapSize.X; x++)
+            {
+                for (int y = 0; y < _slotMapSize.Y; y++)
+                {
+                    var index = x + y * _slotMapSize.Y;
+                    var token = tokensArray[index];
+                    var state = new GpuSingleSegmentState()
+                    {
+                        IsProcessOnGoing = 0,
+                        CurrentSituationIndex = 0,
+                        RequiredSituationIndex = 0
+                    };
+                    if (token != null)
+                    {
+                        if (token.ProcessIsOngoing)
+                        {
+                            state.IsProcessOnGoing = 1;
+                        }
+
+                        state.CurrentSituationIndex = (int) token.CurrentSituation;
+                        state.RequiredSituationIndex = (int) token.RequiredSituation;
+                    }
+
+                    fillingStateArray[index+fillingStateArrayOffset] = state;
+                }
+            }
+        }
+
+
+        private struct GpuSingleSegmentState
+        {
+            public int IsProcessOnGoing;
+            public int RequiredSituationIndex;
+            public int CurrentSituationIndex;
+        }
     }
+
 }
