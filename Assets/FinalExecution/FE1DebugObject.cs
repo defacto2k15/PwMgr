@@ -71,7 +71,7 @@ namespace Assets.FinalExecution
                 var initializingHelper =
                     new FEInitializingHelper(_gameInitializationFields, _ultraUpdatableContainer, _configuration);
                 initializingHelper.InitializeUTService(new TextureConcieverUTProxy());
-                initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
+                initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject(_configuration.UseMultistepComputeShaderExecution));
                 initializingHelper.InitializeUTService(new CommonExecutorUTProxy());
                 initializingHelper.CreatePathProximityTextureDb();
 

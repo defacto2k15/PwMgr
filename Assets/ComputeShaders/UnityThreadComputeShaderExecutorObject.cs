@@ -128,7 +128,21 @@ namespace Assets.ComputeShaders
         public void Update()
         {
             Preconditions.Assert(_currentOrderWithTask != null, "There is arleady there is no order set");
+
             var order = _currentOrderWithTask.Order;
+            if (_executionState.CurrentWorkPackIndex >= order.WorkPacks.Count)
+            {
+
+                var outParameters = order.OutParameters;
+                FinalizeParameters(order.ParametersContainer, _executionState.CreatedParametersContainer, outParameters);
+
+                var tcs = _currentOrderWithTask.Tcs;
+                _currentOrderWithTask = null;
+                _executionState = null;
+                tcs.SetResult(null);
+                return;
+            }
+
             var pack = order.WorkPacks[_executionState.CurrentWorkPackIndex];
             var dispatchLoop = pack.DispatchLoops[_executionState.DispatchLoopIndex];
 
@@ -146,20 +160,7 @@ namespace Assets.ComputeShaders
                     _executionState.DispatchLoopIndex = 0;
                     _executionState.CurrentWorkPackIndex++;
 
-                    if (_executionState.CurrentWorkPackIndex >= order.WorkPacks.Count)
-                    {
-
-                        var outParameters = order.OutParameters;
-                        FinalizeParameters(order.ParametersContainer, _executionState.CreatedParametersContainer, outParameters);
-
-                        var tcs = _currentOrderWithTask.Tcs;
-                        _currentOrderWithTask = null;
-                        _executionState = null;
-                        tcs.SetResult(null);
-                        return;
-                    }
-                    else
-                    {
+                    if (_executionState.CurrentWorkPackIndex < order.WorkPacks.Count) { 
                         var shader = _currentOrderWithTask.Order.WorkPacks[_executionState.CurrentWorkPackIndex].Shader;
                         shader.CreateKernelHandleTranslationMap();
                         shader.SetCreatedParameters(_executionState.CreatedParametersContainer);
@@ -167,7 +168,6 @@ namespace Assets.ComputeShaders
                 }
             }
         }
-
 
         private static void FinalizeParameters(
             ComputeShaderParametersContainer parametersContainer,

@@ -172,25 +172,6 @@ namespace Assets.Editor
         }
     }
 
-    [CustomEditor(typeof(HeightPyramidExplorerDEO))]
-    class Editorbuttons_HeightPyramidExplorerDEO : UnityEditor.Editor
-    {
-        public override void OnInspectorGUI()
-        {
-            DrawDefaultInspector();
-            var debugObject = (HeightPyramidExplorerDEO) target;
-
-            if (GUILayout.Button("FillTerrainWithNoise"))
-            {
-                debugObject.FillTerrainWithNoise();
-            }
-            if (GUILayout.Button("AddNewSegment"))
-            {
-                debugObject.AddNewSegment();
-            }
-        }
-    }
-
     //[CustomEditor(typeof(ETerrainIntegrationFakeHeightInputDEO))]
     //class Editorbuttons_ETerrainIntegrationFakeHeightInputDEO : UnityEditor.Editor
     //{

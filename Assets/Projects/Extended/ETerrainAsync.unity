@@ -355,6 +355,7 @@ GameObject:
   - component: {fileID: 641582741}
   - component: {fileID: 641582740}
   - component: {fileID: 641582742}
+  - component: {fileID: 641582743}
   m_Layer: 0
   m_Name: FERoot
   m_TagString: Untagged
@@ -430,6 +431,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsEnabled: 0
   DrawBoundsOfAllObjects: 0
+--- !u!114 &641582743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 641582739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_GeneratorAsset: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: f70ccbc31158a184eb0db35b46caed2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ExplorerMaterial: {fileID: 2100000, guid: 0e2990b7e17014547b740ad23ae61e52, type: 2}
 --- !u!1 &695293945
 GameObject:
   m_ObjectHideFlags: 0

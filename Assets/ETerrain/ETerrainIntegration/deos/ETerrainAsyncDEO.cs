@@ -11,6 +11,7 @@ using Assets.ETerrain.GroundTexture;
 using Assets.ETerrain.Pyramid.Map;
 using Assets.ETerrain.Pyramid.Shape;
 using Assets.ETerrain.SectorFilling;
+using Assets.ETerrain.Tools.HeightPyramidExplorer;
 using Assets.FinalExecution;
 using Assets.Heightmaps;
 using Assets.Heightmaps.GRing;
@@ -78,6 +79,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 _movementCustodian = new TravellerMovementCustodian(Traveller);
                 _gameInitializationFields.SetField(_movementCustodian);
 
+                var multipleLevelsHeightPyramidExplorerGo = FindObjectOfType<MultipleLevelsHeightPyramidExplorerGO>();
+                if (multipleLevelsHeightPyramidExplorerGo != null)
+                {
+                    _gameInitializationFields.SetField(multipleLevelsHeightPyramidExplorerGo);
+                }
+
                 _ultraUpdatableContainer = ETerrainTestUtils.InitializeFinalElements(_configuration, containerGameObject, _gameInitializationFields, initializeLegacyDesignBodySpotUpdater: false);
                 if (Overlay != null)
                 {
@@ -128,6 +135,15 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     }
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
+
+                if (_gameInitializationFields.HasField<MultipleLevelsHeightPyramidExplorerGO>())
+                {
+                    _gameInitializationFields.Retrive<MultipleLevelsHeightPyramidExplorerGO>().Initialize(startConfiguration.HeightPyramidLevels,
+                        _eTerrainHeightPyramidFacade.CeilTextureArrays.Where(c => c.TextureType == EGroundTextureType.HeightMap).Select(c => c.Texture).First(),
+                        startConfiguration.CommonConfiguration.SlotMapSize,
+                        startConfiguration.CommonConfiguration.RingsUvRange,
+                        startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.BiggestShapeObjectInGroupLength));
+                }
 
                 if (VegetationConfiguration.GenerateBigBushes || VegetationConfiguration.GenerateGrass || VegetationConfiguration.GenerateTrees)
                 {
@@ -194,7 +210,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 return;
             }
-            //Debug.Log("MOVEMENT POSSIBILITY "+_movementCustodian.IsMovementPossible());
+
             _movementCustodian.Update();
             Traveller.SetActive(_movementCustodian.IsMovementPossible());
             Overlay.SetMovementPossibilityDetails(_movementCustodian.ThisFrameBlockingProcesses);
@@ -208,6 +224,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var travellerFlatPosition = new Vector2(position3D.x, position3D.z);
 
              _eTerrainHeightPyramidFacade.Update(travellerFlatPosition);
+
+            if (_gameInitializationFields.HasField<MultipleLevelsHeightPyramidExplorerGO>())
+            {
+                _gameInitializationFields.Retrive<MultipleLevelsHeightPyramidExplorerGO>().UpdateUniforms(travellerFlatPosition, _eTerrainHeightPyramidFacade.PyramidCenterWorldSpacePerLevel);
+            }
+
 
             if (Time.frameCount % 50 == 0)
             {

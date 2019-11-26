@@ -28,44 +28,10 @@ namespace Assets.FinalExecution
             return (T) _gameFields[goodTypes[0]];
         }
 
-        //private InitializationField<GRingSpotUpdater> _spotUpdaterField =
-        //    new InitializationField<GRingSpotUpdater>("GRingSpotUpdater");
-        //public GRingSpotUpdater GRingSpotUpdater
-        //{
-        //    get { return _spotUpdaterField.RetriveValue(); }
-        //    set { _spotUpdaterField.SetValue(value); }
-        //}
-
-        //private InitializationField<DesignBodySpotUpdaterProxy> _designBodySpotUpdaterField =
-        //    new InitializationField<DesignBodySpotUpdaterProxy>("DesignBodySpotUpdaterProxy");
-        //public DesignBodySpotUpdaterProxy DesignBodySpotUpdaterProxy
-        //{
-        //    get { return _designBodySpotUpdaterField.RetriveValue(); }
-        //    set { _designBodySpotUpdaterField.SetValue(value); }
-        //}
-
-        //private class InitializationField<T>
-        //{
-        //    private string _name;
-        //    private bool _fieldSet = false;
-        //    private T _value;
-
-        //    public InitializationField(string name)
-        //    {
-        //        _name = name;
-        //    }
-
-        //    public void SetValue(T value)
-        //    {
-        //        _value = value;
-        //        _fieldSet = true;
-        //    }
-
-        //    public T RetriveValue()
-        //    {
-        //        Preconditions.Assert(_fieldSet, $"Field {_name} is not set");
-        //        return _value;
-        //    }
-        //}
+        public bool HasField<T>()
+        {
+            var queryType = typeof(T);
+            return _gameFields.Keys.Any(c => queryType.IsAssignableFrom(c));
+        }
     }
 }
