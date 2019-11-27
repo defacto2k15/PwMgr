@@ -28,9 +28,12 @@ RWStructuredBuffer<ThermalEroderPointPrecalculatedInfo> MidTextureBuffer;
 
 
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSThermal_Precalculation (uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	uint2 size = uint2(g_sideLength, g_sideLength);
 
 	NeighboursList list = FindNeighbours(id.xy, size);
@@ -59,9 +62,12 @@ void CSThermal_Precalculation (uint3 id : SV_DispatchThreadID)
 	HeightBuffer1[Compute2DIndex(id.xy, size)] = HeightBuffer0[Compute2DIndex(id.xy, size)];
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSThermal_Erosion (uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	uint2 size = uint2(g_sideLength, g_sideLength);
 
 	float changeInHeight = 0;
@@ -95,8 +101,8 @@ void CSThermal_Erosion (uint3 id : SV_DispatchThreadID)
 	HeightBuffer0[Compute2DIndex(id.xy, size)] = pHeight + changeInHeight;
 }
 
-CS_NUMTHREADS_ONE
-void CSThermal_TransferHeightToTexture(uint3 id : SV_DispatchThreadID)
+[numthreads(1,1,1)]
+void CSThermal_TransferHeightToTexture(uint3 id : SV_DispatchThreadID) //todo delete
 {
 	uint2 size = uint2(g_sideLength, g_sideLength);
 

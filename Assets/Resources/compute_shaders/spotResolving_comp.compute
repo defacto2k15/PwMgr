@@ -23,6 +23,13 @@ RWStructuredBuffer<OutputSpotDataStruct> OutputDataBuffer;
 sampler2D TerrainTexture;
 sampler2D NormalsTexture;
 
+float3 encodeNormal(float3 normal){
+	return (normalize(normal) + 1)/2;
+}
+
+float3 decodeNormal(float3 encoded){
+	return (encoded -0.5 )*2;
+}
 
 CS_NUMTHREADS_ONE
 void CS_ResolveSpots(uint3 id : SV_DispatchThreadID)

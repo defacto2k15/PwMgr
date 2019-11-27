@@ -24,11 +24,12 @@ RWBuffer<float> HeightBuffer1;
 
 RWStructuredBuffer<ThermalEroderPointPrecalculatedInfo> MidTextureBuffer;
 
-//RWTexture2D<float4> OutputHeightSum; //I THINK IT WAS FOR DEBUG
-
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSTweakedThermal_Precalculation (uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	uint2 size = uint2(g_sideLength, g_sideLength);
 
 	NeighboursList list = FindNeighbours(id.xy, size);
@@ -57,9 +58,12 @@ void CSTweakedThermal_Precalculation (uint3 id : SV_DispatchThreadID)
 	HeightBuffer1[Compute2DIndex(id.xy, size)] = HeightBuffer0[Compute2DIndex(id.xy, size)];
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSTweakedThermal_Erosion (uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	uint2 size = uint2(g_sideLength, g_sideLength);
 
 	float changeInHeight = 0;

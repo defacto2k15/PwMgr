@@ -1,6 +1,8 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CS_Main
 
+#include "commonComp.hlsl"
+
 StructuredBuffer<int> Triangles;
 StructuredBuffer<float3> Vertices;
 StructuredBuffer<float3> Normals;
@@ -12,7 +14,7 @@ RWStructuredBuffer<float> OutEdgeAngle;
 
 StructuredBuffer<AdjacencyInfo> Adjacency;
 
-[numthreads(1,1,1)] 
+CS_NUMTHREADS_ONE 
 void  CS_Main(uint3 id : SV_DispatchThreadID)
 {
 	// triangle index

@@ -2,7 +2,7 @@
 #pragma kernel CSHabitatToGrassType_Debug2
 
 #include "../shaders/noise.hlsl"
-#define CS_NUMTHREADS_ONE [numthreads(1,1,1)]
+#include "commonComp.hlsl"
 
 #define HabitatType_Forest_Index (0)
 #define HabitatType_Meadow_Index (1)

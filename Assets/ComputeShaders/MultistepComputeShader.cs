@@ -17,7 +17,7 @@ namespace Assets.ComputeShaders
         public MultistepComputeShader(ComputeShader shader, IntVector2 workspaceSize)
         {
             _workspaceSize = new IntVector3(workspaceSize.X, workspaceSize.Y,1);
-            _groupsDivisor = 1;
+            _groupsDivisor = 4;
             _shader = shader;
             _parametersUsageContainer = new ComputeShaderParametersUsageContainer();
             _kernelNamesMap = new Dictionary<MyKernelHandle, string>();
@@ -26,7 +26,7 @@ namespace Assets.ComputeShaders
         public MultistepComputeShader(ComputeShader shader, IntVector3 workspaceSize)
         {
             _workspaceSize = workspaceSize;
-            _groupsDivisor = 1;
+            _groupsDivisor = 4;
             _shader = shader;
             _parametersUsageContainer = new ComputeShaderParametersUsageContainer();
             _kernelNamesMap = new Dictionary<MyKernelHandle, string>();
@@ -78,10 +78,18 @@ namespace Assets.ComputeShaders
             {
                 var handleId = _kernelNameTranslationMap[aHandle].HandleId;
 
+                uint sizeX;
+                uint sizeY;
+                uint sizeZ;
+                _shader.GetKernelThreadGroupSizes(handleId, out sizeX, out sizeY, out sizeZ);
+                if(sizeX==1 && sizeY==1 && sizeZ == 1)
+                {
+                    Debug.Log($"WARNING W815. ComputeShader {_shader.name} still uses [numthreads(1,1,1)] which is slow.");
+                }
                 _shader.Dispatch(handleId,
-                    Mathf.FloorToInt(_workspaceSize.X / (float) _groupsDivisor),
-                    Mathf.FloorToInt(_workspaceSize.Y / (float) _groupsDivisor),
-                    Mathf.FloorToInt(_workspaceSize.Z / (float) _groupsDivisor));
+                    Mathf.CeilToInt(_workspaceSize.X / (float) sizeX),
+                    Mathf.CeilToInt(_workspaceSize.Y / (float) sizeY),
+                    Mathf.CeilToInt(_workspaceSize.Z / (float) sizeZ));
             }
         }
 

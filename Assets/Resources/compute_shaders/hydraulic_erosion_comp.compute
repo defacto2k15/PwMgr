@@ -53,9 +53,12 @@ void debug_writeToTexture(uint2 pos, float value) {
 	DebugTexture[pos] = outColor;
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSHydraulicErosion_Water (uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	// adding water
 	int pIndex = Compute2DIndex(id.xy, g_sideLength);
 
@@ -79,9 +82,12 @@ bool is_hydraulicErosionNeighbourhoodInfo_active(HydraulicErosionNeighbourInfo n
 	return neighbourInfo.position.x < 99999 && neighbourInfo.position.y < 99999;
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSHydraulicErosion_Erosion (uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	// eroding
 	int pIndex = Compute2DIndex(id.xy, g_sideLength);
 	float pTotalHeight = HeightMap[pIndex] + WaterMap[pIndex];
@@ -158,9 +164,12 @@ void CSHydraulicErosion_Erosion (uint3 id : SV_DispatchThreadID)
 	debug_writeToTexture(id.xy, pMin*400);
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSHydraulicErosion_DeltaSum(uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	int pIndex = Compute2DIndex(id.xy, g_sideLength);
 	float waterChangeSum = 0;
 	float sedimentationChangeSum = 0;
@@ -189,9 +198,12 @@ void CSHydraulicErosion_DeltaSum(uint3 id : SV_DispatchThreadID)
 	SedimentMap[pIndex] = SedimentMap[pIndex] + sedimentationChangeSum;
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSHydraulicErosion_ClearDelta(uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	int pIndex = Compute2DIndex(id.xy, g_sideLength);
 	CellDeltaInfo zeroArray[NEIGHBOURHOOD_COUNT + 1];
 	for (int i = 0; i < NEIGHBOURHOOD_COUNT + 1; i++) { // todo maybe delete?
@@ -200,9 +212,12 @@ void CSHydraulicErosion_ClearDelta(uint3 id : SV_DispatchThreadID)
 	DeltaBuffer[pIndex] = new_CellDeltaInfoPack(zeroArray);
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSHydraulicErosion_Evaporation(uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	int pIndex = Compute2DIndex(id.xy, g_sideLength);
 	float water = WaterMap[pIndex];
 	water = water * (1 - g_keParam);
@@ -216,9 +231,12 @@ void CSHydraulicErosion_Evaporation(uint3 id : SV_DispatchThreadID)
 
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSHydraulicErosion_SedimentationToGround(uint3 id : SV_DispatchThreadID)
 {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	int pIndex = Compute2DIndex(id.xy, g_sideLength);
 	float pSediment = SedimentMap[pIndex];
 	HeightMap[pIndex] = HeightMap[pIndex] + pSediment;

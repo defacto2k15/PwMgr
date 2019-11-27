@@ -10,7 +10,7 @@ namespace Assets.Roads
     {
         public static float MaxProximity = 5f;
         public static float MaxDelta = 10f;
-        public static float StartSlopeProximity = 0.75f;
+        public static float StartSlopeProximity = 1.5f;
         public static float EndSlopeProximity = 3f;
         public static IntVector2 ProximityArraySize = new IntVector2(241, 241);
     }

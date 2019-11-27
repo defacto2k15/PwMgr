@@ -1,6 +1,6 @@
 ﻿#pragma kernel CSRoad_Engrave
 
-#define CS_NUMTHREADS_ONE [numthreads(1,1,1)] //todo extract this from commonComp!
+#include "commonComp.hlsl"
 #include "../shaders/noise.hlsl"
 
 cbuffer ConstantGlobalParameters {
@@ -33,8 +33,11 @@ float FractalNormalAround(float2 globalPosition, float2 seed, float min, float m
 	return min + fractal_improvedValueNoise2D_3(globalPosition + seed) * (max - min);
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSRoad_Engrave(uint3 id : SV_DispatchThreadID) {
+	if (!threadIsInWorkSpace2(id.xy, int2(g_TextureSize.xy))) {
+		return;
+	}
 	float2 uv = CalculateUv(id.xy);
 	float2 globalPosition = g_GlobalCoords.xy + float2(uv.x * g_GlobalCoords.z, uv.y * g_GlobalCoords.w);
 	

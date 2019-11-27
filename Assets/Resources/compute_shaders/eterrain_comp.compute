@@ -19,6 +19,7 @@ cbuffer ConstantGlobalParameters {
 #include "../shaders/common.txt"
 #include "../shaders/eterrain_EPropLocaleCommon.hlsl"
 #include "../shaders/eterrain_heightMapCommon.hlsl"
+#include "commonComp.hlsl"
 
 struct LocaleCopyOrder
 {
@@ -80,7 +81,7 @@ ETerrainHeightSamplingResult SampleHeightAtPosition(float2 travellerPositionWorl
 	return result;
 }
 
-[numthreads(1,1,1)]
+CS_NUMTHREADS_ONE 
 void  CSETerrain_LocaleBufferUpdater(uint3 id : SV_DispatchThreadID)
 {
 	ScopeUpdateOrder order = _ScopesUpdateOrdersBuffer[id.x];
@@ -102,7 +103,7 @@ void  CSETerrain_LocaleBufferUpdater(uint3 id : SV_DispatchThreadID)
 	_EPropIdsBuffer[order.Pointer] = eId;
 }
 
-[numthreads(1,1,1)]
+CS_NUMTHREADS_ONE 
 void CSETerrain_LocaleRecalculate(uint3 id : SV_DispatchThreadID)
 {
 	int indexInScopesToRecalculateBuffer = floor(id.x / ((float)g_ScopeLength));
@@ -121,7 +122,7 @@ void CSETerrain_LocaleRecalculate(uint3 id : SV_DispatchThreadID)
 	_EPropLocaleBuffer[ePropLocaleIndex] = locale;
 }
 
-[numthreads(1,1,1)]
+CS_NUMTHREADS_ONE 
 void CSETerrain_LocalesCopy(uint3 id : SV_DispatchThreadID)
 {
 	LocaleCopyOrder order =  _LocalesCopyOrdersBuffer[id.x];

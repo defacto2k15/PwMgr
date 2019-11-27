@@ -69,9 +69,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             {
                 _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = Multithreading};
                 _configuration.EngraveTerrainFeatures = true;
+                _configuration.EngraveRoadsInTerrain = true;
 
-                _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
-                _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = true;
+                _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = false;
+                _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = false;
                 _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
                 var containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
                 VegetationConfiguration.FeConfiguration = _configuration;
@@ -132,8 +133,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     {
                         [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
                             startConfiguration, _gameInitializationFields, _ultraUpdatableContainer, _heightmapListenersContainer),
-                        [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
-                            _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
+                        //[EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+                        //    _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
@@ -205,6 +206,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         private bool _wasFirstUpdateDone = false;
         private TcsSemaphore _initialTerrainCreatedSemaphore;
         private MyAwaitableValue<EPropElevationManagerUpdateInputData> _elevationManagerUpdateInputData;
+        private bool _once = false;
+
 
         public void Update()
         {
@@ -214,6 +217,14 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             }
 
             _movementCustodian.Update();
+            if (_movementCustodian.IsMovementPossible() && Time.frameCount > 3)
+            {
+                if (!_once)
+                {
+                    Debug.Log("time to moving "+Time.realtimeSinceStartup);
+                    _once = true;
+                }
+            }
             Traveller.SetActive(_movementCustodian.IsMovementPossible());
             Overlay.SetMovementPossibilityDetails(_movementCustodian.ThisFrameBlockingProcesses);
 
@@ -261,7 +272,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields initializationFields, UltraUpdatableContainer updatableContainer
             ,  HeightmapSegmentFillingListenersContainer heightmapListenersesContainer, bool modifyCorners = true)
         {
-            //startConfiguration.CommonConfiguration.UseNormalTextures = false;
+            startConfiguration.CommonConfiguration.UseNormalTextures = false;
             var textureRendererProxy = initializationFields.Retrive<UTTextureRendererProxy>();
             var dbProxy = initializationFields.Retrive<TerrainShapeDbProxy>();
             var repositioner = initializationFields.Retrive<Repositioner>();
@@ -319,27 +330,27 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                                 var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
                                     startConfiguration.PerLevelConfigurations[level],sap);
 
-                                var terrainDescriptionOutput = await dbProxy.Query(new TerrainDescriptionQuery()
-                                {
-                                    QueryArea = repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                    RequestedElementDetails = new List<TerrainDescriptionQueryElementDetail>()
+                                    var terrainDescriptionOutput = await dbProxy.Query(new TerrainDescriptionQuery()
                                     {
-                                        new TerrainDescriptionQueryElementDetail()
+                                        QueryArea = repositioner.InvMove(surfaceWorldSpaceRectangle),
+                                        RequestedElementDetails = new List<TerrainDescriptionQueryElementDetail>()
                                         {
-                                            Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
-                                            RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
-                                            Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
-                                        },
-                                        new TerrainDescriptionQueryElementDetail()
-                                        {
-                                            Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
-                                            RequiredMergeStatus = RequiredCornersMergeStatus.NOT_MERGED,
-                                            Type = TerrainDescriptionElementTypeEnum.NORMAL_ARRAY
-                                        },
-                                    }
-                                });
+                                            new TerrainDescriptionQueryElementDetail()
+                                            {
+                                                Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
+                                                RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
+                                                Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
+                                            },
+                                            new TerrainDescriptionQueryElementDetail()
+                                            {
+                                                Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
+                                                RequiredMergeStatus = RequiredCornersMergeStatus.NOT_MERGED,
+                                                Type = TerrainDescriptionElementTypeEnum.NORMAL_ARRAY
+                                            },
+                                        }
+                                    });
+                                    return terrainDescriptionOutput;
 
-                                return terrainDescriptionOutput;
                             },
                             async (sap, terrainDescriptionOutput) =>
                             {

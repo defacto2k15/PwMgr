@@ -1,6 +1,6 @@
 ﻿#pragma kernel CSFloraDomain_Calculate
 
-#define CS_NUMTHREADS_ONE [numthreads(1,1,1)]
+#include "commonComp.hlsl"
 #include "../shaders/noise.hlsl"
 
 cbuffer ConstantGlobalParameters {

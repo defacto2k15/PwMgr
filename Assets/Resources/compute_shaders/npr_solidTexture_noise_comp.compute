@@ -1,6 +1,7 @@
 ﻿#pragma kernel CS_FractalNoise
 #pragma kernel CS_Checkerboard
 
+#include "commonComp.hlsl"
 #include "../shaders/KeijiroShaders/ClassicNoise3D.hlsl"
 #include "../shaders/noise.hlsl"
 
@@ -57,7 +58,7 @@ float4 sampleWithWrapMargins(float3 coords, float repeatScale, float marginSize,
 		+ topSamples.z * weights.z) / (standardWeight + weights.x + weights.y + weights.z);
 }
 
-[numthreads(1,1,1)]
+CS_NUMTHREADS_ONE 
 void CS_FractalNoise(uint3 id : SV_DispatchThreadID)
 {
 	uint3 newId = GetId(id);

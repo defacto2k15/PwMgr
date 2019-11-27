@@ -1,6 +1,7 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CS_Main
 
+#include "commonComp.hlsl"
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 StructuredBuffer<int> Triangles;
@@ -8,7 +9,7 @@ StructuredBuffer<float3> Vertices;
 StructuredBuffer<float3> Normals;
 RWStructuredBuffer<float3> OutVertices;
 
-[numthreads(1,1,1)]
+CS_NUMTHREADS_ONE 
 void  CS_Main(uint3 id : SV_DispatchThreadID)
 {
 	int i = id.x;

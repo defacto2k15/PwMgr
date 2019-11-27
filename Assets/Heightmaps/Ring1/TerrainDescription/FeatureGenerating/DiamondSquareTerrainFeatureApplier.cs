@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ using Assets.Utils.Services;
 using Assets.Utils.TextureRendering;
 using Assets.Utils.Textures;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
 {
@@ -39,6 +41,7 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
             TerrainCardinalResolution resolution, bool canMultistep)
         {
             var configuration = _configurations[resolution];
+
             var detailedHeightmapArray = await TaskUtils
                 .RunInThreadPool(
                     () =>
@@ -76,9 +79,11 @@ namespace Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating
                 CreateTexture2D = false
             };
 
+            var renderedTexture = await _rendererProxy.AddOrder(template);
+            await _commonExecutor.AddAction(() => GameObject.Destroy(detailedTexture));
             return new TextureWithCoords(sizedTexture: new TextureWithSize()
             {
-                Texture = await _rendererProxy.AddOrder(template),
+                Texture = renderedTexture,
                 Size = texture.TextureSize
             }, coords: texture.Coords);
         }

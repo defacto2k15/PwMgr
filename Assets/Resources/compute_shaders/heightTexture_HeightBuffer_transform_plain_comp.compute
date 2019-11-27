@@ -14,15 +14,21 @@ Texture2D<float4> InputHeightTexture;
 RWTexture2D<float4> OutputHeightTexture;
 RWBuffer<float> HeightBuffer;
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSHeightTransform_InputTextureToBuffer(uint3 id : SV_DispatchThreadID) {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	int pIndex = Compute2DIndex(id.xy, g_sideLength);
 	float height = (InputHeightTexture[id.xy]);
 	HeightBuffer[pIndex] = height;
 }
 
-CS_NUMTHREADS_ONE
+CS_NUMTHREADS_FAST
 void CSHeightTransform_BufferToOutputTexture(uint3 id : SV_DispatchThreadID) {
+	if (!threadIsInWorkSpace(id.xy, g_sideLength)) {
+		return;
+	}
 	int pIndex = Compute2DIndex(id.xy, g_sideLength);
 	float height = HeightBuffer[pIndex];
 	OutputHeightTexture[id.xy] = height;
