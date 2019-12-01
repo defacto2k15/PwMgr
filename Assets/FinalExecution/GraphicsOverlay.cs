@@ -20,6 +20,12 @@ namespace Assets.FinalExecution
         private bool _servicesOverlayEnabled = true;
         private bool _fpsOverlayEnabled = true;
         private List<MovementBlockingProcess> _movementPossibilityDetails;
+        private int _EGroundPresentationMode = 0;
+
+        public void Start()
+        {
+            Shader.SetGlobalInt("_GlobalPresentationMode", _EGroundPresentationMode);
+        }
 
         public void Update()
         {
@@ -37,6 +43,12 @@ namespace Assets.FinalExecution
             {
                 TravellerConnectedToCamera = !TravellerConnectedToCamera;
                 Debug.Log("IsTravellerConnected "+TravellerConnectedToCamera);
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                _EGroundPresentationMode = (_EGroundPresentationMode + 1) % 3;
+                Shader.SetGlobalInt("_GlobalPresentationMode", _EGroundPresentationMode);
             }
 
         }

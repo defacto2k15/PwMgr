@@ -41,6 +41,7 @@
 			int _LevelsCount;
 			int _ThisLevelIndex;
 			float _Debug;
+			int _GlobalPresentationMode;
 
 			struct Input {
 				half2 inSegmentSpaceUv;
@@ -49,7 +50,6 @@
 				float terrainMergingLerpParam;
 				float2 worldSpaceLocation;
 				float shouldBeDiscardedMarker;
-				float lp2;
 			};
 
 
@@ -129,8 +129,6 @@
 				v2f_o.terrainMergingLerpParam = (terrainOut.terrainMergingLerpParam+ringIndex); //adding to mitigate per-vertex interpolation in pixel during drawing
 				v2f_o.shouldBeDiscardedMarker = terrainOut.shouldBeDiscardedMarker;
 				v2f_o.worldSpaceLocation = mainGlobalLevelUvSpaceToWorldSpace(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters);
-
-				v2f_o.lp2 = ComputeLerpParam2(inSegmentSpaceUv, levelAndRingIndexes, terrainParameters, perRingParameters);
 			}
 
 			float4 sampleSurfaceTexture(int level, float4 uv) { //TODO VERY UNOPTIMAL
@@ -274,11 +272,17 @@
 				finalColor = float4(surfaceInfo.color,1);
 
 				float3 worldNormal = surfaceInfo.normal;
-				o.Albedo =  finalColor;
 				o.Normal = decodeNormal(worldNormal);
 
-				//o.Albedo = GenerateDebugColorFromIndexes(levelAndRingIndexes, frac(i.terrainMergingLerpParam));
-				//o.Albedo = step(i.lp2,_Debug*2);
+				if (_GlobalPresentationMode == 0) {
+					o.Albedo =  finalColor;
+				}
+				else if (_GlobalPresentationMode == 1) {
+					o.Albedo = 0.5;
+				}
+				else {
+					o.Albedo = GenerateDebugColorFromIndexes(levelAndRingIndexes, frac(i.terrainMergingLerpParam));
+				}
 			} 
 
 			ENDCG
