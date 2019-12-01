@@ -10,6 +10,8 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
 {
     public class MultipleLevelsHeightPyramidExplorerGO : MonoBehaviour
     {
+        public bool DrawExplorer = true;
+        public RenderTexture ExplorerRenderTexture;
         public Material ExplorerMaterial;
 
         private List<HeightPyramidLevel> _levels;
@@ -44,33 +46,37 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
 
             ExplorerMaterial.SetVector("_PerLevelCeilTextureWorldSpaceSizes", packedSizes);
 
-            _fillingStateBuffer = new ComputeBuffer(slotMapSize.X*slotMapSize.Y*_levels.Count, sizeof(int)*3);
+            _fillingStateBuffer = new ComputeBuffer(slotMapSize.X * slotMapSize.Y * _levels.Count,
+                System.Runtime.InteropServices.Marshal.SizeOf(typeof(GpuSingleSegmentState)));
             ExplorerMaterial.SetBuffer("_FillingStateBuffer", _fillingStateBuffer);
         }
 
         public void OnGUI()
         {
-            if (_ceilTexturesArray != null)
+            if (Input.GetKeyDown(KeyCode.Comma))
             {
-                if (Input.GetKeyDown(KeyCode.Comma))
-                {
-                    MoveCurrentSegmentLevel(1);
-                }
+                MoveCurrentSegmentLevel(1);
+            }
 
-                if (Input.GetKeyDown(KeyCode.Period))
-                {
-                    MoveCurrentSegmentLevel(-1);
-                }
+            if (Input.GetKeyDown(KeyCode.Period))
+            {
+                MoveCurrentSegmentLevel(-1);
+            }
+        }
 
+        public void Update()
+        {
+            if (_ceilTexturesArray != null && DrawExplorer)
+            {
                 DrawExplorerWindow();
             }
+
         }
 
         private void DrawExplorerWindow()
         {
             ExplorerMaterial.SetFloat("_SelectedLevelIndex", _selectedLevel.GetIndex());
-            var size = Mathf.Min(Screen.width * 0.5f, Screen.height * 0.5f);
-            Graphics.DrawTexture(new Rect(Screen.width-size, 0,  size, size), _ceilTexturesArray, ExplorerMaterial);
+            Graphics.Blit(_ceilTexturesArray, ExplorerRenderTexture, ExplorerMaterial);
         }
 
         private void MoveCurrentSegmentLevel(int delta)
@@ -131,6 +137,7 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
 
                         state.CurrentSituationIndex = (int) token.Token.CurrentSituation;
                         state.RequiredSituationIndex = (int) token.Token.RequiredSituation;
+                        state.FillingIsNecessary =token.FillingIsNecessary ? 1 : 0;
                     }
 
                     fillingStateArray[index+fillingStateArrayOffset] = state;
@@ -144,6 +151,7 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
             public int IsProcessOnGoing;
             public int RequiredSituationIndex;
             public int CurrentSituationIndex;
+            public int FillingIsNecessary;
         }
     }
 

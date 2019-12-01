@@ -34,5 +34,14 @@ namespace Assets.Utils
                 }
             }
         }
+
+        public static void RunOnce(ref RunOnceBox reference, Action action, int updatesWToWait)
+        {
+            if (reference == null)
+            {
+                reference = new RunOnceBox(action,updatesWToWait);
+            }
+            reference.Update();
+        }
     }
 }

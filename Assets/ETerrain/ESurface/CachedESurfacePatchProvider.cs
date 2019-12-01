@@ -235,13 +235,48 @@ namespace Assets.ESurface
         public Task<List<string>> RetriveAllAssetFilenamesAsync()
         {
             return _commonExecutor.AddAction(() =>
-                Directory.GetFiles(_mainDictionaryPath).Select(
+            {
+                var allFiles = Directory.GetFiles(_mainDictionaryPath).Select(
                     c => c.TrimEndString(_extension)
-                        .Replace(_mainDictionaryPath, "")
-                        .Replace(_extensionForMainTexture,"")
-                        .Replace(_extensionForNormalTexture,"")
-                        .Replace(_extensionForNullFile, ""))
-                    .Distinct().ToList());
+                        .Replace(_mainDictionaryPath, ""));
+
+                var groupedFiles = allFiles.Select(c =>
+                {
+                    var core = c
+                        .Replace(_extensionForMainTexture, "")
+                        .Replace(_extensionForNormalTexture, "")
+                        .Replace(_extensionForNullFile, "");
+
+                    return new
+                    {
+                        name = core,
+                        isMain = c.Contains(_extensionForMainTexture),
+                        isNormal = c.Contains(_extensionForNormalTexture),
+                        isNull = c.Contains(_extensionForNullFile),
+                    };
+                }).GroupBy(c => c.name).ToList();
+
+                var toReturn = groupedFiles.Where(c =>
+                {
+                    if (c.Count() == 1)
+                    {
+                        return c.First().isNull;
+                    }
+                    else
+                    {
+                        if (c.Count() == 2)
+                        {
+                            return c.Any(k => k.isMain) && c.Any(k => k.isNormal);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }).Select(c => c.First().name).ToList();
+                Debug.Log("Retrived files: "+toReturn.Count);
+                return toReturn;
+            });
         }
     }
 }

@@ -24,7 +24,8 @@ namespace Assets.ETerrain.ETerrainIntegration
             {
                 return new ETerrainHeightPyramidFacadeStartConfiguration()
                 {
-                    InitialTravellerPosition = Vector2.zero,
+                    GenerateInitialSegmentsDuringStart = false,
+                    InitialTravellerPosition = new Vector2(440, 100) + new Vector2(90f * 8, 90f * 4),
                     HeightPyramidLevels = new List<HeightPyramidLevel>()
                     {
                         HeightPyramidLevel.Bottom,HeightPyramidLevel.Mid, HeightPyramidLevel.Top
@@ -46,10 +47,11 @@ namespace Assets.ETerrain.ETerrainIntegration
                             },
                             MaxLevelsCount = 3,
                             MaxRingsPerLevelCount = 3,
-                            InterSegmentMarginSize = 1/36.0f,
+                            InterSegmentMarginSize = 1/6.0f,
                             ModifyCornersInHeightSegmentPlacer = true,
                             UseNormalTextures = true,
-                            MergeShapesInRings  = false
+                            MergeShapesOfRings  = false,
+                            MergeSegmentsInFloorTexture = true,
                         },
                     PerLevelConfigurations =
                         new Dictionary<HeightPyramidLevel, HeightPyramidPerLevelConfiguration>()

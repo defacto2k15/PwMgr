@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Assets.Heightmaps.Ring1.valTypes;
@@ -170,7 +171,7 @@ namespace Assets.Heightmaps.Ring1.RenderingTex
             _service = service;
         }
 
-        public Task<Texture> AddOrder(TextureRenderingTemplate template)
+        public Task<Texture> AddOrder(TextureRenderingTemplate template, [CallerMemberName] string callerName = "")
         {
             return BaseUtAddOrder(template);
         }

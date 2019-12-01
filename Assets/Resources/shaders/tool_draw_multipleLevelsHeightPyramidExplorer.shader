@@ -47,6 +47,7 @@
 				int IsProcessOnGoing;
 				int RequiredSituationIndex;
 				int CurrentSituationIndex;
+				int FillingIsNecessary;
 			};
 
 			StructuredBuffer<GpuSingleSegmentState> _FillingStateBuffer;
@@ -143,18 +144,22 @@
 				GpuSingleSegmentState segmentState = _FillingStateBuffer[segmentStateIndex];
 				if (segmentState.IsProcessOnGoing > 0) {
 					if (abs(frac((uv.y - uv.x) * 32)) < 0.2) {
-						return float4(1, 0, 1, 0);
+						return float4(1, 0, 1, 1);
 					}
 				}
 					int requiredSituationIndex = segmentState.RequiredSituationIndex;
 					int currentSituationIndex = segmentState.CurrentSituationIndex;
 					if (requiredSituationIndex != 0) {
 						bool requirementFufilled = false;
+						bool requirementNeeded = true;
 						if (sampleStateFontmap(segmentUv, requiredSituationIndex - 1)) {
 							if (requiredSituationIndex == 1) { //created
 								requirementFufilled = currentSituationIndex >= 3; // created
 							}
 							else if (requiredSituationIndex == 2) { //filled
+								if (segmentState.FillingIsNecessary == 0) {
+									requirementNeeded = false;
+								}
 								requirementFufilled = currentSituationIndex >= 5;
 							}
 
@@ -162,11 +167,14 @@
 								return float4(0, 1, 0, 1);
 							}
 							else {
-								return float4(1, 0, 0, 1);
+								if (requirementNeeded) {
+									return float4(1, 0, 0, 1);
+								} else {
+									return float4(0, 0, 1, 1);
+								}
 							}
 						}
 					}
-
 
 				if (weAreInRingBorder) {
 					outColor = float4(1, 0, 1, 1);
@@ -187,6 +195,7 @@
 					outColor = float4(1, 1, 0, 1);
 				}
 
+				outColor.a = 1;
 				return outColor;
 			}
 			ENDCG

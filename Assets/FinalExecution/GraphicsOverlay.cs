@@ -14,11 +14,11 @@ namespace Assets.FinalExecution
         public GameObject Traveller;
         public Camera Cam;
         public GlobalServicesProfileInfo ServicesProfileInfo;
+        public bool TravellerConnectedToCamera;
 
         private float _deltaTime = 0.0f;
         private bool _servicesOverlayEnabled = true;
         private bool _fpsOverlayEnabled = true;
-        private bool _travellerConnectedToCamera;
         private List<MovementBlockingProcess> _movementPossibilityDetails;
 
         public void Update()
@@ -32,17 +32,15 @@ namespace Assets.FinalExecution
             {
                 _fpsOverlayEnabled = !_fpsOverlayEnabled;
             }
-            
 
-            if (Input.GetKeyDown(KeyCode.V))
+            if (Input.GetKeyDown(KeyCode.M))
             {
-                _travellerConnectedToCamera = !_travellerConnectedToCamera;
-                Debug.Log("IsTravellerConnected "+_travellerConnectedToCamera);
+                TravellerConnectedToCamera = !TravellerConnectedToCamera;
+                Debug.Log("IsTravellerConnected "+TravellerConnectedToCamera);
             }
 
         }
 
-        private bool debugObce = false; // TODO better, cleener solution
         public void OnGUI()
         {
             if (_fpsOverlayEnabled)
@@ -64,19 +62,15 @@ namespace Assets.FinalExecution
                         DrawMovementPossibilityDetailsInfo();
                     }
 
-                    if (_travellerConnectedToCamera )
+                    if (TravellerConnectedToCamera )
                     {
                         if (_movementPossibilityDetails == null || !_movementPossibilityDetails.Any())
                         {
                             Traveller.transform.position = Cam.transform.position;
-                            debugObce = true;
                         }
                         else
                         {
-                            if (debugObce)
-                            {
                                 Cam.transform.position = Traveller.transform.position;
-                            }
                         }
                     }
                 }

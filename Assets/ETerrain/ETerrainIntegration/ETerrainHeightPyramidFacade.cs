@@ -87,7 +87,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                 var perLevelTemplate = templates[level];
 
                 IPyramidShapeInstancer shapeInstancer = null;
-                if (heightPyramidMapConfiguration.MergeShapesInRings)
+                if (heightPyramidMapConfiguration.MergeShapesOfRings)
                 {
                     shapeInstancer = new MergedMeshesPyramidShapeInstancer(_meshGeneratorUtProxy, heightPyramidMapConfiguration, perLevelConfiguration);
                 }
