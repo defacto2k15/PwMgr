@@ -277,7 +277,7 @@
 				o.Albedo =  finalColor;
 				o.Normal = decodeNormal(worldNormal);
 
-				o.Albedo = GenerateDebugColorFromIndexes(levelAndRingIndexes, frac(i.terrainMergingLerpParam));
+				//o.Albedo = GenerateDebugColorFromIndexes(levelAndRingIndexes, frac(i.terrainMergingLerpParam));
 				//o.Albedo = step(i.lp2,_Debug*2);
 			} 
 

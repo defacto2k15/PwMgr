@@ -68,10 +68,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             TaskUtils.ExecuteActionWithOverridenMultithreading(true, () =>
             {
                 _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = Multithreading};
-                _configuration.EngraveTerrainFeatures = true;
+                _configuration.EngraveTerrainFeatures = false;
                 _configuration.EngraveRoadsInTerrain = true;
 
-                _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = false;
+                _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
                 _configuration.TerrainShapeDbConfiguration.UseTextureSavingToDisk = false;
                 _configuration.TerrainShapeDbConfiguration.MergeTerrainDetail = true;
                 var containerGameObject = GameObject.FindObjectOfType<ComputeShaderContainerGameObject>();
@@ -95,6 +95,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 }
 
                 var startConfiguration = ETerrainHeightPyramidFacadeStartConfiguration.DefaultConfiguration;
+                //startConfiguration.CommonConfiguration.SlotMapSize= new IntVector2(7,7);
                 startConfiguration.GenerateInitialSegmentsDuringStart = false;
                 startConfiguration.CommonConfiguration.YScale = _gameInitializationFields.Retrive<HeightDenormalizer>().DenormalizationMultiplier;
                 startConfiguration.CommonConfiguration.InterSegmentMarginSize = 1 / 6.0f;
@@ -133,8 +134,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     {
                         [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
                             startConfiguration, _gameInitializationFields, _ultraUpdatableContainer, _heightmapListenersContainer),
-                        //[EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
-                        //    _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
+                        [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
+                            _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
                 );
                 initializingHelper.InitializeUTService(new UnityThreadComputeShaderExecutorObject());
@@ -208,7 +209,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         private MyAwaitableValue<EPropElevationManagerUpdateInputData> _elevationManagerUpdateInputData;
         private bool _once = false;
 
-
         public void Update()
         {
             if (!_initializationWasSuccessfull)
@@ -245,7 +245,6 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                 explorer.UpdateHeightmapSegmentFillingState(_heightmapListenersContainer.ListenersDict.ToDictionary(c=>c.Key, c=>c.Value.TokensDict));
             }
 
-
             if (Time.frameCount % 50 == 0)
             {
                 if (VegetationConfiguration.GenerateBigBushes || VegetationConfiguration.GenerateGrass || VegetationConfiguration.GenerateTrees)
@@ -269,10 +268,11 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         }
 
         public static OneGroundTypeLevelTextureEntitiesGenerator GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-            ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields initializationFields, UltraUpdatableContainer updatableContainer
-            ,  HeightmapSegmentFillingListenersContainer heightmapListenersesContainer, bool modifyCorners = true)
+            ETerrainHeightPyramidFacadeStartConfiguration startConfiguration, GameInitializationFields initializationFields,
+            UltraUpdatableContainer updatableContainer
+            , HeightmapSegmentFillingListenersContainer heightmapListenersesContainer, bool modifyCorners = true)
         {
-            startConfiguration.CommonConfiguration.UseNormalTextures = false;
+            startConfiguration.CommonConfiguration.UseNormalTextures = true;
             var textureRendererProxy = initializationFields.Retrive<UTTextureRendererProxy>();
             var dbProxy = initializationFields.Retrive<TerrainShapeDbProxy>();
             var repositioner = initializationFields.Retrive<Repositioner>();
@@ -280,27 +280,28 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             return new OneGroundTypeLevelTextureEntitiesGenerator
             {
                 CeilTextureArrayGenerator = () =>
+                {
+                    var outList = new List<EGroundTexture>()
                     {
-                        var outList = new List<EGroundTexture>()
-                        {
+                        new EGroundTexture(
+                            texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize
+                                , startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.HeightTextureFormat),
+                            textureType: EGroundTextureType.HeightMap
+                        ),
+                    };
+                    if (startConfiguration.CommonConfiguration.UseNormalTextures)
+                    {
+                        outList.Add(
                             new EGroundTexture(
                                 texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize
-                                    , startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.HeightTextureFormat),
-                                textureType:EGroundTextureType.HeightMap
-                                ),
-                        };
-                        if (startConfiguration.CommonConfiguration.UseNormalTextures)
-                        {
-                            outList.Add(
-                                new EGroundTexture(
-                                    texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize
-                                        , startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.NormalTextureFormat),
-                                    textureType: EGroundTextureType.NormalTexture
-                                )
-                            );
-                        }
-                        return outList;
-                    },
+                                    , startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.NormalTextureFormat),
+                                textureType: EGroundTextureType.NormalTexture
+                            )
+                        );
+                    }
+
+                    return outList;
+                },
                 SegmentFillingListenerGeneratorFunc = (level, ceilTextureArrays) =>
                 {
                     var usedGroundTypes = new List<EGroundTextureType>() {EGroundTextureType.HeightMap};
@@ -308,48 +309,49 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     {
                         usedGroundTypes.Add(EGroundTextureType.NormalTexture);
                     }
+
                     var segmentModificationManagers = usedGroundTypes.ToDictionary(groundType => groundType,
                         groundType =>
                         {
                             var groundTexture = ceilTextureArrays.First(c => c.TextureType == groundType);
 
-                            var segmentsPlacer= new HeightSegmentPlacer(
+                            var segmentsPlacer = new HeightSegmentPlacer(
                                 textureRendererProxy, initializationFields.Retrive<CommonExecutorUTProxy>(), groundTexture.Texture
                                 , level.GetIndex(), startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize
                                 , startConfiguration.CommonConfiguration.InterSegmentMarginSize, startConfiguration.CommonConfiguration.SegmentTextureResolution
-                                , false
+                                , modifyCorners
                             );
                             var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
                             return new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
                         });
 
-                    var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("Height-" + level.ToString(), 
-                        new  CompoundSegmentOrdersFillingExecutor<TerrainDescriptionOutput>(
+                    var otherThreadExecutor = new OtherThreadCompoundSegmentFillingOrdersExecutorProxy("Height-" + level.ToString(),
+                        new CompoundSegmentOrdersFillingExecutor<TerrainDescriptionOutput>(
                             async (sap) =>
                             {
                                 var surfaceWorldSpaceRectangle = ETerrainUtils.TerrainShapeSegmentAlignedPositionToWorldSpaceArea(level,
-                                    startConfiguration.PerLevelConfigurations[level],sap);
+                                    startConfiguration.PerLevelConfigurations[level], sap);
 
-                                    var terrainDescriptionOutput = await dbProxy.Query(new TerrainDescriptionQuery()
+                                var terrainDescriptionOutput = await dbProxy.Query(new TerrainDescriptionQuery()
+                                {
+                                    QueryArea = repositioner.InvMove(surfaceWorldSpaceRectangle),
+                                    RequestedElementDetails = new List<TerrainDescriptionQueryElementDetail>()
                                     {
-                                        QueryArea = repositioner.InvMove(surfaceWorldSpaceRectangle),
-                                        RequestedElementDetails = new List<TerrainDescriptionQueryElementDetail>()
+                                        new TerrainDescriptionQueryElementDetail()
                                         {
-                                            new TerrainDescriptionQueryElementDetail()
-                                            {
-                                                Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
-                                                RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
-                                                Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
-                                            },
-                                            new TerrainDescriptionQueryElementDetail()
-                                            {
-                                                Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
-                                                RequiredMergeStatus = RequiredCornersMergeStatus.NOT_MERGED,
-                                                Type = TerrainDescriptionElementTypeEnum.NORMAL_ARRAY
-                                            },
-                                        }
-                                    });
-                                    return terrainDescriptionOutput;
+                                            Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
+                                            RequiredMergeStatus = RequiredCornersMergeStatus.MERGED,
+                                            Type = TerrainDescriptionElementTypeEnum.HEIGHT_ARRAY
+                                        },
+                                        new TerrainDescriptionQueryElementDetail()
+                                        {
+                                            Resolution = ETerrainUtils.HeightPyramidLevelToTerrainShapeDatabaseResolution(level),
+                                            RequiredMergeStatus = RequiredCornersMergeStatus.NOT_MERGED,
+                                            Type = TerrainDescriptionElementTypeEnum.NORMAL_ARRAY
+                                        },
+                                    }
+                                });
+                                return terrainDescriptionOutput;
 
                             },
                             async (sap, terrainDescriptionOutput) =>
@@ -382,7 +384,8 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     heightmapListenersesContainer.AddListener(level, fillingListener);
 
                     var travellerCustodian = initializationFields.Retrive<TravellerMovementCustodian>();
-                    travellerCustodian.AddLimiter(() => new MovementBlockingProcess(){ProcessName = "HeightSegmentsGenerationProcess "+level, BlockCount = fillingListener.BlockingProcessesCount()});
+                    travellerCustodian.AddLimiter(() => new MovementBlockingProcess()
+                        {ProcessName = "HeightSegmentsGenerationProcess " + level, BlockCount = fillingListener.BlockingProcessesCount()});
                     initializationFields.Retrive<InitialSegmentsGenerationInspector>().SetConditionToCheck(() => fillingListener.BlockingProcessesCount() == 0);
                     return fillingListener;
                 }
@@ -567,15 +570,15 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
     public class UnityThreadCompoundSegmentFillingListener : ISegmentFillingListener
     {
         private OtherThreadCompoundSegmentFillingOrdersExecutorProxy _executor;
-        private Dictionary<IntVector2, SegmentGenerationProcessToken> _tokensDict;
+        private Dictionary<IntVector2,  SegmentGenerationProcessTokenWithFillingNecessity> _tokensDict;
 
         public UnityThreadCompoundSegmentFillingListener(OtherThreadCompoundSegmentFillingOrdersExecutorProxy executor)
         {
             _executor = executor;
-            _tokensDict = new Dictionary<IntVector2, SegmentGenerationProcessToken>();
+            _tokensDict = new Dictionary<IntVector2, SegmentGenerationProcessTokenWithFillingNecessity>();
         }
 
-        public Dictionary<IntVector2, SegmentGenerationProcessToken> TokensDict => _tokensDict;
+        public Dictionary<IntVector2, SegmentGenerationProcessTokenWithFillingNecessity> TokensDict => _tokensDict;
 
         public void AddSegment(SegmentInformation segmentInfo)
         {
@@ -583,16 +586,28 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             Preconditions.Assert(!_tokensDict.ContainsKey(sap), $"There arleady is segment of sap {sap}");
 
             RequiredSegmentSituation requiredSituation;
+            bool fillingIsNecessary;
             if (segmentInfo.SegmentState == SegmentState.Active)
             {
+                fillingIsNecessary = true;
+                requiredSituation = RequiredSegmentSituation.Filled;
+            }
+            else if (segmentInfo.SegmentState == SegmentState.Standby)
+            {
+                fillingIsNecessary = false;
                 requiredSituation = RequiredSegmentSituation.Filled;
             }
             else
             {
+                fillingIsNecessary = false;
                 requiredSituation = RequiredSegmentSituation.Created;
             }
             var newToken = new SegmentGenerationProcessToken(SegmentGenerationProcessSituation.BeforeStartOfCreation,requiredSituation);
-            _tokensDict[sap] = newToken;
+            _tokensDict[sap] = new SegmentGenerationProcessTokenWithFillingNecessity()
+            {
+                Token = newToken,
+                FillingIsNecessary =  fillingIsNecessary
+            };
             _executor.ExecuteSegmentAction(newToken, sap);
         }
 
@@ -600,7 +615,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
         {
             var sap = segmentInfo.SegmentAlignedPosition;
             Preconditions.Assert(_tokensDict.ContainsKey(sap),"Cannot remove segment, as it was never present in dict "+segmentInfo.SegmentAlignedPosition);
-            var token = _tokensDict[sap];
+            var token = _tokensDict[sap].Token;
             token.RequiredSituation = RequiredSegmentSituation.Removed;
             _executor.ExecuteSegmentAction(token, sap);
             _tokensDict.Remove(sap);
@@ -613,12 +628,20 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var token = _tokensDict[sap];
             if (segmentInfo.SegmentState == SegmentState.Active)
             {
-                token.RequiredSituation = RequiredSegmentSituation.Filled;
-                _executor.ExecuteSegmentAction(token, sap);
+                token.Token.RequiredSituation = RequiredSegmentSituation.Filled;
+                token.FillingIsNecessary = true;
+                _executor.ExecuteSegmentAction(token.Token, sap);
+            }
+            else if (segmentInfo.SegmentState == SegmentState.Standby)
+            {
+                token.Token.RequiredSituation = RequiredSegmentSituation.Filled;
+                token.FillingIsNecessary = false;
             }
             else
             {
-                token.RequiredSituation = RequiredSegmentSituation.Created;
+                token.Token.RequiredSituation = RequiredSegmentSituation.Created;
+                token.FillingIsNecessary = false;
+
             }
         }
 
@@ -631,9 +654,9 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             return _tokensDict.Select(c => c.Value).Sum(c =>
             {
-                if (c.RequiredSituation == RequiredSegmentSituation.Filled)
+                if (c.Token.RequiredSituation == RequiredSegmentSituation.Filled && c.FillingIsNecessary)
                 {
-                    if (c.CurrentSituation == SegmentGenerationProcessSituation.Filled)
+                    if (c.Token.CurrentSituation == SegmentGenerationProcessSituation.Filled)
                     {
                         return 0;
                     }
@@ -683,8 +706,13 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
         public bool ProcessIsOngoing =>
             (_currentSituation == SegmentGenerationProcessSituation.DuringCreation ||
-             _currentSituation == SegmentGenerationProcessSituation.DuringCreation ||
              _currentSituation == SegmentGenerationProcessSituation.DuringFilling);
+    }
+
+    public class SegmentGenerationProcessTokenWithFillingNecessity
+    {
+        public SegmentGenerationProcessToken Token;
+        public bool FillingIsNecessary;
     }
 
 

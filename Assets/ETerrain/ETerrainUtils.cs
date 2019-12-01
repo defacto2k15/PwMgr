@@ -68,6 +68,14 @@ namespace Assets.ETerrain
 
             var surfaceWorldSpaceRectangle = new MyRectangle(segmentAlignedPosition.X * segmentLength, segmentAlignedPosition.Y * segmentLength
                 , segmentLength, segmentLength);
+            //if (level == HeightPyramidLevel.Mid)
+            //{
+            //    surfaceWorldSpaceRectangle = RectangleUtils.MoveBy(surfaceWorldSpaceRectangle, new Vector2(90 * 8 * 1, 0));
+            //}
+            //else if (level == HeightPyramidLevel.Top)
+            //{
+            //    surfaceWorldSpaceRectangle = RectangleUtils.MoveBy(surfaceWorldSpaceRectangle, new Vector2(90 * -8, 90*-4));
+            //}
             return surfaceWorldSpaceRectangle;
         }
 

@@ -88,7 +88,7 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
             }
         }
 
-        public void UpdateHeightmapSegmentFillingState(Dictionary<HeightPyramidLevel, Dictionary<IntVector2, SegmentGenerationProcessToken>> tokens)
+        public void UpdateHeightmapSegmentFillingState(Dictionary<HeightPyramidLevel, Dictionary<IntVector2,  SegmentGenerationProcessTokenWithFillingNecessity>> tokens)
         {
             var fillingStateArray = new GpuSingleSegmentState[_slotMapSize.X * _slotMapSize.Y * _levels.Count];
 
@@ -100,9 +100,9 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
             _fillingStateBuffer.SetData(fillingStateArray);
         }
 
-        private void FillStateArrayFromSoleLevelData(Dictionary<IntVector2, SegmentGenerationProcessToken> tokens, GpuSingleSegmentState[] fillingStateArray, int fillingStateArrayOffset)
+        private void FillStateArrayFromSoleLevelData(Dictionary<IntVector2,   SegmentGenerationProcessTokenWithFillingNecessity> tokens, GpuSingleSegmentState[] fillingStateArray, int fillingStateArrayOffset)
         {
-            var tokensArray = new SegmentGenerationProcessToken[_slotMapSize.X * _slotMapSize.Y];
+            var tokensArray = new   SegmentGenerationProcessTokenWithFillingNecessity[_slotMapSize.X * _slotMapSize.Y];
             foreach (var pair in tokens)
             {
                 var moddedCoords = new IntVector2((pair.Key.X + _slotMapSize.X * 32) % _slotMapSize.X, (pair.Key.Y + _slotMapSize.Y * 32) % _slotMapSize.Y);
@@ -123,13 +123,13 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
                     };
                     if (token != null)
                     {
-                        if (token.ProcessIsOngoing)
+                        if (token.Token.ProcessIsOngoing)
                         {
                             state.IsProcessOnGoing = 1;
                         }
 
-                        state.CurrentSituationIndex = (int) token.CurrentSituation;
-                        state.RequiredSituationIndex = (int) token.RequiredSituation;
+                        state.CurrentSituationIndex = (int) token.Token.CurrentSituation;
+                        state.RequiredSituationIndex = (int) token.Token.RequiredSituation;
                     }
 
                     fillingStateArray[index+fillingStateArrayOffset] = state;

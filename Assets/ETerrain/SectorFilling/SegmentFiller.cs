@@ -13,7 +13,7 @@ namespace Assets.ETerrain.SectorFilling
         private readonly float _segmentWorldSpaceLength;
         private ISegmentFillingListener _listener;
 
-        private IntRectangle _currentField;
+        private IntVector2 _currentFieldMarker;
 
         public SegmentFiller(IntVector2 fieldSize, IntVector2 standbyMarginsSize, float segmentWorldSpaceLength, ISegmentFillingListener listener)
         {
@@ -26,8 +26,9 @@ namespace Assets.ETerrain.SectorFilling
         public void InitializeField(Vector2 travellerPosition)
         {
             var travellerPositionInSectorSpace = travellerPosition / _segmentWorldSpaceLength;
-            _currentField = CalculateFieldRectangle(travellerPositionInSectorSpace);
-            foreach (var pair in ComputeSectorsInRectangle(_currentField))
+            _currentFieldMarker = CalculateFieldPositionMarker(travellerPositionInSectorSpace);
+
+            foreach (var pair in ComputeSectorsInRectangle(_currentFieldMarker))
             {
                 _listener.AddSegment(new SegmentInformation
                 {
@@ -37,47 +38,63 @@ namespace Assets.ETerrain.SectorFilling
             }
         }
 
-        private Dictionary<IntVector2, SegmentState> ComputeSectorsInRectangle(IntRectangle rectangle)
+        private Dictionary<IntVector2, SegmentState> ComputeSectorsInRectangle(IntVector2 fieldMarker)
         {
+            var activeSectorsCenter = new IntVector2(Mathf.FloorToInt(fieldMarker.X / 2f), Mathf.FloorToInt(fieldMarker.Y / 2f));
+            var fieldActiveSectors = new IntRectangle( activeSectorsCenter.X-2, activeSectorsCenter.Y-2, 5, 5 );
+
             var outDict = new Dictionary<IntVector2, SegmentState>();
-            for (int x = rectangle.X; x < rectangle.MaxX; x++)
+            for (int x = fieldActiveSectors.X; x < fieldActiveSectors.MaxX; x++)
             {
-                for (int y = rectangle.Y; y < rectangle.MaxY; y++)
+                for (int y = fieldActiveSectors.Y; y < fieldActiveSectors.MaxY; y++)
                 {
                     var state = SegmentState.Active;
-                    if (x < rectangle.X + _standbyMarginsSize.X || x >= rectangle.MaxX - _standbyMarginsSize.X ||
-                        y < rectangle.Y + _standbyMarginsSize.Y || y >= rectangle.MaxY - _standbyMarginsSize.Y)
-                    {
-                        //state = SegmentState.Standby;
-                        state = SegmentState.Active;
-                    }
                     outDict[new IntVector2(x, y)] = state;
                 }
             }
+
+            var standbyInnerMarginOffset = new IntVector2(-1,-1);
+            if (fieldMarker.X % 2 == 1) // todo, this is temporary
+            {
+                standbyInnerMarginOffset.X = 5;
+            }
+            if (fieldMarker.Y % 2 == 1) // todo, this is temporary
+            {
+                standbyInnerMarginOffset.Y = 5;
+            }
+
+            var rectDownLeftPoint = new IntVector2(fieldActiveSectors.DownLeftX, fieldActiveSectors.DownLeftY);
+            for (int y = -1; y < 6; y++)
+            {
+                outDict.Add(rectDownLeftPoint + new IntVector2(standbyInnerMarginOffset.X, y), SegmentState.Standby);
+            }
+            for (int x = -1; x < 6; x++)
+            {
+                var segmentCoords = rectDownLeftPoint + new IntVector2(x, standbyInnerMarginOffset.Y);
+                if (!outDict.ContainsKey(segmentCoords))
+                {
+                    outDict.Add(segmentCoords, SegmentState.Standby);
+                }
+            }
+
+
             return outDict;
         }
 
-        private IntRectangle CalculateFieldRectangle(Vector2 travellerPositionInSectorSpace)
-        {// TODO this is hack, temporary
-            //var centerIntPoint = IntVector2.FromFloat(travellerPositionInSectorSpace);
-            //return new IntRectangle(centerIntPoint.X-3, centerIntPoint.Y-3, 7, 7);
-
-
-            var downLeftPointInSectorSpace = travellerPositionInSectorSpace - new Vector2(_fieldSize.X / 2f, _fieldSize.Y / 2f);
-            var alignedDownLeftPoint = IntVector2.FromFloat(downLeftPointInSectorSpace);
-            return new IntRectangle(alignedDownLeftPoint.X, alignedDownLeftPoint.Y, _fieldSize.X, _fieldSize.Y);
-            //return new IntRectangle(alignedDownLeftPoint.X-1, alignedDownLeftPoint.Y-1, _fieldSize.X+2, _fieldSize.Y+2);
+        private IntVector2 CalculateFieldPositionMarker(Vector2 travellerPositionInSectorSpace)
+        {
+            return IntVector2.FloorFromFloat(travellerPositionInSectorSpace*2);
         }
 
         public void Update(Vector2 travellerPosition)
         {
             var travellerPositionInSectorSpace = travellerPosition / _segmentWorldSpaceLength;
-            var newField = CalculateFieldRectangle(travellerPositionInSectorSpace);
+            var newMarker = CalculateFieldPositionMarker(travellerPositionInSectorSpace);
             // URUCHAMIANE DOPIERO JAK MUSIMY WYMIENIC SEKTORY!
-            if (!newField.Equals(_currentField))
+            if (!newMarker.Equals(_currentFieldMarker))
             {
-                var rectangleDelta = CalculateDelta(newField, _currentField);
-                _currentField = newField;
+                var rectangleDelta = CalculateDelta(newMarker, _currentFieldMarker);
+                _currentFieldMarker = newMarker;
 
                 rectangleDelta.SectorsToRemove.ForEach(c => _listener.RemoveSegment(c));
                 rectangleDelta.SectorsToCreate.ForEach(c => _listener.AddSegment(c));
@@ -85,10 +102,10 @@ namespace Assets.ETerrain.SectorFilling
             }
         }
 
-        private SegmentFieldDelta CalculateDelta(IntRectangle newField, IntRectangle oldField)
+        private SegmentFieldDelta CalculateDelta(IntVector2 newMarker, IntVector2 oldMarker)
         {
-            var oldFieldsSectors = ComputeSectorsInRectangle(oldField);
-            var newFieldsSectors = ComputeSectorsInRectangle(newField);
+            var newFieldsSectors = ComputeSectorsInRectangle(newMarker);
+            var oldFieldsSectors = ComputeSectorsInRectangle(oldMarker);
 
             var sectorsToCreate = new List<SegmentInformation>();
             var sectorsToRemove = new List<SegmentInformation>();
@@ -96,7 +113,7 @@ namespace Assets.ETerrain.SectorFilling
 
             foreach (var oldPair in oldFieldsSectors)
             {
-                if (!newField.Contains(oldPair.Key))
+                if (!newFieldsSectors.ContainsKey(oldPair.Key))
                 {
                     sectorsToRemove.Add(new SegmentInformation
                     {

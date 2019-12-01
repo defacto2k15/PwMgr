@@ -89,15 +89,24 @@ namespace Assets.Utils
             return new IntVector2(vector1.X*vector2.X, vector1.Y*vector2.Y);
         }
 
-        public static IntVector2 FromFloat(float x, float y)
+        public static IntVector2 RoundFromFloat(float x, float y)
         {
             return new IntVector2(Mathf.RoundToInt(x), Mathf.RoundToInt(y));
         }
 
-        public static IntVector2 FromFloat(Vector2 vector)
+        public static IntVector2 RoundFromFloat(Vector2 vector)
         {
-            return FromFloat(vector.x, vector.y);
+            return RoundFromFloat(vector.x, vector.y);
         }
 
+        public static IntVector2 CeilFromFloat(Vector2 vector)
+        {
+            return new IntVector2(Mathf.CeilToInt(vector.x), Mathf.CeilToInt(vector.y));
+        }
+
+        public static IntVector2 FloorFromFloat(Vector2 vector)
+        {
+            return new IntVector2(Mathf.FloorToInt(vector.x), Mathf.FloorToInt(vector.y));
+        }
     }
 }
