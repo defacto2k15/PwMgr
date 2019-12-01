@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Assets.Caching;
 using Assets.ComputeShaders;
@@ -14,19 +12,14 @@ using Assets.ETerrain.SectorFilling;
 using Assets.ETerrain.Tools.HeightPyramidExplorer;
 using Assets.FinalExecution;
 using Assets.Heightmaps;
-using Assets.Heightmaps.GRing;
-using Assets.Heightmaps.Ring1.Creator;
 using Assets.Heightmaps.Ring1.MeshGeneration;
 using Assets.Heightmaps.Ring1.RenderingTex;
 using Assets.Heightmaps.Ring1.TerrainDescription;
 using Assets.Heightmaps.Ring1.TerrainDescription.CornerMerging;
 using Assets.Heightmaps.Ring1.TerrainDescription.FeatureGenerating;
-using Assets.Heightmaps.Ring1.valTypes;
 using Assets.PreComputation.Configurations;
 using Assets.Repositioning;
-using Assets.Ring2.Db;
 using Assets.Ring2.GRuntimeManagementOtherThread;
-using Assets.Ring2.IntensityProvider;
 using Assets.Ring2.RuntimeManagementOtherThread.Finalizer;
 using Assets.ShaderUtils;
 using Assets.Trees.SpotUpdating;
@@ -36,6 +29,10 @@ using Assets.Utils.Services;
 using Assets.Utils.ShaderBuffers;
 using Assets.Utils.UTUpdating;
 using UnityEngine;
+
+namespace Assets.ETerrain.SectorFilling
+{
+}
 
 namespace Assets.ETerrain.ETerrainIntegration.deos
 {
@@ -68,7 +65,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             TaskUtils.ExecuteActionWithOverridenMultithreading(true, () =>
             {
                 _configuration = new FEConfiguration(new FilePathsConfiguration()) {Multithreading = Multithreading};
-                _configuration.EngraveTerrainFeatures = false;
+                _configuration.EngraveTerrainFeatures = true;
                 _configuration.EngraveRoadsInTerrain = true;
 
                 _configuration.TerrainShapeDbConfiguration.UseTextureLoadingFromDisk = true;
@@ -133,7 +130,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     new Dictionary<EGroundTextureType, OneGroundTypeLevelTextureEntitiesGenerator>
                     {
                         [EGroundTextureType.HeightMap] = GenerateAsyncHeightTextureEntitiesGeneratorFromTerrainShapeDb(
-                            startConfiguration, _gameInitializationFields, _ultraUpdatableContainer, _heightmapListenersContainer),
+                            startConfiguration, _gameInitializationFields, _ultraUpdatableContainer, _heightmapListenersContainer, false),
                         [EGroundTextureType.SurfaceTexture] = GenerateAsyncSurfaceTextureEntitiesGeneratorFromTerrainShapeDb(
                             _configuration, startConfiguration, _gameInitializationFields, _ultraUpdatableContainer)
                     }
@@ -400,35 +397,22 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var surfaceTextureFormat = RenderTextureFormat.ARGB32;
             var commonExecutor = gameInitializationFields.Retrive<CommonExecutorUTProxy>();
 
-            var feRing2PatchConfiguration = new FeRing2PatchConfiguration(configuration);
-            feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit = new Dictionary<int, float>()
-            {
-                [0] = 3f,
-                [1] = 3 / 8f,
-                [2] = 3 / 64f
-            };
-            feRing2PatchConfiguration.Ring2PatchesOverseerConfiguration_IntensityPatternPixelsPerUnit = new Dictionary<int, float>()
-            {
-                [0] = 1 / 3f,
-                [1] = 1 / (3 * 8f),
-                [2] = 1 / (3f * 64f)
-            };
+            var feRing2PatchConfiguration = new Ring2PatchInitializerConfiguration(configuration);
 
-            int mipmapLevelToExtract = 1;
             feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit =
                 feRing2PatchConfiguration.Ring2PlateStamperConfiguration.PlateStampPixelsPerUnit.ToDictionary(
                     c => c.Key,
-                    c => c.Value * Mathf.Pow(2, mipmapLevelToExtract)
+                    c => c.Value * Mathf.Pow(2, feRing2PatchConfiguration.MipmapLevelToExtract)
                 );
 
-            var patchInitializer = new Ring2PatchInitialization(gameInitializationFields, ultraUpdatableContainer, feRing2PatchConfiguration);
+            var patchInitializer = new Ring2PatchInitializer(gameInitializationFields, ultraUpdatableContainer, feRing2PatchConfiguration);
             patchInitializer.Start();
 
             var mipmapExtractor = new MipmapExtractor(gameInitializationFields.Retrive<UTTextureRendererProxy>());
             var patchesCreatorProxy = gameInitializationFields.Retrive<GRing2PatchesCreatorProxy>();
             var patchStamperOverseerFinalizer = gameInitializationFields.Retrive<Ring2PatchStamplingOverseerFinalizer>();
             var surfacePatchProvider = new ESurfacePatchProvider(patchesCreatorProxy, patchStamperOverseerFinalizer, commonExecutor,
-                mipmapExtractor, mipmapLevelToExtract);
+                mipmapExtractor, feRing2PatchConfiguration.MipmapLevelToExtract);
 
             var cachedSurfacePatchProvider =
                 new CachedESurfacePatchProvider(surfacePatchProvider
@@ -542,357 +526,4 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             return elevationBuffers;
         }
     }
-
-    public class UnityThreadDummySegmentFillingListener : ISegmentFillingListener
-    {
-        private OtherThreadCompoundSegmentFillingOrdersExecutorProxy _executor;
-
-        public UnityThreadDummySegmentFillingListener(OtherThreadCompoundSegmentFillingOrdersExecutorProxy executor)
-        {
-            _executor = executor;
-        }
-
-        public void AddSegment(SegmentInformation segmentInfo)
-        {
-            var token = new SegmentGenerationProcessToken(SegmentGenerationProcessSituation.BeforeStartOfCreation, RequiredSegmentSituation.Filled);
-            _executor.ExecuteSegmentAction(token,segmentInfo.SegmentAlignedPosition);
-        }
-
-        public void RemoveSegment(SegmentInformation segmentInfo)
-        {
-        }
-
-        public void SegmentStateChange(SegmentInformation segmentInfo)
-        {
-        }
-    }
-
-    public class UnityThreadCompoundSegmentFillingListener : ISegmentFillingListener
-    {
-        private OtherThreadCompoundSegmentFillingOrdersExecutorProxy _executor;
-        private Dictionary<IntVector2,  SegmentGenerationProcessTokenWithFillingNecessity> _tokensDict;
-
-        public UnityThreadCompoundSegmentFillingListener(OtherThreadCompoundSegmentFillingOrdersExecutorProxy executor)
-        {
-            _executor = executor;
-            _tokensDict = new Dictionary<IntVector2, SegmentGenerationProcessTokenWithFillingNecessity>();
-        }
-
-        public Dictionary<IntVector2, SegmentGenerationProcessTokenWithFillingNecessity> TokensDict => _tokensDict;
-
-        public void AddSegment(SegmentInformation segmentInfo)
-        {
-            var sap = segmentInfo.SegmentAlignedPosition;
-            Preconditions.Assert(!_tokensDict.ContainsKey(sap), $"There arleady is segment of sap {sap}");
-
-            RequiredSegmentSituation requiredSituation;
-            bool fillingIsNecessary;
-            if (segmentInfo.SegmentState == SegmentState.Active)
-            {
-                fillingIsNecessary = true;
-                requiredSituation = RequiredSegmentSituation.Filled;
-            }
-            else if (segmentInfo.SegmentState == SegmentState.Standby)
-            {
-                fillingIsNecessary = false;
-                requiredSituation = RequiredSegmentSituation.Filled;
-            }
-            else
-            {
-                fillingIsNecessary = false;
-                requiredSituation = RequiredSegmentSituation.Created;
-            }
-            var newToken = new SegmentGenerationProcessToken(SegmentGenerationProcessSituation.BeforeStartOfCreation,requiredSituation);
-            _tokensDict[sap] = new SegmentGenerationProcessTokenWithFillingNecessity()
-            {
-                Token = newToken,
-                FillingIsNecessary =  fillingIsNecessary
-            };
-            _executor.ExecuteSegmentAction(newToken, sap);
-        }
-
-        public void RemoveSegment(SegmentInformation segmentInfo)
-        {
-            var sap = segmentInfo.SegmentAlignedPosition;
-            Preconditions.Assert(_tokensDict.ContainsKey(sap),"Cannot remove segment, as it was never present in dict "+segmentInfo.SegmentAlignedPosition);
-            var token = _tokensDict[sap].Token;
-            token.RequiredSituation = RequiredSegmentSituation.Removed;
-            _executor.ExecuteSegmentAction(token, sap);
-            _tokensDict.Remove(sap);
-        }
-
-        public void SegmentStateChange(SegmentInformation segmentInfo)
-        {
-            var sap = segmentInfo.SegmentAlignedPosition;
-            Preconditions.Assert(_tokensDict.ContainsKey(sap), "During segmentStateChange to Active there is no tokens in dict");
-            var token = _tokensDict[sap];
-            if (segmentInfo.SegmentState == SegmentState.Active)
-            {
-                token.Token.RequiredSituation = RequiredSegmentSituation.Filled;
-                token.FillingIsNecessary = true;
-                _executor.ExecuteSegmentAction(token.Token, sap);
-            }
-            else if (segmentInfo.SegmentState == SegmentState.Standby)
-            {
-                token.Token.RequiredSituation = RequiredSegmentSituation.Filled;
-                token.FillingIsNecessary = false;
-            }
-            else
-            {
-                token.Token.RequiredSituation = RequiredSegmentSituation.Created;
-                token.FillingIsNecessary = false;
-
-            }
-        }
-
-        public int BlockingProcessesCount()
-        {
-            if (!_tokensDict.Any())
-            {
-                return 0;
-            }
-
-            return _tokensDict.Select(c => c.Value).Sum(c =>
-            {
-                if (c.Token.RequiredSituation == RequiredSegmentSituation.Filled && c.FillingIsNecessary)
-                {
-                    if (c.Token.CurrentSituation == SegmentGenerationProcessSituation.Filled)
-                    {
-                        return 0;
-                    }
-                    else
-                    {
-                        return 1;
-                    }
-                }
-
-                return 0;
-            });
-        }
-    }
-
-    public enum SegmentGenerationProcessSituation
-    {
-        BeforeStartOfCreation=1, DuringCreation=2, Created=3, DuringFilling=4, Filled=5
-    }
-
-    public enum RequiredSegmentSituation
-    {
-         Created=1, Filled=2, Removed=3
-    }
-
-    public class SegmentGenerationProcessToken
-    {
-        private volatile  SegmentGenerationProcessSituation _currentSituation;
-        private volatile  RequiredSegmentSituation _requiredSituation;
-
-        public SegmentGenerationProcessToken(SegmentGenerationProcessSituation currentSituation, RequiredSegmentSituation requiredSituation)
-        {
-            _currentSituation = currentSituation;
-            _requiredSituation = requiredSituation;
-        }
-
-        public SegmentGenerationProcessSituation CurrentSituation
-        {
-            get => _currentSituation;
-            set => _currentSituation = value;
-        }
-
-        public RequiredSegmentSituation RequiredSituation
-        {
-            get => _requiredSituation;
-            set => _requiredSituation = value;
-        }
-
-        public bool ProcessIsOngoing =>
-            (_currentSituation == SegmentGenerationProcessSituation.DuringCreation ||
-             _currentSituation == SegmentGenerationProcessSituation.DuringFilling);
-    }
-
-    public class SegmentGenerationProcessTokenWithFillingNecessity
-    {
-        public SegmentGenerationProcessToken Token;
-        public bool FillingIsNecessary;
-    }
-
-
-    public class OtherThreadCompoundSegmentFillingOrdersExecutorProxy :  BaseOtherThreadProxy
-    {
-        private ISegmentOrdersFillingExecutor _executor;
-
-        public OtherThreadCompoundSegmentFillingOrdersExecutorProxy(string namePrefix, ISegmentOrdersFillingExecutor executor)
-            : base($"{namePrefix} - OtherThreadCompoundSegmentFillingListenerProxy", false)
-        {
-            _executor = executor;
-        }
-
-        public void ExecuteSegmentAction(SegmentGenerationProcessToken token, IntVector2 sap)
-        {
-            PostPureAsyncAction(() => _executor.ExecuteSegmentAction(token, sap));
-        }
-    }
-
-    public interface ISegmentOrdersFillingExecutor
-    {
-        Task ExecuteSegmentAction(SegmentGenerationProcessToken token, IntVector2 sap);
-    } 
-
-    public class LambdaSegmentOrdersFillingExecutor : ISegmentOrdersFillingExecutor
-    {
-        private Func<IntVector2, Task> _segmentFillingFunc;
-
-        public Task ExecuteSegmentAction(SegmentGenerationProcessToken token, IntVector2 sap)
-        {
-            if (token.RequiredSituation == RequiredSegmentSituation.Filled || token.RequiredSituation == RequiredSegmentSituation.Created)
-            {
-                return _segmentFillingFunc(sap);
-            }
-            else
-            {
-                return TaskUtils.EmptyCompleted();
-            }
-        }
-    } 
-
-    public class CompoundSegmentOrdersFillingExecutor<T> : ISegmentOrdersFillingExecutor
-    {
-        private Func<IntVector2, Task<T>> _segmentGeneratingFunc;
-        private Func<IntVector2,T, Task> _segmentFillingFunc;
-        private Func<T, Task> _segmentRemovalFunc;
-        private Dictionary<IntVector2,T > _currentlyCreatedSegments;
-
-        public CompoundSegmentOrdersFillingExecutor(Func<IntVector2, Task<T>> segmentGeneratingFunc, Func<IntVector2, T, Task> segmentFillingFunc, Func<T, Task> segmentRemovalFunc)
-        {
-            _segmentGeneratingFunc = segmentGeneratingFunc;
-            _segmentFillingFunc = segmentFillingFunc;
-            _segmentRemovalFunc = segmentRemovalFunc;
-            _currentlyCreatedSegments = new Dictionary<IntVector2, T>();
-        }
-
-        private async Task<bool> SegmentProcessOneLoop(SegmentGenerationProcessToken token, IntVector2 sap)
-        {
-            switch (token.CurrentSituation)
-            {
-                case SegmentGenerationProcessSituation.BeforeStartOfCreation:
-                    switch (token.RequiredSituation)
-                    {
-                        case RequiredSegmentSituation.Created:
-                            await GenerateSegment(token, sap);
-                            return true;
-                        case RequiredSegmentSituation.Filled:
-                            if (!_currentlyCreatedSegments.ContainsKey(sap))
-                            {
-                                await GenerateSegment(token, sap);
-                            }
-                            else
-                            {
-                                await FillSegment(token, sap);
-                            }
-                            return true;
-                        case RequiredSegmentSituation.Removed:
-                            await RemoveSegment(token, sap);
-                            return false;
-                        default:
-                            Preconditions.Fail("Unexpected required situation " + token.RequiredSituation);
-                            return false;
-                    }
-                case SegmentGenerationProcessSituation.Created:
-                    switch (token.RequiredSituation)
-                    {
-                        case RequiredSegmentSituation.Created:
-                            return false;
-                        case RequiredSegmentSituation.Filled:
-                            await FillSegment(token, sap);
-                            return true;
-                        case RequiredSegmentSituation.Removed:
-                            await RemoveSegment(token, sap);
-                            return false;
-                        default:
-                            Preconditions.Fail("Unexpected required situation " + token.RequiredSituation);
-                            return false;
-                    }
-                case SegmentGenerationProcessSituation.Filled:
-                    switch (token.RequiredSituation)
-                    {
-                        case RequiredSegmentSituation.Created:
-                            return false;
-                        case RequiredSegmentSituation.Filled:
-                            return false;
-                        case RequiredSegmentSituation.Removed:
-                            await RemoveSegment(token, sap);
-                            return false;
-                        default:
-                            Preconditions.Fail("Unexpected required situation " + token.RequiredSituation);
-                            return false;
-                    }
-                default:
-                    Preconditions.Fail("Unexpected situation " + token.CurrentSituation);
-                    return false;
-            }
-        }
-
-        public async Task ExecuteSegmentAction(SegmentGenerationProcessToken token, IntVector2 sap)
-        {
-            if (!token.ProcessIsOngoing) { 
-                bool shouldContinue = true;
-                while (shouldContinue)
-                {
-                    shouldContinue = await SegmentProcessOneLoop(token, sap);
-                }
-            }
-        }
-
-        private async Task RemoveSegment(SegmentGenerationProcessToken token, IntVector2 sap)
-        {
-            Preconditions.Assert(!token.ProcessIsOngoing, "Cannot remove while process in ongoing");
-            Preconditions.Assert(token.RequiredSituation == RequiredSegmentSituation.Removed, "Required situation in not removed but "+token.RequiredSituation);
-            if (_currentlyCreatedSegments.ContainsKey(sap))
-            {
-                var segment = _currentlyCreatedSegments[sap];
-                _currentlyCreatedSegments.Remove(sap);
-                await _segmentRemovalFunc(segment);
-            }
-        }
-
-        private async Task FillSegment(SegmentGenerationProcessToken token, IntVector2 sap)
-        {
-            Preconditions.Assert(token.CurrentSituation == SegmentGenerationProcessSituation.Created, "Unexpected situaton "+token.CurrentSituation);
-            token.CurrentSituation = SegmentGenerationProcessSituation.DuringFilling;
-            await _segmentFillingFunc(sap, _currentlyCreatedSegments[sap]);
-            token.CurrentSituation = SegmentGenerationProcessSituation.Filled;
-        }
-
-        private async Task GenerateSegment(SegmentGenerationProcessToken token, IntVector2 sap)
-        {
-            Preconditions.Assert(token.CurrentSituation == SegmentGenerationProcessSituation.BeforeStartOfCreation, "Unexpected situaton "+token.CurrentSituation);
-            if (!_currentlyCreatedSegments.ContainsKey(sap))
-            {
-                token.CurrentSituation = SegmentGenerationProcessSituation.DuringCreation;
-                var newSegment = await _segmentGeneratingFunc(sap);
-                _currentlyCreatedSegments[sap] = newSegment;
-            }
-            token.CurrentSituation = SegmentGenerationProcessSituation.Created;
-        }
-    }
-
-    public class SegmentWithToken<T>
-    {
-        public T Segment;
-        public SegmentGenerationProcessToken Token;
-    }
-
-    public class HeightmapSegmentFillingListenersContainer
-    {
-        private Dictionary<HeightPyramidLevel, UnityThreadCompoundSegmentFillingListener> _listenersDict= new Dictionary<HeightPyramidLevel, UnityThreadCompoundSegmentFillingListener>();
-
-        public void AddListener(HeightPyramidLevel level, UnityThreadCompoundSegmentFillingListener listener)
-        {
-            Preconditions.Assert(!_listenersDict.ContainsKey(level),$"There aelaady is listener from level {level}");
-            _listenersDict[level] = listener;
-        }
-
-        public Dictionary<HeightPyramidLevel, UnityThreadCompoundSegmentFillingListener> ListenersDict => _listenersDict;
-    } 
-
-
 }

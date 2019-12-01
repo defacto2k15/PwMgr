@@ -83,7 +83,7 @@ namespace Assets.FinalExecution
                 initializingHelper.InitializeMonoliticRing2RegionsDatabase();
 
                 var finalSurfacePathInitialization =
-                    new Ring2PatchInitialization(_gameInitializationFields, _ultraUpdatableContainer, new FeRing2PatchConfiguration(_configuration));
+                    new Ring2PatchInitializer(_gameInitializationFields, _ultraUpdatableContainer, new Ring2PatchInitializerConfiguration(_configuration));
                 finalSurfacePathInitialization.Start();
 
                 var finalTerrainInitialization =

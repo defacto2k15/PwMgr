@@ -96,9 +96,9 @@ namespace Assets.FinalExecution
             int i = 0;
             foreach (var blockingDetail in _movementPossibilityDetails)
             {
-                rect = new Rect(10, 150 + (30*i), w , h );
+                rect = new Rect(10, 170 + (40*i), w , h );
                 style.fontSize = h * 5 / 100;
-                style.normal.textColor = new Color(0.0f,0,0,1);
+                style.normal.textColor = new Color(0.0f,0,1,1);
                 GUI.Label(rect, $"Blocking process: {blockingDetail.ProcessName} Count {blockingDetail.BlockCount}", style);
                 i++;
             }
@@ -165,7 +165,7 @@ namespace Assets.FinalExecution
                 var color1 = Color.cyan;
                 if (utService.WorkQueueSize > 0)
                 {
-                    color1 = Color.grey;
+                    color1 = Color.black;
                 }
                 _cachedStringBuilder.Append($"{utService.Name} Queue size: {utService.WorkQueueSize}");
 
@@ -187,7 +187,6 @@ namespace Assets.FinalExecution
     {
         private List<string> _phases;
         private float _cycleSeconds;
-
 
         public LoadingLabel(List<string> phases, float cycleSeconds)
         {

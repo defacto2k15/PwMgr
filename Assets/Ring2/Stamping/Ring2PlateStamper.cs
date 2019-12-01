@@ -9,10 +9,6 @@ using UnityEngine;
 
 namespace Assets.Ring2.Stamping
 {
-    public class Ring2PlateStamperConfiguration
-    {
-        public Dictionary<int, float> PlateStampPixelsPerUnit;
-    }
 
     public class Ring2PlateStamper
     {
@@ -229,5 +225,10 @@ namespace Assets.Ring2.Stamping
             PlateCoords = plateCoords;
             StampLod = stampLod;
         }
+    }
+
+    public class Ring2PlateStamperConfiguration
+    {
+        public Dictionary<int, float> PlateStampPixelsPerUnit;
     }
 }
