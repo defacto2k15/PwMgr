@@ -17,25 +17,25 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
 {
     public class LegacyHeightPyramidSegmentExplorerWindow
     {
-        private readonly Texture _ceilTexture;
+        private readonly Texture _floorTexture;
         private Material _heightTextureDrawingMaterial;
         private float _levelSelectSliderValue = 0;
 
-        public LegacyHeightPyramidSegmentExplorerWindow(Texture ceilTexture)
+        public LegacyHeightPyramidSegmentExplorerWindow(Texture floorTexture)
         {
-            _ceilTexture = ceilTexture;
+            _floorTexture = floorTexture;
             _heightTextureDrawingMaterial = new Material(Shader.Find("Custom/Tool/DrawHeightTextureMipMaps"));
         }
 
         public void OnGUI()
         {
-            _heightTextureDrawingMaterial.SetTexture("_HeightTextureArray", _ceilTexture);
+            _heightTextureDrawingMaterial.SetTexture("_HeightTextureArray", _floorTexture);
             _heightTextureDrawingMaterial.SetInt("_HeightTextureSelectedLevel", (int) _levelSelectSliderValue);
 
-            _heightTextureDrawingMaterial.SetTexture("_HeightTexture", _ceilTexture);
+            _heightTextureDrawingMaterial.SetTexture("_HeightTexture", _floorTexture);
             _heightTextureDrawingMaterial.SetInt("_HeightTextureMipLevel", (int) _levelSelectSliderValue);
             Graphics.DrawTexture(new Rect(30, 30, 240, 240),
-                _ceilTexture, _heightTextureDrawingMaterial);
+                _floorTexture, _heightTextureDrawingMaterial);
         }
     }
 }

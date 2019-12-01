@@ -13,7 +13,7 @@ namespace Assets.ETerrain.ETerrainIntegration
         public RenderTextureFormat NormalTextureFormat { get; set; }
         public RenderTextureFormat SurfaceTextureFormat { get; set; }
 
-        public IntVector2 CeilTextureSize => SlotMapSize * SegmentTextureResolution;
+        public IntVector2 FloorTextureSize => SlotMapSize * SegmentTextureResolution;
         public float YScale { get; set; }
         public bool MergeShapesOfRings { get; set; }
 

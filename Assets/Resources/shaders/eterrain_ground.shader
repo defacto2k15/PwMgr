@@ -74,7 +74,7 @@
 				return p;
 			}
 
-				// UV IN RECTANGLE [{-L/2; -L/2} - {L/2; L/2}] where L - length of ceilTexture in worldSpace
+				// UV IN RECTANGLE [{-L/2; -L/2} - {L/2; L/2}] where L - length of floorTexture in worldSpace
 			float2 calculateInSegmentSpaceUv(float2 uv) {
 				return _SegmentCoords.xy + float2(uv.x * _SegmentCoords.z, uv.y * _SegmentCoords.w);
 			}
@@ -160,7 +160,7 @@
 			}
 
 			ESurfaceInfo calculateESurfaceInfo(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters terrainParameters, float lod ) {
-				int mainHeightTextureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution;
+				int mainHeightTextureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].floorTextureResolution;
 				float2 textureSamplingUv = frac(inSegmentSpaceUv + MainPyramidCenterUv(levelAndRingIndexes, terrainParameters));
 
 				float2 sampleCenteredHighQualityUv = textureSamplingUv + 1.0/ (mainHeightTextureResolution * 2.0); //This is to align UV to sample center of heightmap pixels
@@ -216,9 +216,9 @@
 
 			float2 CalculateDownLeftVerticleInSegmentSpaceUv(float2 inSegmentSpaceUv, ELevelAndRingIndexes levelAndRingIndexes, EPerRingParameters perRingParameters, ETerrainParameters terrainParameters) {
 				float subRingMultiplier = pow(2, levelAndRingIndexes.ringIndex);
-				int gridResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureResolution / subRingMultiplier;
-				float ceilTextureWorldSize = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
-				float worldSpaceGridCellsLength = ceilTextureWorldSize / gridResolution;
+				int gridResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].floorTextureResolution / subRingMultiplier;
+				float floorTextureWorldSize = terrainParameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].floorTextureWorldSize;
+				float worldSpaceGridCellsLength = floorTextureWorldSize / gridResolution;
 				InTriangleGridPosition gridPosition = calculateInTriangleGridPosition(inSegmentSpaceUv, gridResolution);
 				int2  squareIndex = gridPosition.squareIndex;
 

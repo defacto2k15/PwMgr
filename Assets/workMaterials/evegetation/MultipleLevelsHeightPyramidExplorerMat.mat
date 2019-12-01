@@ -43,6 +43,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _FloorTexturesArray:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -87,9 +91,10 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _PerLevelCeilTextureWorldSpaceSizes: {r: 540, g: 4320, b: 34560, a: 0}
-    - _Pyramid0WorldSpaceCenter: {r: 1159.5001, g: 460.50003, b: 0, a: 0}
-    - _Pyramid1WorldSpaceCenter: {r: 1164.0001, g: 456.00003, b: 0, a: 0}
-    - _Pyramid2WorldSpaceCenter: {r: 1152.0001, g: 480.00003, b: 0, a: 0}
+    - _PerLevelFloorTextureWorldSpaceSizes: {r: 540, g: 4320, b: 34560, a: 0}
+    - _Pyramid0WorldSpaceCenter: {r: 1183.5001, g: 322.50003, b: 0, a: 0}
+    - _Pyramid1WorldSpaceCenter: {r: 1188.0001, g: 324.00003, b: 0, a: 0}
+    - _Pyramid2WorldSpaceCenter: {r: 1152.0001, g: 288.00003, b: 0, a: 0}
     - _RingsUvRange: {r: 0.083333336, g: 0.16666667, b: 0.33333334, a: 0}
     - _SlotMapSize: {r: 6, g: 6, b: 0, a: 0}
-    - _TravellerPosition: {r: 1160, g: 460, b: 0, a: 0}
+    - _TravellerPosition: {r: 1183.5183, g: 323.0445, b: 0, a: 0}

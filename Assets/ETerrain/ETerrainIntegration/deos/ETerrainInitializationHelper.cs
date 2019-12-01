@@ -36,12 +36,12 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             return new OneGroundTypeLevelTextureEntitiesGenerator
             {
-                CeilTextureArrayGenerator = () =>
+                FloorTextureArrayGenerator = () =>
                 {
                     var outList = new List<EGroundTexture>()
                     {
                         new EGroundTexture(
-                            texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize
+                            texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.FloorTextureSize
                                 , startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.HeightTextureFormat),
                             textureType: EGroundTextureType.HeightMap
                         ),
@@ -50,7 +50,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     {
                         outList.Add(
                             new EGroundTexture(
-                                texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize
+                                texture: EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.FloorTextureSize
                                     , startConfiguration.HeightPyramidLevels.Count, startConfiguration.CommonConfiguration.NormalTextureFormat),
                                 textureType: EGroundTextureType.NormalTexture
                             )
@@ -59,7 +59,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
                     return outList;
                 },
-                SegmentFillingListenerGeneratorFunc = (level, ceilTextureArrays) =>
+                SegmentFillingListenerGeneratorFunc = (level, floorTextureArrays) =>
                 {
                     var usedGroundTypes = new List<EGroundTextureType>() {EGroundTextureType.HeightMap};
                     if (startConfiguration.CommonConfiguration.UseNormalTextures)
@@ -70,11 +70,11 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
                     var segmentModificationManagers = usedGroundTypes.ToDictionary(groundType => groundType,
                         groundType =>
                         {
-                            var groundTexture = ceilTextureArrays.First(c => c.TextureType == groundType);
+                            var groundTexture = floorTextureArrays.First(c => c.TextureType == groundType);
 
                             var segmentsPlacer = new HeightSegmentPlacer(
                                 textureRendererProxy, initializationFields.Retrive<CommonExecutorUTProxy>(), groundTexture.Texture
-                                , level.GetIndex(), startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize
+                                , level.GetIndex(), startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.FloorTextureSize
                                 , startConfiguration.CommonConfiguration.InterSegmentMarginSize, startConfiguration.CommonConfiguration.SegmentTextureResolution
                                 , startConfiguration.CommonConfiguration.MergeSegmentsInFloorTexture
                             );
@@ -195,20 +195,20 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
 
             return new OneGroundTypeLevelTextureEntitiesGenerator()
             {
-                CeilTextureArrayGenerator =  () =>
+                FloorTextureArrayGenerator =  () =>
                 {
                     return new List<EGroundTexture>()
                     {
-                        new EGroundTexture( EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.CeilTextureSize,
+                        new EGroundTexture( EGroundTextureGenerator.GenerateEmptyGroundTextureArray(startConfiguration.CommonConfiguration.FloorTextureSize,
                             startConfiguration.HeightPyramidLevels.Count, surfaceTextureFormat),
                         EGroundTextureType.SurfaceTexture )
                     };
                 },
-                SegmentFillingListenerGeneratorFunc = (level, ceilTextureArrays) =>
+                SegmentFillingListenerGeneratorFunc = (level, floorTextureArrays) =>
                 {
-                    var ceilTextureArray = ceilTextureArrays.First(c => c.TextureType == EGroundTextureType.SurfaceTexture);
-                    var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTextureArray.Texture, level.GetIndex()
-                        , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                    var floorTextureArray = floorTextureArrays.First(c => c.TextureType == EGroundTextureType.SurfaceTexture);
+                    var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, floorTextureArray.Texture, level.GetIndex()
+                        , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.FloorTextureSize);
                     var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
                     var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 

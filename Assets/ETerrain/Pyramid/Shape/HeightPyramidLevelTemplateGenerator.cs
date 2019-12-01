@@ -75,7 +75,7 @@ namespace Assets.ETerrain.Pyramid.Shape
                 }
             }
 
-            var levelFlatSize = perLevelConfiguration.CeilTextureWorldSize;
+            var levelFlatSize = perLevelConfiguration.FloorTextureWorldSize;
 
             return new HeightPyramidLevelTemplate()
             {
@@ -199,7 +199,7 @@ namespace Assets.ETerrain.Pyramid.Shape
             go.transform.localScale = new Vector3(1, 1, 1);
             var renderer = go.AddComponent<MeshRenderer>();
 
-            var segmentUvs = RectangleUtils.CalculateSubelementUv( _perLevelConfiguration.CeilTextureZeroCenteredWorldArea,
+            var segmentUvs = RectangleUtils.CalculateSubelementUv( _perLevelConfiguration.FloorTextureZeroCenteredWorldArea,
                 new MyRectangle(center.x - flatSize.x / 2, center.y - flatSize.y / 2, flatSize.x, flatSize.y));
 
             renderer.material = new Material(Shader.Find("Custom/ETerrain/Ground"));
@@ -279,13 +279,13 @@ namespace Assets.ETerrain.Pyramid.Shape
             go.transform.localScale = new Vector3(flatSize.x, 1, flatSize.y);
             var renderer = go.AddComponent<MeshRenderer>();
 
-            var segmentUvs = RectangleUtils.CalculateSubelementUv(_perLevelConfiguration.CeilTextureZeroCenteredWorldArea,
+            var segmentUvs = RectangleUtils.CalculateSubelementUv(_perLevelConfiguration.FloorTextureZeroCenteredWorldArea,
                 new MyRectangle(flatStartPos.x, flatStartPos.y, flatSize.x, flatSize.y));
 
             renderer.material = new Material(Shader.Find("Custom/ETerrain/Ground"));
             renderer.material.SetVector("_SegmentCoords", segmentUvs.ToVector4());
 
-            var segmentLevelUvs = RectangleUtils.CalculateSubelementUv(_perLevelConfiguration.CeilTextureZeroCenteredWorldArea.SubRectangle(new MyRectangle(1/6.0f, 1/6.0f, 4/6.0f, 4/6.0f)),
+            var segmentLevelUvs = RectangleUtils.CalculateSubelementUv(_perLevelConfiguration.FloorTextureZeroCenteredWorldArea.SubRectangle(new MyRectangle(1/6.0f, 1/6.0f, 4/6.0f, 4/6.0f)),
                 new MyRectangle(flatStartPos.x, flatStartPos.y, flatSize.x, flatSize.y));
             renderer.material.SetVector("_SegmentLevelCoords", segmentLevelUvs.ToVector4());
 

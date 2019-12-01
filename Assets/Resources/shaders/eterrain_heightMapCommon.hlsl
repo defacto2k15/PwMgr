@@ -20,8 +20,8 @@
 
 			struct ELevelConfiguration {
 				ERingConfiguration ringsConfiguration[MAX_RINGS_PER_LEVEL_COUNT];
-				float ceilTextureWorldSize;
-				float ceilTextureResolution;
+				float floorTextureWorldSize;
+				float floorTextureResolution;
 			};
 
 			ELevelConfiguration null_ELevelConfiguration() {
@@ -29,8 +29,8 @@
 				for (int i = 0; i < MAX_RINGS_PER_LEVEL_COUNT; i++) {
 					c.ringsConfiguration[i] = null_ERingConfiguration();
 				}
-				c.ceilTextureWorldSize = 0;
-				c.ceilTextureResolution = 0;
+				c.floorTextureWorldSize = 0;
+				c.floorTextureResolution = 0;
 				return c;
 			}
 
@@ -124,7 +124,7 @@
 
 			float2 worldSpaceToGlobalLevelUvSpace(float2 worldSpace, int levelIndex, ETerrainParameters parameters) {
 				return (worldSpace - parameters.perFrameConfiguration.levelConfiguration[levelIndex].levelCenterWorldSpace)
-					/ parameters.pyramidConfiguration.levelsConfiguration[levelIndex].ceilTextureWorldSize+ 0.5;
+					/ parameters.pyramidConfiguration.levelsConfiguration[levelIndex].floorTextureWorldSize+ 0.5;
 			}
 
 			bool isInRectangle(float2 pos, float4 rect) {
@@ -157,55 +157,55 @@
 			}
 
 			float2 MainPyramidCenterUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) { //todo delete
-				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
+				float2  floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].floorTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex].levelCenterWorldSpace;
-				return (pyramidCenterWorldSize/ ceilTextureWorldSize) + 0.5;
+				return (pyramidCenterWorldSize/ floorTextureWorldSize) + 0.5;
 			}
 
 			float2 MainTravellerPositionUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
-				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
-				return (parameters.travellerPositionWorldSpace / ceilTextureWorldSize) + 0.5;
+				float2  floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].floorTextureWorldSize;
+				return (parameters.travellerPositionWorldSpace / floorTextureWorldSize) + 0.5;
 			}
 
 			float2 AuxTravellerPositionUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
 				int auxLevelOffset = AuxLevelOffset(levelAndRingIndexes, parameters);
-				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].ceilTextureWorldSize;
-				return (parameters.travellerPositionWorldSpace / ceilTextureWorldSize) + 0.5;
+				float2  floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].floorTextureWorldSize;
+				return (parameters.travellerPositionWorldSpace / floorTextureWorldSize) + 0.5;
 			}
 
 			float2 AuxPyramidCenterUv(ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
 				int auxLevelOffset = AuxLevelOffset(levelAndRingIndexes, parameters);
-				float2 ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].ceilTextureWorldSize;
+				float2 floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].floorTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelCenterWorldSpace;
-				return (pyramidCenterWorldSize/ ceilTextureWorldSize) + 0.5;
+				return (pyramidCenterWorldSize/ floorTextureWorldSize) + 0.5;
 			}
 
 			float2 auxGlobalLevelUvSpaceToWorldSpace(float2 auxGlobalLevelUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
 				int auxLevelOffset = AuxLevelOffset(levelAndRingIndexes, parameters);
-				float ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].ceilTextureWorldSize;
+				float floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].floorTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelCenterWorldSpace;
-				float2 offset = (auxGlobalLevelUv-0.5) * ceilTextureWorldSize;
+				float2 offset = (auxGlobalLevelUv-0.5) * floorTextureWorldSize;
 				return (pyramidCenterWorldSize+offset);
 			}
 
 			float2 mainGlobalLevelUvSpaceToWorldSpace(float2 auxGlobalLevelUv, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
-				float2 ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
+				float2 floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].floorTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex].levelCenterWorldSpace;
-				float2 offset = (auxGlobalLevelUv-0.5) * ceilTextureWorldSize;
+				float2 offset = (auxGlobalLevelUv-0.5) * floorTextureWorldSize;
 				return (pyramidCenterWorldSize+offset);
 			}
 
 			float2 worldSpaceToMainGlobalLevelUvSpace(float2 worldSpace, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
-				float2 ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].ceilTextureWorldSize;
+				float2 floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex].floorTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex].levelCenterWorldSpace;
-				return (worldSpace - pyramidCenterWorldSize) / (ceilTextureWorldSize) + 0.5;
+				return (worldSpace - pyramidCenterWorldSize) / (floorTextureWorldSize) + 0.5;
 			}
 
 			float2 worldSpaceToAuxGlobalLevelUvSpace(float2 worldSpace, ELevelAndRingIndexes levelAndRingIndexes, ETerrainParameters parameters) {
 				int auxLevelOffset = AuxLevelOffset(levelAndRingIndexes, parameters);
-				float2 ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].ceilTextureWorldSize;
+				float2 floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].floorTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[levelAndRingIndexes.levelIndex+auxLevelOffset].levelCenterWorldSpace;
-				return (worldSpace - pyramidCenterWorldSize) / (ceilTextureWorldSize) + 0.5;
+				return (worldSpace - pyramidCenterWorldSize) / (floorTextureWorldSize) + 0.5;
 			}
 
 			struct ETerrainHeightCalculationOut {
@@ -290,36 +290,36 @@
 				return c;
 			}
 
-			struct CeilTextureSamplingQuery {
+			struct FloorTextureSamplingQuery {
 				CeilSliceAndMipmap ceilSliceAndMipmap;
 				float2 uv;
 			};
 
-			CeilTextureSamplingQuery make_CeilTextureSamplingQuery( CeilSliceAndMipmap ceilSliceAndMipmap, float2 uv){
-				CeilTextureSamplingQuery q;
+			FloorTextureSamplingQuery make_FloorTextureSamplingQuery( CeilSliceAndMipmap ceilSliceAndMipmap, float2 uv){
+				FloorTextureSamplingQuery q;
 				q.ceilSliceAndMipmap = ceilSliceAndMipmap;
 				q.uv = uv;
 				return q;
 			}
 
-			float sampleHeightTextureWithQuery(CeilTextureSamplingQuery query) {
+			float sampleHeightTextureWithQuery(FloorTextureSamplingQuery query) {
 				return sampleHeightMap(query.ceilSliceAndMipmap.slice, float4(query.uv, 0, query.ceilSliceAndMipmap.mipmap));
 			}
 
 			float2 alignUvToPixelCenter(float2 textureSamplingUv, int levelIndex, int ringIndex, ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
-				int textureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelIndex].ceilTextureResolution;
+				int textureResolution = terrainParameters.pyramidConfiguration.levelsConfiguration[levelIndex].floorTextureResolution;
 				return textureSamplingUv + pow(2, ringIndex) / (textureResolution * 2.0); 
 			}
 
 			float2 MainPyramidCenterUv2(int sliceIndex, ETerrainParameters parameters) {
-				float2  ceilTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[sliceIndex].ceilTextureWorldSize;
+				float2  floorTextureWorldSize = parameters.pyramidConfiguration.levelsConfiguration[sliceIndex].floorTextureWorldSize;
 				float2 pyramidCenterWorldSize = parameters.perFrameConfiguration.levelConfiguration[sliceIndex].levelCenterWorldSpace;
-				return (pyramidCenterWorldSize/ ceilTextureWorldSize) + 0.5;
+				return (pyramidCenterWorldSize/ floorTextureWorldSize) + 0.5;
 			}
 
 			float sampleHeightTextureComplex(float2 inSegmentSpaceUv, CeilSliceAndMipmap ceilSliceAndMipmap,  ETerrainParameters terrainParameters, EPerRingParameters perRingParameters) {
 				float2 textureSamplingUv = frac(inSegmentSpaceUv + MainPyramidCenterUv2(ceilSliceAndMipmap.slice, terrainParameters));
-				CeilTextureSamplingQuery  query = make_CeilTextureSamplingQuery(
+				FloorTextureSamplingQuery  query = make_FloorTextureSamplingQuery(
 					ceilSliceAndMipmap,
 					alignUvToPixelCenter(textureSamplingUv, ceilSliceAndMipmap.slice,  ceilSliceAndMipmap.mipmap, terrainParameters, perRingParameters)
 				);

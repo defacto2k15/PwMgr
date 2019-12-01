@@ -8,6 +8,6 @@ namespace Assets.ETerrain.ETerrainIntegration
         public Dictionary<int, Vector2> RingUvRanges;
         public float CeilSliceWorldSize;
         public Dictionary<int, Vector2> HeightMergeRanges;
-        public int CeilTextureResolution;
+        public int FloorTextureResolution;
     }
 }

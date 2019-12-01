@@ -62,7 +62,7 @@ namespace Assets.ETerrain.ETerrainIntegration
 
             _pyramidRootGo = new GameObject("HeightPyramidRoot");
 
-            var ceilTextureArrays = groundEntitiesGenerators.SelectMany( c => c.Value.CeilTextureArrayGenerator()).ToList();
+            var floorTextureArrays = groundEntitiesGenerators.SelectMany( c => c.Value.FloorTextureArrayGenerator()).ToList();
 
             _perLevelEntites = new Dictionary<HeightPyramidLevel, HeightPyramidLevelEntities>();
             foreach (var level in heightLevels)
@@ -73,7 +73,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                 {
                     var generator = c.Value;
 
-                    var fillingListener= generator.SegmentFillingListenerGeneratorFunc(level, ceilTextureArrays);
+                    var fillingListener= generator.SegmentFillingListenerGeneratorFunc(level, floorTextureArrays);
 
                     var segmentFiller = new SegmentFiller(heightPyramidMapConfiguration.SlotMapSize, perLevelConfiguration.SegmentFillerStandByMarginsSize,
                         perLevelConfiguration.BiggestShapeObjectInGroupLength, fillingListener);
@@ -127,7 +127,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                 var shapeGroup = pair.Value.ShapeGroup;
                 var heightPyramidLevel = pair.Key;
                 var ringsPerLevelCount = _startConfiguration.CommonConfiguration.MaxRingsPerLevelCount; //TODO
-                heightmapUniformsSetter.InitializePyramidUniforms( shapeGroup, heightPyramidLevel,ceilTextureArrays, heightLevels.Count, ringsPerLevelCount);
+                heightmapUniformsSetter.InitializePyramidUniforms( shapeGroup, heightPyramidLevel,floorTextureArrays, heightLevels.Count, ringsPerLevelCount);
                 heightmapUniformsSetter.PassPyramidBuffers(shapeGroup, configurationBuffer, bufferReloaderRootGo, ePyramidPerFrameParametersBuffer);
             }
 
@@ -151,7 +151,7 @@ namespace Assets.ETerrain.ETerrainIntegration
                 HeightPyramidMapConfiguration = heightPyramidMapConfiguration,
                 HeightmapUniformsSetter = heightmapUniformsSetter,
                 GroupMover = groupMover,
-                CeilTextureArrays = ceilTextureArrays
+                FloorTextureArrays = floorTextureArrays
             };
         }
 
@@ -180,7 +180,7 @@ namespace Assets.ETerrain.ETerrainIntegration
 
         public Dictionary<HeightPyramidLevel, Vector2> PyramidCenterWorldSpacePerLevel => _pyramidCenterWorldSpacePerLevel;
 
-        public List<EGroundTexture> CeilTextureArrays => _pyramidCommonEntites.CeilTextureArrays;
+        public List<EGroundTexture> FloorTextureArrays => _pyramidCommonEntites.FloorTextureArrays;
 
         public void DisableShapes()
         {

@@ -15,19 +15,19 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
         public Material ExplorerMaterial;
 
         private List<HeightPyramidLevel> _levels;
-        private Texture _ceilTexturesArray;
+        private Texture _floorTexturesArray;
         private IntVector2 _slotMapSize;
         private HeightPyramidLevel _selectedLevel;
         private ComputeBuffer _fillingStateBuffer;
 
-        public void Initialize(List<HeightPyramidLevel> levels, Texture ceilTexturesArray, IntVector2 slotMapSize, Dictionary<int, Vector2> ringsUvRange,
+        public void Initialize(List<HeightPyramidLevel> levels, Texture floorTexturesArray, IntVector2 slotMapSize, Dictionary<int, Vector2> ringsUvRange,
             Dictionary<HeightPyramidLevel, float> perLevelBiggestShapeLengths)
         {
             _levels = levels;
             _selectedLevel = _levels.First();
-            _ceilTexturesArray = ceilTexturesArray;
+            _floorTexturesArray = floorTexturesArray;
             _slotMapSize = slotMapSize;
-            ExplorerMaterial.SetTexture("_CeilTexturesArray", ceilTexturesArray);
+            ExplorerMaterial.SetTexture("_FloorTexturesArray", floorTexturesArray);
             ExplorerMaterial.SetVector("_SlotMapSize", new Vector4(slotMapSize.X, slotMapSize.Y, 0,0));
 
             var packedRingRanges = new Vector4();
@@ -37,14 +37,14 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
             }
             ExplorerMaterial.SetVector($"_RingsUvRange", packedRingRanges);
 
-            var perLevelCeilTextureWorldSpaceSize = perLevelBiggestShapeLengths.ToDictionary(c => c.Key, c => c.Value * slotMapSize.X); //TODO what whith Y
+            var perLevelFloorTextureWorldSpaceSize = perLevelBiggestShapeLengths.ToDictionary(c => c.Key, c => c.Value * slotMapSize.X); //TODO what whith Y
             var packedSizes = new Vector4();
-            foreach (var pair in perLevelCeilTextureWorldSpaceSize)
+            foreach (var pair in perLevelFloorTextureWorldSpaceSize)
             {
                 packedSizes[pair.Key.GetIndex()] = pair.Value;
             }
 
-            ExplorerMaterial.SetVector("_PerLevelCeilTextureWorldSpaceSizes", packedSizes);
+            ExplorerMaterial.SetVector("_PerLevelFloorTextureWorldSpaceSizes", packedSizes);
 
             _fillingStateBuffer = new ComputeBuffer(slotMapSize.X * slotMapSize.Y * _levels.Count,
                 System.Runtime.InteropServices.Marshal.SizeOf(typeof(GpuSingleSegmentState)));
@@ -66,7 +66,7 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
 
         public void Update()
         {
-            if (_ceilTexturesArray != null && DrawExplorer)
+            if (_floorTexturesArray != null && DrawExplorer)
             {
                 DrawExplorerWindow();
             }
@@ -76,7 +76,7 @@ namespace Assets.ETerrain.Tools.HeightPyramidExplorer
         private void DrawExplorerWindow()
         {
             ExplorerMaterial.SetFloat("_SelectedLevelIndex", _selectedLevel.GetIndex());
-            Graphics.Blit(_ceilTexturesArray, ExplorerRenderTexture, ExplorerMaterial);
+            Graphics.Blit(_floorTexturesArray, ExplorerRenderTexture, ExplorerMaterial);
         }
 
         private void MoveCurrentSegmentLevel(int delta)

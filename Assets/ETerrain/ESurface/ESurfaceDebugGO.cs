@@ -70,9 +70,9 @@ namespace Assets.ESurface
             var levels = startConfiguration.HeightPyramidLevels;
             buffersManager.InitializeBuffers(levels.ToDictionary(c => c, c => new EPyramidShaderBuffersGeneratorPerRingInput()
             {
-                CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X, //TODO i use only X, - works only for squares
+                FloorTextureResolution = startConfiguration.CommonConfiguration.FloorTextureSize.X, //TODO i use only X, - works only for squares
                 HeightMergeRanges = perLevelTemplates[c].PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
-                CeilSliceWorldSize = startConfiguration.PerLevelConfigurations[c].CeilTextureWorldSize.x, // TODO works only for square pyramids - i use width
+                CeilSliceWorldSize = startConfiguration.PerLevelConfigurations[c].FloorTextureWorldSize.x, // TODO works only for square pyramids - i use width
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             }), startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
 
@@ -105,16 +105,16 @@ namespace Assets.ESurface
                     //    {
                     //        SegmentFillingListenerGeneratorFunc = (level) =>
                     //        {
-                    //            var ceilTexture = EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                    //            var floorTexture = EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.FloorTextureSize,
                     //                surfaceTextureFormat);
-                    //            var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
-                    //                , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                    //            var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, floorTexture
+                    //                , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.FloorTextureSize);
                     //            var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
                     //            var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
 
-                    //            return new SegmentFillingListenerWithCeilTexture()
+                    //            return new SegmentFillingListenerWithFloorTexture()
                     //            {
-                    //                CeilTexture = ceilTexture,
+                    //                FloorTexture = floorTexture,
                     //                SegmentFillingListener =
                     //                    new LambdaSegmentFillingListener(
                     //                        (c) =>

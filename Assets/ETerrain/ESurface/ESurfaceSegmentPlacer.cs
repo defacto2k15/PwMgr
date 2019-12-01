@@ -11,16 +11,16 @@ namespace Assets.ETerrain.Pyramid.Map
     public class ESurfaceSegmentPlacer : IGroundTextureSegmentPlacer
     {
         private UTTextureRendererProxy _renderer;
-        private RenderTexture _ceilTextureArray;
+        private RenderTexture _floorTextureArray;
         private readonly int _ceilArraySliceIndex;
         private IntVector2 _floorSlotsCount;
         private IntVector2 _floorTextureSize;
 
-        public ESurfaceSegmentPlacer(UTTextureRendererProxy renderer, RenderTexture ceilTextureArray
+        public ESurfaceSegmentPlacer(UTTextureRendererProxy renderer, RenderTexture floorTextureArray
             , int ceilArraySliceIndex, IntVector2 floorSlotsCount, IntVector2 floorTextureSize)
         {
             _renderer = renderer;
-            _ceilTextureArray = ceilTextureArray;
+            _floorTextureArray = floorTextureArray;
             _ceilArraySliceIndex = ceilArraySliceIndex;
             _floorSlotsCount = floorSlotsCount;
             _floorTextureSize = floorTextureSize;
@@ -38,7 +38,7 @@ namespace Assets.ETerrain.Pyramid.Map
             {
                 CanMultistep = false,
                 CreateTexture2D = false,
-                RenderTextureToModify = _ceilTextureArray,
+                RenderTextureToModify = _floorTextureArray,
                 ShaderName = "Custom/ESurface/SegmentPlacer",
                 UniformPack = uniforms,
                 RenderingRectangle = segmentPlacement0.Pixels,

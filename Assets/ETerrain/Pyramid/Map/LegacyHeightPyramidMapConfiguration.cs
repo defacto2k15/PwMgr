@@ -11,6 +11,6 @@ namespace Assets.ETerrain.Pyramid.Map
         public float InterSegmentMarginSize { get; set; }
         public RenderTextureFormat HeightTextureFormat { get; set; }
 
-        public IntVector2 CeilTextureSize => SlotMapSize * SegmentTextureResolution;
+        public IntVector2 FloorTextureSize => SlotMapSize * SegmentTextureResolution;
     }
 }

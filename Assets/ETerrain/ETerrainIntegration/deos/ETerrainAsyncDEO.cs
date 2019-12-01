@@ -108,10 +108,10 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             var levels = startConfiguration.PerLevelConfigurations.Keys.Where(c => startConfiguration.HeightPyramidLevels.Contains(c));
             buffersManager.InitializeBuffers(levels.ToDictionary(c => c, c => new EPyramidShaderBuffersGeneratorPerRingInput()
             {
-                CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X, //TODO i use only X, - works only for squares
+                FloorTextureResolution = startConfiguration.CommonConfiguration.FloorTextureSize.X, //TODO i use only X, - works only for squares
                 HeightMergeRanges = perLevelTemplates[c].PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
                 CeilSliceWorldSize =
-                    startConfiguration.PerLevelConfigurations[c].CeilTextureWorldSize.x, // TODO works only for square pyramids - i use width
+                    startConfiguration.PerLevelConfigurations[c].FloorTextureWorldSize.x, // TODO works only for square pyramids - i use width
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             }), startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
 
@@ -145,7 +145,7 @@ namespace Assets.ETerrain.ETerrainIntegration.deos
             if (_gameInitializationFields.HasField<MultipleLevelsHeightPyramidExplorerGO>())
             {
                 _gameInitializationFields.Retrive<MultipleLevelsHeightPyramidExplorerGO>().Initialize(startConfiguration.HeightPyramidLevels,
-                    _eTerrainHeightPyramidFacade.CeilTextureArrays.Where(c => c.TextureType == EGroundTextureType.HeightMap).Select(c => c.Texture).First(),
+                    _eTerrainHeightPyramidFacade.FloorTextureArrays.Where(c => c.TextureType == EGroundTextureType.HeightMap).Select(c => c.Texture).First(),
                     startConfiguration.CommonConfiguration.SlotMapSize,
                     startConfiguration.CommonConfiguration.RingsUvRange,
                     startConfiguration.PerLevelConfigurations.ToDictionary(c => c.Key, c => c.Value.BiggestShapeObjectInGroupLength));

@@ -11,8 +11,8 @@ namespace Assets.ETerrain.ETerrainIntegration
         public IntVector2 SegmentFillerStandByMarginsSize;
         public float BiggestShapeObjectInGroupLength;
         public int OneRingShapeObjectsCount = 4; //todo
-        public Vector2 CeilTextureWorldSize => new Vector2( BiggestShapeObjectInGroupLength * (OneRingShapeObjectsCount + 2), BiggestShapeObjectInGroupLength * (OneRingShapeObjectsCount + 2));
-        public MyRectangle CeilTextureZeroCenteredWorldArea  => MyRectangle.ZeroCenteredWithSize(CeilTextureWorldSize);
+        public Vector2 FloorTextureWorldSize => new Vector2( BiggestShapeObjectInGroupLength * (OneRingShapeObjectsCount + 2), BiggestShapeObjectInGroupLength * (OneRingShapeObjectsCount + 2));
+        public MyRectangle FloorTextureZeroCenteredWorldArea  => MyRectangle.ZeroCenteredWithSize(FloorTextureWorldSize);
 
         public float TransitionSingleStepPercent;
         public bool CreateCenterObject;

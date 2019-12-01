@@ -10,6 +10,6 @@ namespace Assets.ETerrain.ETerrainIntegration
         public HeightPyramidSegmentsUniformsSetter HeightmapUniformsSetter;
         public HeightPyramidGroupMover GroupMover;
         public HeightPyramidCommonConfiguration HeightPyramidMapConfiguration;
-        public List<EGroundTexture> CeilTextureArrays;
+        public List<EGroundTexture> FloorTextureArrays;
     }
 }

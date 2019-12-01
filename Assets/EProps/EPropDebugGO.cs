@@ -77,9 +77,9 @@ namespace Assets.EProps
             var levels = startConfiguration.PerLevelConfigurations.Keys;
             var ePyramidShaderBuffersGeneratorPerRingInputs = levels.ToDictionary(c => c, c => new EPyramidShaderBuffersGeneratorPerRingInput()
             {
-                CeilTextureResolution = startConfiguration.CommonConfiguration.CeilTextureSize.X,  //TODO i use only X, - works only for squares
+                FloorTextureResolution = startConfiguration.CommonConfiguration.FloorTextureSize.X,  //TODO i use only X, - works only for squares
                 HeightMergeRanges = perLevelTemplates[c].PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange),
-                CeilSliceWorldSize = startConfiguration.PerLevelConfigurations[c].CeilTextureWorldSize.x,  // TODO works only for square pyramids - i use width
+                CeilSliceWorldSize = startConfiguration.PerLevelConfigurations[c].FloorTextureWorldSize.x,  // TODO works only for square pyramids - i use width
                 RingUvRanges = startConfiguration.CommonConfiguration.RingsUvRange
             });
             buffersManager.InitializeBuffers(ePyramidShaderBuffersGeneratorPerRingInputs, startConfiguration.CommonConfiguration.MaxLevelsCount, startConfiguration.CommonConfiguration.MaxRingsPerLevelCount);
@@ -92,16 +92,16 @@ namespace Assets.EProps
                     //    {
                     //        SegmentFillingListenerGeneratorFunc = (level) =>
                     //        {
-                    //            var ceilTexture =
-                    //                EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.CeilTextureSize,
+                    //            var floorTexture =
+                    //                EGroundTextureGenerator.GenerateEmptyGroundTexture(startConfiguration.CommonConfiguration.FloorTextureSize,
                     //                    startConfiguration.CommonConfiguration.HeightTextureFormat);
-                    //            var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, ceilTexture
-                    //                , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.CeilTextureSize);
+                    //            var segmentsPlacer = new ESurfaceSegmentPlacer(textureRendererProxy, floorTexture
+                    //                , startConfiguration.CommonConfiguration.SlotMapSize, startConfiguration.CommonConfiguration.FloorTextureSize);
                     //            var pyramidLevelManager = new GroundLevelTexturesManager(startConfiguration.CommonConfiguration.SlotMapSize);
                     //            var segmentModificationManager = new SoleLevelGroundTextureSegmentModificationsManager(segmentsPlacer, pyramidLevelManager);
-                    //            return new SegmentFillingListenerWithCeilTexture()
+                    //            return new SegmentFillingListenerWithFloorTexture()
                     //            {
-                    //                CeilTexture = ceilTexture,
+                    //                FloorTexture = floorTexture,
                     //                SegmentFillingListener = new LambdaSegmentFillingListener(
                     //                    (c) =>
                     //                    {
@@ -132,9 +132,9 @@ namespace Assets.EProps
                 HeightScale =startConfiguration.CommonConfiguration.YScale
             };
             _elevationManager = new EPropElevationManager(new CommonExecutorUTProxy(), shaderExecutorObject, ePropLocationConfiguration, ePropConstantPyramidParameters);
-            var heightCeilTextureArray = _eTerrainHeightPyramidFacade.CeilTextureArrays.Where(c => c.TextureType == EGroundTextureType.HeightMap).Select(c => c.Texture).First();
+            var heightFloorTextureArray = _eTerrainHeightPyramidFacade.FloorTextureArrays.Where(c => c.TextureType == EGroundTextureType.HeightMap).Select(c => c.Texture).First();
             var initializedBuffers = _elevationManager.Initialize(buffersManager.PyramidPerFrameParametersBuffer, buffersManager.EPyramidConfigurationBuffer,
-                heightCeilTextureArray);
+                heightFloorTextureArray);
             var ePropLocaleBuffer = initializedBuffers.EPropLocaleBuffer;
             var ePropIdsBuffer = initializedBuffers.EPropIdsBuffer;
 
@@ -150,7 +150,7 @@ namespace Assets.EProps
 
             _mergeRingsDisplayer = new EPropDebugMergeRingsDisplayer();
             _mergeRingsDisplayer.Start();
-            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.CeilTextureWorldSize);
+            var levelWorldSizes = startConfiguration.PerLevelConfigurations.ToDictionary(c=>c.Key, c=>c.Value.FloorTextureWorldSize);
             var ringMergeRanges = perLevelTemplates.ToDictionary(c => c.Key,
                 c => c.Value.PerRingTemplates.ToDictionary(k => k.Key, k => k.Value.HeightMergeRange));
             _ePropHotAreaSelector = new EPropHotAreaSelector(levelWorldSizes, ringMergeRanges);

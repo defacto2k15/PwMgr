@@ -3,11 +3,11 @@
 	Properties
 	{
 		_SegmentsStateFontmap("SegmentsStateFontmap", 2D) = "pink" {}
-		_CeilTexturesArray("HeightTexture", 2DArray) = "" {}
+		_FloorTexturesArray("HeightTexture", 2DArray) = "" {}
 		_SelectedLevelIndex("HeightTextureMipLevel", Int) = 0
 		_SlotMapSize("SlotMapSize", Vector) = (2.0,2.0,0.0,0.0)
 		_RingsUvRange("RingsUvRange", Vector) = (0.0,0.0,0.0,0.0)
-		_PerLevelCeilTextureWorldSpaceSizes("_PerLevelCeilTextureWorldSpaceSizes", Vector) = (0.0,0.0,0.0,0.0)
+		_PerLevelFloorTextureWorldSpaceSizes("_PerLevelFloorTextureWorldSpaceSizes", Vector) = (0.0,0.0,0.0,0.0)
 		_TravellerPosition("_TravellerPosition", Vector) = (0.0, 0.0, 0.0, 0.0)
 		_Pyramid0WorldSpaceCenter("_Pyramid0WorldSpaceCenter", Vector) = (0.0, 0.0, 0.0, 0.0)
 		_Pyramid1WorldSpaceCenter("_Pyramid1WorldSpaceCenter", Vector) = (0.0, 0.0, 0.0, 0.0)
@@ -28,11 +28,11 @@
 			#include "UnityCG.cginc" 
 
 			sampler2D _SegmentsStateFontmap;
-			UNITY_DECLARE_TEX2DARRAY(_CeilTexturesArray);
+			UNITY_DECLARE_TEX2DARRAY(_FloorTexturesArray);
 			int _SelectedLevelIndex;
 			float4 _SlotMapSize;
 			float4 _RingsUvRange;
-			float4 _PerLevelCeilTextureWorldSpaceSizes;
+			float4 _PerLevelFloorTextureWorldSpaceSizes;
 
 			float4 _TravellerPosition;
 			float4 _Pyramid0WorldSpaceCenter;
@@ -86,12 +86,12 @@
 
 			fixed4 frag(v2f i) : Color{
 				float2 uv = i.uv;
-				float height = UNITY_SAMPLE_TEX2DARRAY_LOD(_CeilTexturesArray, float3(uv, _SelectedLevelIndex), 0);
+				float height = UNITY_SAMPLE_TEX2DARRAY_LOD(_FloorTexturesArray, float3(uv, _SelectedLevelIndex), 0);
 
 				float4 outColor = float4(height, height, height, 1);
 
-				float ceilTextureWorldSpaceSize = _PerLevelCeilTextureWorldSpaceSizes[_SelectedLevelIndex];
-				float4 worldSpaceRingRanges = _RingsUvRange * ceilTextureWorldSpaceSize;
+				float floorTextureWorldSpaceSize = _PerLevelFloorTextureWorldSpaceSizes[_SelectedLevelIndex];
+				float4 worldSpaceRingRanges = _RingsUvRange * floorTextureWorldSpaceSize;
 
 				float2 pyramidCenterWorldSpace = RetrivePyramidWorldSpaceCenter(_SelectedLevelIndex);// float2(_Debug, _Debug2);
 
@@ -99,7 +99,7 @@
 				bool weAreInRingBorder = false;
 				for (int ringIndex = 0; ringIndex < 3; ringIndex++) {
 					float thisRingRange = _RingsUvRange[ringIndex];
-					float2 pyramidCenterUv = frac(pyramidCenterWorldSpace / ceilTextureWorldSpaceSize);
+					float2 pyramidCenterUv = frac(pyramidCenterWorldSpace / floorTextureWorldSpaceSize);
 					float2 loopedPyramidCenterUv = pyramidCenterUv;
 
 					int2 uvQuart = round(uv);
@@ -190,7 +190,7 @@
 					}
 				}
 
-				float2 travellerPositionCeilSpace = frac(_TravellerPosition.xy / ceilTextureWorldSpaceSize);
+				float2 travellerPositionCeilSpace = frac(_TravellerPosition.xy / floorTextureWorldSpaceSize);
 				if (length(travellerPositionCeilSpace - uv) < 0.01) {
 					outColor = float4(1, 1, 0, 1);
 				}

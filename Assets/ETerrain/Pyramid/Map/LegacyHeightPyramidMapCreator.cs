@@ -7,21 +7,21 @@ namespace Assets.ETerrain.Pyramid.Map
     //{
     //    public LegacyHeightPyramidMapEntites Create(UTTextureRendererProxy textureRendererProxy, LegacyHeightPyramidMapConfiguration pyramidMapConfiguration)
     //    {
-    //        var ceilTexture =
-    //            EGroundTextureGenerator.GenerateEmptyGroundTexture(pyramidMapConfiguration.CeilTextureSize, pyramidMapConfiguration.HeightTextureFormat);
+    //        var floorTexture =
+    //            EGroundTextureGenerator.GenerateEmptyGroundTexture(pyramidMapConfiguration.FloorTextureSize, pyramidMapConfiguration.HeightTextureFormat);
 
     //        var modifiedCornerBuffer =
     //            EGroundTextureGenerator.GenerateModifiedCornerBuffer(pyramidMapConfiguration.SegmentTextureResolution,
     //                pyramidMapConfiguration.HeightTextureFormat);
-    //        var segmentsPlacer = new HeightSegmentPlacer(textureRendererProxy, ceilTexture, pyramidMapConfiguration.SlotMapSize,
-    //            pyramidMapConfiguration.CeilTextureSize, pyramidMapConfiguration.InterSegmentMarginSize, modifiedCornerBuffer);
+    //        var segmentsPlacer = new HeightSegmentPlacer(textureRendererProxy, floorTexture, pyramidMapConfiguration.SlotMapSize,
+    //            pyramidMapConfiguration.FloorTextureSize, pyramidMapConfiguration.InterSegmentMarginSize, modifiedCornerBuffer);
     //        var heightMapManager = new LegacyHeightPyramidMapManager(segmentsPlacer, pyramidMapConfiguration);           
 
     //        return new LegacyHeightPyramidMapEntites()
     //        {
     //            MapManager = heightMapManager,
     //            SegmentPlacer = segmentsPlacer,
-    //            CeilTexture = ceilTexture
+    //            FloorTexture = floorTexture
     //        };
     //    }
     //}
@@ -30,6 +30,6 @@ namespace Assets.ETerrain.Pyramid.Map
     //{
     //    public HeightSegmentPlacer SegmentPlacer;
     //    public LegacyHeightPyramidMapManager MapManager;
-    //    public RenderTexture CeilTexture;
+    //    public RenderTexture FloorTexture;
     //}
 }
